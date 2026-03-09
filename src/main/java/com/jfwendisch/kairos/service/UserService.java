@@ -28,19 +28,24 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
-
-        user.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(user);
 
         return User.builder()
                 .username(user.getEmail())
                 .password(user.getPasswordHash())
                 .authorities(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                 .build();
+    }
+
+    @Transactional
+    public void updateLastLogin(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            user.setLastLoginAt(LocalDateTime.now());
+            userRepository.save(user);
+        });
     }
 
     public AppUser createUser(String email, String password, UserRole role) {

@@ -55,7 +55,7 @@ public class DockerCheckService {
                 String imageId = imageRepo + ":" + imageTag;
                 dockerClient.removeImageCmd(imageId).withForce(true).exec();
             } catch (Exception removeEx) {
-                log.debug("Could not remove docker image after check: {}", removeEx.getMessage());
+                log.warn("Could not remove docker image '{}' after check: {}", image, removeEx.getMessage());
             }
 
             CheckResult result = CheckResult.builder()

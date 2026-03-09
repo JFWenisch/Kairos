@@ -18,6 +18,8 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -50,7 +52,18 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, UserService userService) throws Exception {
+    public AuthenticationSuccessHandler formLoginSuccessHandler(UserService userService) {
+        SavedRequestAwareAuthenticationSuccessHandler handler = new SavedRequestAwareAuthenticationSuccessHandler();
+        handler.setDefaultTargetUrl("/");
+        return (request, response, authentication) -> {
+            userService.updateLastLogin(authentication.getName());
+            handler.onAuthenticationSuccess(request, response, authentication);
+        };
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
+            AuthenticationSuccessHandler formLoginSuccessHandler) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/resources/**", "/login", "/css/**", "/js/**",
@@ -63,7 +76,7 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .defaultSuccessUrl("/", true)
+                .successHandler(formLoginSuccessHandler)
                 .permitAll()
             )
             .logout(logout -> logout

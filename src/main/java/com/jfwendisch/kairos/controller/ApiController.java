@@ -1,6 +1,7 @@
 package com.jfwendisch.kairos.controller;
 
 import com.jfwendisch.kairos.dto.ResourceDTO;
+import com.jfwendisch.kairos.entity.CheckResult;
 import com.jfwendisch.kairos.entity.MonitoredResource;
 import com.jfwendisch.kairos.repository.ResourceTypeConfigRepository;
 import com.jfwendisch.kairos.service.ResourceService;
@@ -25,7 +26,7 @@ public class ApiController {
     }
 
     @PostMapping("/resources")
-    public ResponseEntity<?> addResource(@RequestBody ResourceDTO dto) {
+    public ResponseEntity<MonitoredResource> addResource(@RequestBody ResourceDTO dto) {
         MonitoredResource resource = MonitoredResource.builder()
                 .name(dto.getName())
                 .resourceType(dto.getResourceType())
@@ -42,7 +43,7 @@ public class ApiController {
     }
 
     @GetMapping("/resources/{id}/history")
-    public ResponseEntity<?> getHistory(@PathVariable Long id) {
+    public ResponseEntity<List<CheckResult>> getHistory(@PathVariable Long id) {
         return resourceService.findById(id)
                 .map(r -> ResponseEntity.ok(resourceService.getFullHistory(id)))
                 .orElse(ResponseEntity.notFound().build());

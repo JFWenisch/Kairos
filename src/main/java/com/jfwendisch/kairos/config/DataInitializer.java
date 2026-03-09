@@ -28,7 +28,8 @@ public class DataInitializer implements ApplicationRunner {
 
     private void initDefaultAdmin() {
         if (userRepository.count() == 0) {
-            log.info("Creating default admin user: admin@kairos.local / admin");
+            log.warn("No users found. Creating default admin user: admin@kairos.local");
+            log.warn("*** SECURITY WARNING: Change the default admin password immediately! ***");
             userService.createUser("admin@kairos.local", "admin", UserRole.ADMIN);
         }
     }

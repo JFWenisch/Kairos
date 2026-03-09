@@ -80,8 +80,9 @@ public class ResourceService {
         return (double) available / relevant * 100.0;
     }
 
+    private static final int TIMELINE_BUCKETS = 90;
+
     public List<String> getTimelineBlocks(MonitoredResource resource) {
-        int buckets = 90;
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime start = now.minusHours(24);
 
@@ -89,10 +90,10 @@ public class ResourceService {
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
 
         long totalMinutes = 24 * 60;
-        long bucketMinutes = totalMinutes / buckets;
+        long bucketMinutes = totalMinutes / TIMELINE_BUCKETS;
 
-        List<String> blocks = new ArrayList<>(buckets);
-        for (int i = 0; i < buckets; i++) {
+        List<String> blocks = new ArrayList<>(TIMELINE_BUCKETS);
+        for (int i = 0; i < TIMELINE_BUCKETS; i++) {
             LocalDateTime bucketStart = start.plusMinutes(i * bucketMinutes);
             LocalDateTime bucketEnd = bucketStart.plusMinutes(bucketMinutes);
 
