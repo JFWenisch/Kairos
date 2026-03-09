@@ -19,7 +19,7 @@
     <description>Uptime monitoring application</description>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <docker-java.version>3.3.6</docker-java.version>
     </properties>
 
