@@ -47,7 +47,7 @@ public class DataInitializer implements ApplicationRunner {
         if (resourceTypeConfigRepository.findByTypeName("DOCKER").isEmpty()) {
             resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
                     .typeName("DOCKER")
-                    .checkIntervalMinutes(60)
+                    .checkIntervalMinutes(3600) // 60 hours
                     .parallelism(2)
                     .allowPublicAdd(false)
                     .build());

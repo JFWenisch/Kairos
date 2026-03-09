@@ -67,10 +67,10 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/resources/**", "/login", "/css/**", "/js/**",
-                        "/actuator/prometheus", "/actuator/health", "/h2-console/**").permitAll()
+                        "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**").permitAll()
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/resources/*/history").authenticated()
+                .requestMatchers("/api/resources/**/history").authenticated()
                 .requestMatchers("/api/resources/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

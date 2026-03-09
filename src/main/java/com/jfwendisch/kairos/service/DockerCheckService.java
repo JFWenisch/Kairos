@@ -34,7 +34,7 @@ public class DockerCheckService {
                     .sslConfig(config.getSSLConfig())
                     .maxConnections(5)
                     .connectionTimeout(Duration.ofSeconds(30))
-                    .responseTimeout(Duration.ofSeconds(45))
+                    .responseTimeout(Duration.ofMinutes(3)) // allow time for large image pulls
                     .build();
             dockerClient = DockerClientImpl.getInstance(config, httpClient);
 

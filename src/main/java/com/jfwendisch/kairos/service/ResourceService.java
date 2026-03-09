@@ -80,6 +80,7 @@ public class ResourceService {
         return (double) available / relevant * 100.0;
     }
 
+    /** Number of color-coded blocks displayed in the 24-hour timeline visualization (one block ≈ 16 min). */
     private static final int TIMELINE_BUCKETS = 90;
 
     public List<String> getTimelineBlocks(MonitoredResource resource) {
