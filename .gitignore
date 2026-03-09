@@ -1,0 +1,14 @@
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.db
+kairos.mv.db
+kairos.trace.db
+.idea/
+*.iml
+.eclipse
+.settings/
+.classpath
+.project
