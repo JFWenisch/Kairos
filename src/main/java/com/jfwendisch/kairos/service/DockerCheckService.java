@@ -49,7 +49,7 @@ public class DockerCheckService {
             dockerClient.pullImageCmd(imageRepo)
                     .withTag(imageTag)
                     .exec(new PullImageResultCallback())
-                    .awaitCompletion(5, TimeUnit.MINUTES);
+                    .awaitCompletion(2, TimeUnit.MINUTES);
 
             try {
                 String imageId = imageRepo + ":" + imageTag;
