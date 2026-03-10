@@ -73,6 +73,86 @@
                             </div>
                         </div>
                     </form>
+
+                    <!-- Authentication credentials section -->
+                    <hr class="my-3">
+                    <h6 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Authentication Credentials</h6>
+
+                    <!-- Existing auths table -->
+                    <div th:if="${!config.authentications.isEmpty()}" class="mb-3">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>URL Pattern</th>
+                                    <th>Username</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="auth : ${config.authentications}">
+                                    <td th:text="${auth.name}"></td>
+                                    <td><span class="badge bg-secondary" th:text="${auth.authType}">BASIC</span></td>
+                                    <td><code th:text="${auth.urlPattern}"></code></td>
+                                    <td th:text="${auth.username}"></td>
+                                    <td>
+                                        <form th:action="@{'/admin/resource-types/auth/delete/' + ${auth.id}}" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Delete this authentication?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p th:if="${config.authentications.isEmpty()}" class="text-muted small">
+                        No authentication credentials configured.
+                    </p>
+
+                    <!-- Add new auth form -->
+                    <button class="btn btn-outline-success btn-sm mb-2"
+                            type="button"
+                            th:data-bs-target="${'#addAuthCollapse-' + config.id}"
+                            data-bs-toggle="collapse">
+                        <i class="bi bi-plus-circle me-1"></i>Add Authentication
+                    </button>
+                    <div th:id="${'addAuthCollapse-' + config.id}" class="collapse">
+                        <div class="card card-body bg-dark-subtle mt-2">
+                            <form th:action="@{'/admin/resource-types/' + ${config.id} + '/auth/add'}" method="post">
+                                <div class="row g-2">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" class="form-control form-control-sm" name="name"
+                                               placeholder="e.g. My Registry" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">URL / Target Pattern</label>
+                                        <input type="text" class="form-control form-control-sm" name="urlPattern"
+                                               placeholder="e.g. https://example.com*" required>
+                                        <div class="form-text">Use <code>*</code> as a trailing wildcard.</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Username</label>
+                                        <input type="text" class="form-control form-control-sm" name="username"
+                                               required autocomplete="off">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" class="form-control form-control-sm" name="password"
+                                               required autocomplete="new-password">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <i class="bi bi-check-lg me-1"></i>Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -35,14 +35,26 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void initResourceTypeConfigs() {
-        if (resourceTypeConfigRepository.findByTypeName("URL").isEmpty()) {
+        // Migrate legacy config name "URL" -> "HTTP" used by older versions.
+        resourceTypeConfigRepository.findByTypeName("URL").ifPresent(legacyUrlConfig -> {
+            if (resourceTypeConfigRepository.findByTypeName("HTTP").isPresent()) {
+                resourceTypeConfigRepository.delete(legacyUrlConfig);
+                log.info("Removed legacy ResourceTypeConfig 'URL' because 'HTTP' already exists");
+            } else {
+                legacyUrlConfig.setTypeName("HTTP");
+                resourceTypeConfigRepository.save(legacyUrlConfig);
+                log.info("Migrated ResourceTypeConfig from 'URL' to 'HTTP'");
+            }
+        });
+
+        if (resourceTypeConfigRepository.findByTypeName("HTTP").isEmpty()) {
             resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
-                    .typeName("URL")
+                    .typeName("HTTP")
                     .checkIntervalMinutes(1)
                     .parallelism(5)
                     .allowPublicAdd(false)
                     .build());
-            log.info("Created default ResourceTypeConfig for URL");
+            log.info("Created default ResourceTypeConfig for HTTP");
         }
         if (resourceTypeConfigRepository.findByTypeName("DOCKER").isEmpty()) {
             resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
