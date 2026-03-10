@@ -3,6 +3,7 @@ package com.jfwendisch.kairos.service;
 import com.jfwendisch.kairos.entity.CheckResult;
 import com.jfwendisch.kairos.entity.CheckStatus;
 import com.jfwendisch.kairos.entity.MonitoredResource;
+import com.jfwendisch.kairos.entity.ResourceTypeAuth;
 import com.jfwendisch.kairos.repository.CheckResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 public class HttpCheckService {
 
     private final CheckResultRepository checkResultRepository;
+    private final AuthService authService;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -30,13 +34,21 @@ public class HttpCheckService {
     public CheckResult check(MonitoredResource resource) {
         String url = resource.getTarget();
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(15))
-                    .GET()
-                    .build();
+                    .GET();
 
-            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            // Apply Basic Auth if a matching credential is configured for this URL
+            Optional<ResourceTypeAuth> authOpt = authService.findMatchingAuth(url, "HTTP");
+            authOpt.ifPresent(auth -> {
+                String credentials = auth.getUsername() + ":" + auth.getPassword();
+                String encoded = Base64.getEncoder().encodeToString(credentials.getBytes());
+                requestBuilder.header("Authorization", "Basic " + encoded);
+                log.debug("Applying Basic Auth '{}' to HTTP check for {}", auth.getName(), url);
+            });
+
+            HttpResponse<Void> response = httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.discarding());
             int statusCode = response.statusCode();
 
             CheckResult result;

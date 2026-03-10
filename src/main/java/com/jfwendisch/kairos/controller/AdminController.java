@@ -1,6 +1,7 @@
 package com.jfwendisch.kairos.controller;
 
 import com.jfwendisch.kairos.entity.*;
+import com.jfwendisch.kairos.repository.ResourceTypeAuthRepository;
 import com.jfwendisch.kairos.repository.ResourceTypeConfigRepository;
 import com.jfwendisch.kairos.service.ResourceService;
 import com.jfwendisch.kairos.service.UserService;
@@ -20,6 +21,7 @@ public class AdminController {
     private final ResourceService resourceService;
     private final UserService userService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
+    private final ResourceTypeAuthRepository resourceTypeAuthRepository;
 
     @GetMapping
     public String admin() {
@@ -96,6 +98,39 @@ public class AdminController {
             resourceTypeConfigRepository.save(config);
         });
         redirectAttributes.addFlashAttribute("successMessage", "Configuration updated");
+        return "redirect:/admin/resource-types";
+    }
+
+    @PostMapping("/resource-types/{configId}/auth/add")
+    public String addAuth(@PathVariable Long configId,
+                          @RequestParam String name,
+                          @RequestParam String urlPattern,
+                          @RequestParam String username,
+                          @RequestParam String password,
+                          RedirectAttributes redirectAttributes) {
+        resourceTypeConfigRepository.findById(configId).ifPresent(config -> {
+            ResourceTypeAuth auth = ResourceTypeAuth.builder()
+                    .resourceTypeConfig(config)
+                    .name(name)
+                    .authType(AuthType.BASIC)
+                    .urlPattern(urlPattern)
+                    .username(username)
+                    .password(password)
+                    .build();
+            resourceTypeAuthRepository.save(auth);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + name + "' added to " + config.getTypeName());
+        });
+        return "redirect:/admin/resource-types";
+    }
+
+    @PostMapping("/resource-types/auth/delete/{authId}")
+    public String deleteAuth(@PathVariable Long authId, RedirectAttributes redirectAttributes) {
+        resourceTypeAuthRepository.findById(authId).ifPresent(auth -> {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + auth.getName() + "' deleted");
+            resourceTypeAuthRepository.delete(auth);
+        });
         return "redirect:/admin/resource-types";
     }
 

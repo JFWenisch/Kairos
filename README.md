@@ -24,9 +24,10 @@
 
 - **HTTP monitoring** — HTTP GET checks with configurable interval and parallelism
 - **Docker image monitoring** — pulls an image and verifies it is accessible from the configured registry
+- **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks run `docker login` before pulling
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
-- **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users
+- **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **Public submission mode** — optionally allow unauthenticated users to add resources via the REST API
 - **OIDC / OAuth2 login** — plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** — `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
@@ -142,6 +143,8 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 | `OIDC_ISSUER_URI` | `OIDC_ISSUER_URI` | *(empty)* | OIDC issuer URI (e.g. `https://keycloak.example.com/realms/myrealm`) |
 
 See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Docker socket access, and OIDC.
+
+See [docs/authentication.md](docs/authentication.md) for details on configuring authentication credentials for resource checks.
 
 ---
 
