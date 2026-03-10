@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.0 - 2026-03-10
+
+## [0.2.0](https://github.com/JFWenisch/Kairos/compare/v0.1.0...v0.2.0) (2026-03-10)
+
+
+### Features
+
+* initial commit supporting auth for resourcetypes ([3441051](https://github.com/JFWenisch/Kairos/commit/344105110660bed2fd2f8dd721bb7f2e5594b553))
+* initial commit supporting auth for resourcetypes ([8a08b23](https://github.com/JFWenisch/Kairos/commit/8a08b2396c98c8a55a56088d13c89704bb8c889c)), closes [#4](https://github.com/JFWenisch/Kairos/issues/4)
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.2.0
+
+
 ## v0.1.0 - 2026-03-10
 
 ## [0.1.0](https://github.com/JFWenisch/Kairos/compare/v0.0.3...v0.1.0) (2026-03-10)
