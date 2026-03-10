@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.0 - 2026-03-10
+
+## [0.1.0](https://github.com/JFWenisch/Kairos/compare/v0.0.3...v0.1.0) (2026-03-10)
+
+
+### Features
+
+* Added helm chart ([31f2c0e](https://github.com/JFWenisch/Kairos/commit/31f2c0e3e884c060e6dd95a5a54cf46aa816fa9c))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.1.0
+
+
 ## v0.0.3 - 2026-03-10
 
 ### [0.0.3](https://github.com/JFWenisch/Kairos/compare/v0.0.2...v0.0.3) (2026-03-10)
