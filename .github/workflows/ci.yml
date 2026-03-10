@@ -22,8 +22,12 @@ jobs:
   versioning:
     if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
-      version: ${{ steps.semver.outputs.version }}
+      tag: ${{ steps.tag_version.outputs.new_tag }}
+      version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.tag_version.outputs.changelog }}
       image: ${{ steps.image.outputs.name }}
 
     steps:
@@ -36,40 +40,28 @@ jobs:
         id: image
         run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
-      - name: Calculate semantic version
-        id: semver
+      - name: Bump version and generate changelog
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUBTOKEN }}
+          release_branches: main
+          default_bump: patch
+          dry_run: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+
+      - name: Derive application version
+        id: version
         shell: bash
         run: |
           set -euo pipefail
+          tag="${{ steps.tag_version.outputs.new_tag }}"
 
-          latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)"
-          if [ -z "$latest_tag" ]; then
-            latest_tag="v0.0.0"
-            range="HEAD"
-          else
-            range="${latest_tag}..HEAD"
+          if [ -z "$tag" ]; then
+            tag="v0.0.1"
           fi
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
-            range="origin/${{ github.base_ref }}..HEAD"
-          fi
+          version="${tag#v}"
 
-          base_version="${latest_tag#v}"
-          IFS='.' read -r major minor patch <<< "$base_version"
-
-          messages="$(git log --pretty=format:%s $range || true)"
-
-          if echo "$messages" | grep -Eq '^feat(\(.+\))?: '; then
-            minor=$((minor + 1))
-            patch=0
-          elif echo "$messages" | grep -Eq '^fix(\(.+\))?: '; then
-            patch=$((patch + 1))
-          else
-            patch=$((patch + 1))
-          fi
-
-          version="${major}.${minor}.${patch}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             version="${version}-pr.${{ github.event.number }}.${{ github.run_number }}"
           fi
@@ -222,7 +214,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUBTOKEN }}
 
       - name: Push Docker tags to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -259,30 +251,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create or update CHANGELOG.md
-        id: changelog
+      - name: Update CHANGELOG.md
         shell: bash
         run: |
           set -euo pipefail
-          tag="v${{ needs.versioning.outputs.version }}"
+          tag="${{ needs.versioning.outputs.tag }}"
           image="${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}"
           date="$(date -u +%Y-%m-%d)"
-
-          previous_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)"
-          if [ -n "$previous_tag" ]; then
-            changes="$(git log --pretty=format:'- %s (%h)' "${previous_tag}..HEAD")"
-          else
-            changes="$(git log --pretty=format:'- %s (%h)')"
-          fi
-
-          if [ -z "$changes" ]; then
-            changes='- No user-facing changes in this release.'
-          fi
+          changelog="${{ needs.versioning.outputs.changelog }}"
 
           {
             echo "## ${tag} - ${date}"
             echo
-            echo "$changes"
+            echo "$changelog"
             echo
             echo "Docker image: ${image}"
             echo
@@ -304,12 +285,6 @@ jobs:
             } > CHANGELOG.md
           fi
 
-          {
-            echo "release_body<<EOF"
-            cat .release_entry.md
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Commit changelog
         shell: bash
         run: |
@@ -317,20 +292,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "chore(release): v${{ needs.versioning.outputs.version }} [skip ci]" || exit 0
+          git commit -m "chore(release): ${{ needs.versioning.outputs.tag }} [skip ci]" || exit 0
           git push
-
-      - name: Create and push tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          tag="v${{ needs.versioning.outputs.version }}"
-          git tag -a "$tag" -m "Release $tag" || true
-          git push origin "$tag" || true
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.versioning.outputs.version }}
-          name: v${{ needs.versioning.outputs.version }}
-          body: ${{ steps.changelog.outputs.release_body }}
+          tag_name: ${{ needs.versioning.outputs.tag }}
+          name: ${{ needs.versioning.outputs.tag }}
+          body: |
+            ${{ needs.versioning.outputs.changelog }}
+
+            Docker image: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
