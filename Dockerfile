@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
-FROM gcr.io/distroless/java17-debian12:nonroot
+FROM cgr.dev/chainguard/jre:latest
 WORKDIR /app
+
+USER nonroot
 
 COPY target/kairos-*.jar /app/app.jar
 
