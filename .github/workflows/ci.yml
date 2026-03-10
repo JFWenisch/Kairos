@@ -1,0 +1,306 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  packages: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  versioning:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.tag_version.outputs.new_tag }}
+      version: ${{ steps.version.outputs.version }}
+      changelog: ${{ steps.tag_version.outputs.changelog }}
+      image: ${{ steps.image.outputs.name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Normalize image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version and generate changelog
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUBTOKEN }}
+          release_branches: main
+          default_bump: patch
+          dry_run: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+
+      - name: Derive application version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ steps.tag_version.outputs.new_tag }}"
+
+          if [ -z "$tag" ]; then
+            tag="v0.0.1"
+          fi
+
+          version="${tag#v}"
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            version="${version}-pr.${{ github.event.number }}.${{ github.run_number }}"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  test-build:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    needs: versioning
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ needs.versioning.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Run tests
+        run: mvn -B test
+
+      - name: Build JAR
+        run: mvn -B -DskipTests package
+
+  docker-build-scan:
+    if: (github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')) && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    needs:
+      - versioning
+      - test-build
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ needs.versioning.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Build application JAR
+        run: mvn -B -DskipTests package
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (local)
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
+
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
+
+      - name: Run Trivy scan
+        shell: bash
+        run: |
+          set +e
+          image="${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}"
+          status=1
+
+          for attempt in 1 2 3; do
+            trivy image \
+              --format table \
+              --output trivy-report.txt \
+              --scanners vuln \
+              --vuln-type os,library \
+              --severity CRITICAL,HIGH,MEDIUM \
+              "$image"
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          if [ ! -s trivy-report.txt ]; then
+            {
+              echo "Trivy scan could not complete after retries."
+              echo "Image: $image"
+              echo "Exit status: $status"
+            } > trivy-report.txt
+          fi
+
+          exit 0
+
+      - name: Upload Trivy report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-${{ github.run_id }}
+          path: trivy-report.txt
+
+      - name: Add Trivy report to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = fs.readFileSync('trivy-report.txt', 'utf8');
+            const maxLen = 60000;
+            if (report.length > maxLen) {
+              report = report.slice(0, maxLen) + '\n... output truncated ...';
+            }
+            const body = [
+              '## Trivy vulnerability report',
+              '',
+              `Image: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}`,
+              '',
+              '```text',
+              report,
+              '```'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUBTOKEN }}
+
+      - name: Push Docker tags to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ needs.versioning.outputs.image }}"
+          version="${{ needs.versioning.outputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
+
+          docker tag "$image:$version" "$image:latest"
+          docker tag "$image:$version" "$image:main"
+          docker tag "$image:$version" "$image:sha-$short_sha"
+
+          docker push "$image:$version"
+          docker push "$image:latest"
+          docker push "$image:main"
+          docker push "$image:sha-$short_sha"
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    needs:
+      - versioning
+      - test-build
+      - docker-build-scan
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update CHANGELOG.md
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ needs.versioning.outputs.tag }}"
+          image="${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}"
+          date="$(date -u +%Y-%m-%d)"
+          changelog="${{ needs.versioning.outputs.changelog }}"
+
+          {
+            echo "## ${tag} - ${date}"
+            echo
+            echo "$changelog"
+            echo
+            echo "Docker image: ${image}"
+            echo
+          } > .release_entry.md
+
+          if [ -f CHANGELOG.md ]; then
+            {
+              head -n 1 CHANGELOG.md
+              echo
+              cat .release_entry.md
+              tail -n +2 CHANGELOG.md
+            } > CHANGELOG.new.md
+            mv CHANGELOG.new.md CHANGELOG.md
+          else
+            {
+              echo "# Changelog"
+              echo
+              cat .release_entry.md
+            } > CHANGELOG.md
+          fi
+
+      - name: Commit changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore(release): ${{ needs.versioning.outputs.tag }} [skip ci]" || exit 0
+          git push
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.versioning.outputs.tag }}
+          name: ${{ needs.versioning.outputs.tag }}
+          body: |
+            ${{ needs.versioning.outputs.changelog }}
+
+            Docker image: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}

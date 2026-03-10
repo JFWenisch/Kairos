@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.11</version>
         <relativePath/>
     </parent>
 
@@ -20,7 +20,20 @@
 
     <properties>
         <java.version>17</java.version>
-        <docker-java.version>3.3.6</docker-java.version>
+        <docker-java.version>3.6.0</docker-java.version>
+        <postgresql.version>42.7.7</postgresql.version>
+        <logback.version>1.5.19</logback.version>
+        <tomcat.version>10.1.49</tomcat.version>
+        <jackson.version>2.18.6</jackson.version>
+        <spring-security.version>6.4.10</spring-security.version>
+        <spring-framework.version>6.2.11</spring-framework.version>
+        <nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version>
+        <httpclient5.version>5.4.3</httpclient5.version>
+        <commons-io.version>2.14.0</commons-io.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <json-smart.version>2.5.2</json-smart.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
     </properties>
 
     <dependencies>
