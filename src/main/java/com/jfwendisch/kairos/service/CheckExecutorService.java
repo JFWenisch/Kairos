@@ -7,6 +7,8 @@ import com.jfwendisch.kairos.repository.MonitoredResourceRepository;
 import com.jfwendisch.kairos.repository.ResourceTypeConfigRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +78,19 @@ public class CheckExecutorService {
                 log.debug("Dispatched checks for type {} ({} resources)", typeName, resources.size());
             }
         }
+    }
+
+    /**
+     * Run an immediate check pass as soon as the application is fully ready.
+     * This fires after all ApplicationRunner beans (including DataInitializer) have completed,
+     * ensuring resource-type configs are already present in the database.
+     * Without this, the first @Scheduled dispatch can race with DataInitializer and find no
+     * configs, delaying the first check by one full fixedDelay period (30 s).
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void runChecksOnStartup() {
+        log.info("Application ready – running initial resource checks");
+        dispatch();
     }
 
     @PreDestroy
