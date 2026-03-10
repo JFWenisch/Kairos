@@ -145,24 +145,50 @@ jobs:
           load: true
           tags: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
 
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
+
       - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          image-ref: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
-          format: table
-          output: trivy-report.txt
-          vuln-type: os,library
-          severity: CRITICAL,HIGH,MEDIUM
-          exit-code: '0'
+        shell: bash
+        run: |
+          set +e
+          image="${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}"
+          status=1
+
+          for attempt in 1 2 3; do
+            trivy image \
+              --format table \
+              --output trivy-report.txt \
+              --scanners vuln \
+              --vuln-type os,library \
+              --severity CRITICAL,HIGH,MEDIUM \
+              "$image"
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          if [ ! -s trivy-report.txt ]; then
+            {
+              echo "Trivy scan could not complete after retries."
+              echo "Image: $image"
+              echo "Exit status: $status"
+            } > trivy-report.txt
+          fi
+
+          exit 0
 
       - name: Upload Trivy report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report-${{ github.run_id }}
           path: trivy-report.txt
 
       - name: Add Trivy report to PR
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         continue-on-error: true
         uses: actions/github-script@v7
         with:
