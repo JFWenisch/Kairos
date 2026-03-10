@@ -16,27 +16,27 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UrlCheckServiceTest {
+class HttpCheckServiceTest {
 
     @Mock
     private CheckResultRepository checkResultRepository;
 
     @InjectMocks
-    private UrlCheckService urlCheckService;
+    private HttpCheckService httpCheckService;
 
     @Test
     void checkInvalidUrlReturnsNotAvailable() {
         MonitoredResource resource = MonitoredResource.builder()
                 .id(1L)
                 .name("Test")
-                .resourceType(ResourceType.URL)
+                .resourceType(ResourceType.HTTP)
                 .target("http://localhost:99999/nonexistent")
                 .active(true)
                 .build();
 
         when(checkResultRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        CheckResult result = urlCheckService.check(resource);
+        CheckResult result = httpCheckService.check(resource);
         assertThat(result.getStatus()).isEqualTo(CheckStatus.NOT_AVAILABLE);
     }
 }

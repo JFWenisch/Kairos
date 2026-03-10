@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CheckExecutorService {
 
-    private final UrlCheckService urlCheckService;
+    private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
@@ -32,11 +32,11 @@ public class CheckExecutorService {
     private final Map<String, ExecutorService> executorMap = new ConcurrentHashMap<>();
 
     public CheckExecutorService(
-            UrlCheckService urlCheckService,
+            HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository) {
-        this.urlCheckService = urlCheckService;
+        this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
@@ -65,8 +65,8 @@ public class CheckExecutorService {
                     final MonitoredResource r = resource;
                     executor.submit(() -> {
                         try {
-                            if (type == ResourceType.URL) {
-                                urlCheckService.check(r);
+                            if (type == ResourceType.HTTP) {
+                                httpCheckService.check(r);
                             } else if (type == ResourceType.DOCKER) {
                                 dockerCheckService.check(r);
                             }

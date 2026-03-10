@@ -1,6 +1,6 @@
 # Kairos — Uptime Monitor
 
-**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your URLs and Docker images are reachable, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
+**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## Features
 
-- **URL monitoring** — HTTP GET checks with configurable interval and parallelism
+- **HTTP monitoring** — HTTP GET checks with configurable interval and parallelism
 - **Docker image monitoring** — pulls an image and verifies it is accessible from the configured registry
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
@@ -118,7 +118,7 @@ See [docs/api.md](docs/api.md) for full request/response examples.
 Kairos exposes a Prometheus-compatible endpoint at `/actuator/prometheus`. The key metric is:
 
 ```
-kairos_resource_status{resource_name="GitHub",resource_type="URL"} 1.0
+kairos_resource_status{resource_name="GitHub",resource_type="HTTP"} 1.0
 ```
 
 Values: `1` = available, `0` = not available, `-1` = unknown (no checks yet).

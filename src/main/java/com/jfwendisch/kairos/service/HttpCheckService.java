@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UrlCheckService {
+public class HttpCheckService {
 
     private final CheckResultRepository checkResultRepository;
 
@@ -59,7 +59,7 @@ public class UrlCheckService {
             }
             return checkResultRepository.save(result);
         } catch (Exception e) {
-            log.warn("URL check failed for {}: {}", url, e.getMessage());
+            log.warn("HTTP check failed for {}: {}", url, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
                     .status(CheckStatus.NOT_AVAILABLE)
