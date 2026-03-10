@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}"><i class="bi bi-clock-history me-2"></i>Kairos</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div class="d-flex flex-column">
+                <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
+                <a th:href="@{/admin/settings}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-sliders me-2"></i>General Settings</a>
+                <a th:href="@{/admin/resources}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-hdd-network me-2"></i>Manage Resources</a>
+                <a th:href="@{/admin/resource-types}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>Resource Types</a>
+                <a th:href="@{/admin/users}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-people me-2"></i>Users</a>
+            </div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <span th:text="${successMessage}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0"><i class="bi bi-hdd-network me-2"></i>Manage Resources</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                    <i class="bi bi-plus-circle me-1"></i>Add Resource
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(resources)}" class="p-3 text-muted">No resources configured.</div>
+                    <table class="table table-hover mb-0" th:unless="${#lists.isEmpty(resources)}">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Target</th>
+                                <th>Active</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="resource : ${resources}">
+                                <td>
+                                    <a th:href="@{/resources/{id}(id=${resource.id})}" th:text="${resource.name}">Name</a>
+                                </td>
+                                <td><span class="badge bg-secondary" th:text="${resource.resourceType}">TYPE</span></td>
+                                <td><code class="small" th:text="${resource.target}">target</code></td>
+                                <td>
+                                    <span th:if="${resource.active}" class="badge bg-success">Active</span>
+                                    <span th:unless="${resource.active}" class="badge bg-secondary">Inactive</span>
+                                </td>
+                                <td th:text="${resource.createdAt != null} ? ${#temporals.format(resource.createdAt, 'yyyy-MM-dd')} : '-'">date</td>
+                                <td>
+                                    <form th:action="@{/admin/resources/delete/{id}(id=${resource.id})}" method="post" class="d-inline"
+                                          onsubmit="return confirm('Delete this resource?')">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Resource</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/admin/resources/add}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" required placeholder="My Website">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="resourceType" required>
+                            <option th:each="type : ${resourceTypes}" th:value="${type}" th:text="${type}">TYPE</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Target</label>
+                        <input type="text" class="form-control" name="target" required
+                               placeholder="https://example.com or nginx:latest">
+                        <div class="form-text">URL or Docker image name</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-plus me-1"></i>Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

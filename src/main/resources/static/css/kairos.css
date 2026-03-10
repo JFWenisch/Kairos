@@ -1,0 +1,49 @@
+.timeline-block {
+    display: inline-block;
+    width: 10px;
+    height: 30px;
+    margin: 0 1px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: opacity 0.1s;
+}
+.timeline-block:hover { opacity: 0.7; }
+.timeline-block.available { background-color: #198754; }
+.timeline-block.not-available { background-color: #dc3545; }
+.timeline-block.unknown { background-color: #6c757d; }
+.timeline-container { overflow-x: auto; white-space: nowrap; padding: 4px 0; }
+
+.status-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-dot-lg {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.status-dot.status-available, .status-dot-lg.status-available { background-color: #198754; }
+.status-dot.status-not-available, .status-dot-lg.status-not-available { background-color: #dc3545; }
+.status-dot.status-unknown, .status-dot-lg.status-unknown { background-color: #6c757d; }
+
+.resource-row:last-child { border-bottom: none !important; }
+.resource-row:hover { background-color: rgba(255,255,255,0.03); }
+
+.nav-link.active {
+    background-color: rgba(255,255,255,0.1);
+    color: #fff !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+.status-dot.status-not-available {
+    animation: pulse 2s infinite;
+}

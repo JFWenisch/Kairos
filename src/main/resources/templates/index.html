@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kairos - Uptime Monitor</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+</head>
+<body>
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-activity me-2"></i>Status Dashboard</h1>
+        <small class="text-muted">Last 24 hours</small>
+    </div>
+
+    <div th:if="${#lists.isEmpty(resources)}" class="text-center py-5">
+        <i class="bi bi-emoji-smile display-1 text-muted"></i>
+        <p class="text-muted mt-3">No resources being monitored yet.</p>
+        <a th:href="@{/admin/resources}" sec:authorize="hasRole('ADMIN')" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add Resources
+        </a>
+    </div>
+
+    <div class="card" th:unless="${#lists.isEmpty(resources)}">
+        <div class="card-body p-0">
+            <div th:each="vm : ${resources}" class="resource-row border-bottom p-3">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <span th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                            <div>
+                                <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                                   class="text-decoration-none fw-semibold"
+                                   th:text="${vm.resource.name}">Resource Name</a>
+                                <div>
+                                    <small class="text-muted" th:text="${vm.resource.resourceType}">TYPE</small>
+                                    <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
+                                           th:text="${vm.resource.target}">target</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="timeline-container">
+                            <span th:each="block : ${vm.timelineBlocks}"
+                                  th:class="'timeline-block ' + ${block}"
+                                  th:title="${block}"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span class="fw-bold" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                        <br>
+                        <small class="text-muted">uptime</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>
