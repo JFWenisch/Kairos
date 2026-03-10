@@ -78,6 +78,53 @@ docker run -d \
 java -jar target/kairos-0.0.1-SNAPSHOT.jar
 ```
 
+### Run on Kubernetes with Helm
+
+Kairos includes a production-ready Helm chart for Kubernetes deployments.
+
+#### Prerequisites
+
+- Kubernetes 1.20+
+- Helm 3.0+
+
+#### Install
+
+```bash
+helm install kairos ./charts/kairos -n kairos --create-namespace
+```
+
+#### With Persistence (H2 Database)
+
+```bash
+helm install kairos ./charts/kairos \
+  -n kairos --create-namespace \
+  --set persistence.enabled=true
+```
+
+#### With PostgreSQL
+
+```bash
+helm install kairos ./charts/kairos \
+  -n kairos --create-namespace \
+  --set env.SPRING_DATASOURCE_URL="jdbc:postgresql://postgres:5432/kairos" \
+  --set env.SPRING_DATASOURCE_USERNAME="kairos" \
+  --set secrets.SPRING_DATASOURCE_PASSWORD="your-password"
+```
+
+#### With Ingress
+
+```bash
+helm install kairos ./charts/kairos \
+  -n kairos --create-namespace \
+  --set ingress.enabled=true \
+  --set ingress.className=nginx \
+  --set ingress.hosts[0].host=kairos.example.com \
+  --set ingress.hosts[0].paths[0].path=/ \
+  --set ingress.hosts[0].paths[0].pathType=Prefix
+```
+
+For more Helm configuration options, see [charts/kairos/README.md](charts/kairos/README.md).
+
 ---
 
 ## Configuration

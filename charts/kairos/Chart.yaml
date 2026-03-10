@@ -1,0 +1,18 @@
+apiVersion: v2
+name: kairos
+description: A self-hosted uptime and availability monitoring application
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - monitoring
+  - uptime
+  - availability
+  - docker
+  - http
+home: https://github.com/JFWenisch/Kairos
+sources:
+  - https://github.com/JFWenisch/Kairos
+maintainers:
+  - name: JFWenisch
+    url: https://github.com/JFWenisch

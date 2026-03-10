@@ -1,0 +1,106 @@
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: jfwendisch/kairos
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: kairos.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+persistence:
+  enabled: false
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /app/data
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables for Spring Boot and application configuration
+# Leave empty to use defaults
+env:
+  # Database configuration
+  SPRING_DATASOURCE_URL: ""
+  SPRING_DATASOURCE_USERNAME: ""
+  SPRING_DATASOURCE_PASSWORD: ""
+
+  # OIDC / OAuth2 configuration
+  OIDC_ENABLED: "false"
+  OIDC_CLIENT_ID: ""
+  OIDC_CLIENT_SECRET: ""
+  OIDC_ISSUER_URI: ""
+
+  # Docker socket configuration (if accessing Docker from container)
+  DOCKER_HOST: ""
+
+  # Optional: Custom Spring Boot properties
+  # SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+  # LOGGING_LEVEL_ROOT: "INFO"
+
+# Secrets for sensitive data
+secrets: {}
+  # SPRING_DATASOURCE_PASSWORD: "your-password"
+  # OIDC_CLIENT_SECRET: "your-secret"
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
