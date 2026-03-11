@@ -4,6 +4,9 @@ import tech.wenisch.kairos.dto.ResourceViewModel;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +15,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +30,7 @@ public class HomeController {
 
     private final ResourceService resourceService;
     private final AnnouncementService announcementService;
+    private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     @GetMapping("/")
     public String index(Model model) {
@@ -49,7 +55,37 @@ public class HomeController {
 
         model.addAttribute("resources", viewModels);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
+        model.addAttribute("allowPublicAdd", isPublicAddAllowed());
+        model.addAttribute("resourceTypes", ResourceType.values());
         return "index";
+    }
+
+    @PostMapping("/resources/submit")
+    public String submitResource(
+            @RequestParam String name,
+            @RequestParam ResourceType resourceType,
+            @RequestParam String target,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (!isPublicAddAllowed()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Public resource submission is currently disabled.");
+            return "redirect:/";
+        }
+
+        if (name == null || name.isBlank() || target == null || target.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Name and target are required.");
+            return "redirect:/";
+        }
+
+        MonitoredResource resource = MonitoredResource.builder()
+                .name(name.trim())
+                .resourceType(resourceType)
+                .target(target.trim())
+                .active(true)
+                .build();
+        resourceService.save(resource);
+        redirectAttributes.addFlashAttribute("successMessage", "Resource submitted successfully.");
+        return "redirect:/";
     }
 
     @GetMapping("/announcements")
@@ -135,5 +171,9 @@ public class HomeController {
         } catch (IllegalArgumentException ex) {
             return null;
         }
+    }
+
+    private boolean isPublicAddAllowed() {
+        return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
     }
 }
