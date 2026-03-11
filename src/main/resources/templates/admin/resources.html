@@ -47,12 +47,24 @@
                 <span th:text="${successMessage}">Success</span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${errorMessage}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="h4 mb-0"><i class="bi bi-hdd-network me-2"></i>Manage Resources</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResourceModal">
-                    <i class="bi bi-plus-circle me-1"></i>Add Resource
-                </button>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-info" th:href="@{/admin/resources/export}">
+                        <i class="bi bi-download me-1"></i>Export YAML
+                    </a>
+                    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importResourcesModal">
+                        <i class="bi bi-upload me-1"></i>Import YAML
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                        <i class="bi bi-plus-circle me-1"></i>Add Resource
+                    </button>
+                </div>
             </div>
 
             <div class="card">
@@ -94,6 +106,34 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Resources Modal -->
+<div class="modal fade" id="importResourcesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Import Resources (YAML)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/admin/resources/import}" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resourceImportFile" class="form-label">YAML File</label>
+                        <input id="resourceImportFile" type="file" name="file" class="form-control"
+                               accept=".yaml,.yml,text/yaml,application/x-yaml" required>
+                    </div>
+                    <div class="form-text">
+                        Supports versioned export files and older list-based YAML files.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Import</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
