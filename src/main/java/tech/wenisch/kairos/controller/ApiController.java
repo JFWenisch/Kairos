@@ -96,6 +96,7 @@ public class ApiController {
                             resource.getName(),
                             resource.getResourceType(),
                             resource.getTarget(),
+                            resource.isSkipTls(),
                             resource.isActive(),
                             resource.getCreatedAt(),
                             resourceService.getCurrentStatus(resource),
@@ -132,6 +133,7 @@ public class ApiController {
                 .name(dto.getName())
                 .resourceType(dto.getResourceType())
                 .target(dto.getTarget())
+                .skipTls(dto.isSkipTls())
                 .active(true)
                 .build();
         return ResponseEntity.ok(resourceService.save(resource));

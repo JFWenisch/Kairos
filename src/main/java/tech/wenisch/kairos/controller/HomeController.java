@@ -65,6 +65,7 @@ public class HomeController {
             @RequestParam String name,
             @RequestParam ResourceType resourceType,
             @RequestParam String target,
+            @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
             RedirectAttributes redirectAttributes
     ) {
         if (!isPublicAddAllowed()) {
@@ -81,6 +82,7 @@ public class HomeController {
                 .name(name.trim())
                 .resourceType(resourceType)
                 .target(target.trim())
+            .skipTls(skipTls)
                 .active(true)
                 .build();
         resourceService.save(resource);

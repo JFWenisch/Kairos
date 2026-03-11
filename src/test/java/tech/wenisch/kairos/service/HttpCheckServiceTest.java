@@ -51,4 +51,21 @@ class HttpCheckServiceTest {
         assertThat(result.getStatus()).isEqualTo(CheckStatus.NOT_AVAILABLE);
         verify(resourceStatusStreamService).publishResourceUpdate(resource);
     }
+
+    @Test
+    void getHttpClientUsesInsecureClientWhenSkipTlsIsEnabled() {
+        MonitoredResource secureResource = MonitoredResource.builder()
+                .resourceType(ResourceType.HTTP)
+                .target("https://example.com")
+                .skipTls(false)
+                .build();
+        MonitoredResource insecureResource = MonitoredResource.builder()
+                .resourceType(ResourceType.HTTP)
+                .target("https://example.com")
+                .skipTls(true)
+                .build();
+
+        assertThat(httpCheckService.getHttpClient(insecureResource))
+                .isNotSameAs(httpCheckService.getHttpClient(secureResource));
+    }
 }

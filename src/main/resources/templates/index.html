@@ -151,6 +151,11 @@
                         <input id="resource-target" name="target" class="form-control" type="text" maxlength="1000" required
                                placeholder="https://example.com/health or image:tag">
                     </div>
+                    <div class="form-check mt-3">
+                        <input id="resource-skip-tls" name="skipTLS" class="form-check-input" type="checkbox" value="true">
+                        <label for="resource-skip-tls" class="form-check-label">Ignore TLS certificate and hostname errors</label>
+                        <div class="form-text">Only applies to HTTP resources.</div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -105,11 +105,13 @@ public class AdminController {
     public String addResource(@RequestParam String name,
                               @RequestParam ResourceType resourceType,
                               @RequestParam String target,
+                              @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
                               RedirectAttributes redirectAttributes) {
         MonitoredResource resource = MonitoredResource.builder()
                 .name(name)
                 .resourceType(resourceType)
                 .target(target)
+            .skipTls(skipTls)
                 .active(true)
                 .build();
         resourceService.save(resource);

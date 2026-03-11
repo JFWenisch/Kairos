@@ -1,5 +1,7 @@
 package tech.wenisch.kairos.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,6 +22,10 @@ public class MonitoredResource {
     private ResourceType resourceType;
 
     private String target;
+
+    @JsonProperty("skipTLS")
+    @JsonAlias("skipTls")
+    private boolean skipTls;
 
     private boolean active = true;
 

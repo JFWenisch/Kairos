@@ -32,6 +32,7 @@ resources:
   - name: Example Website
     resourceType: HTTP
     target: https://example.com/health
+    skipTLS: false
     active: true
     createdAt: 2026-03-11T12:00:00
   - name: Nginx Image
@@ -77,6 +78,7 @@ Preferred fields in exported YAML:
 - `name`
 - `resourceType`
 - `target`
+- `skipTLS`
 - `active`
 - `createdAt`
 

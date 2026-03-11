@@ -85,8 +85,9 @@ Returns all **active** monitored resources.
   {
     "id": 1,
     "name": "GitHub",
-    "resourceType": "URL",
+    "resourceType": "HTTP",
     "target": "https://github.com",
+    "skipTLS": false,
     "active": true,
     "createdAt": "2024-01-15T10:00:00"
   },
@@ -115,6 +116,7 @@ Returns a single resource by ID including general information and latest health 
   "name": "GitHub",
   "resourceType": "HTTP",
   "target": "https://github.com",
+  "skipTLS": false,
   "active": true,
   "createdAt": "2026-03-11T10:00:00",
   "currentStatus": "available",
@@ -138,16 +140,18 @@ Add a new resource to monitor.
 ```json
 {
   "name": "My Service",
-  "resourceType": "URL",
-  "target": "https://example.com"
+  "resourceType": "HTTP",
+  "target": "https://example.com",
+  "skipTLS": false
 }
 ```
 
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `URL` or `DOCKER` | Yes |
+| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
 | `target` | string | Full URL or Docker image reference | Yes |
+| `skipTLS` | boolean | `true` or `false`; only applies to `HTTP` resources | No |
 
 **Response** `200 OK` — the created resource object
 
@@ -156,7 +160,7 @@ Add a new resource to monitor.
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/resources \
   -H "Content-Type: application/json" \
-  -d '{"name":"Example","resourceType":"URL","target":"https://example.com"}'
+  -d '{"name":"Example","resourceType":"HTTP","target":"https://example.com","skipTLS":true}'
 ```
 
 ---

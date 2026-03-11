@@ -91,6 +91,7 @@ public class ResourceExchangeService {
             resource.setName((name == null || name.isBlank()) ? target.trim() : name.trim());
             resource.setResourceType(resourceType);
             resource.setTarget(target.trim());
+            resource.setSkipTls(readBoolean(node, false, "skipTLS", "skipTls"));
             resource.setActive(readBoolean(node, "active", true));
 
             if (isNew) {
@@ -115,6 +116,7 @@ public class ResourceExchangeService {
         node.put("name", resource.getName());
         node.put("resourceType", resource.getResourceType() != null ? resource.getResourceType().name() : null);
         node.put("target", resource.getTarget());
+        node.put("skipTLS", resource.isSkipTls());
         node.put("active", resource.isActive());
         node.put("createdAt", resource.getCreatedAt());
         return node;
@@ -161,6 +163,16 @@ public class ResourceExchangeService {
             return defaultValue;
         }
         return candidate.asBoolean(defaultValue);
+    }
+
+    private boolean readBoolean(JsonNode node, boolean defaultValue, String... names) {
+        for (String name : names) {
+            JsonNode candidate = node.path(name);
+            if (!candidate.isMissingNode() && !candidate.isNull()) {
+                return candidate.asBoolean(defaultValue);
+            }
+        }
+        return defaultValue;
     }
 
     private Optional<LocalDateTime> readDateTime(JsonNode node, String name) {
