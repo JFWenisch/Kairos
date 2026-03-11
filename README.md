@@ -28,6 +28,8 @@
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
 - **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
+- **Announcement system** — publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
+- **Public announcements** — active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
 - **Public submission mode** — optionally allow unauthenticated users to add resources via the REST API
 - **OIDC / OAuth2 login** — plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** — `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
@@ -146,11 +148,20 @@ See [docs/configuration.md](docs/configuration.md) for advanced configuration in
 
 See [docs/authentication.md](docs/authentication.md) for details on configuring authentication credentials for resource checks.
 
+See [docs/announcements.md](docs/announcements.md) for announcement management and behavior details.
+
+## Documentation
+
+- [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
+- [docs/authentication.md](docs/authentication.md) — resource check authentication and credential matching
+- [docs/configuration.md](docs/configuration.md) — runtime configuration, database setup and OIDC
+- [docs/announcements.md](docs/announcements.md) — announcement features, permissions and lifecycle
+
 ---
 
 ## REST API
 
-The REST API is available at `/api`. The dashboard (`/` and `/resources/**`) is publicly accessible; write endpoints require an authenticated admin session.
+The REST API is available at `/api`. The public pages (`/`, `/announcements` and `/resources/**`) are publicly accessible; write endpoints require an authenticated admin session.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -191,4 +202,4 @@ A health endpoint is also available at `/actuator/health`.
 
 ## License
 
-[MIT](LICENSE)
+[GNU GPL v3.0](LICENSE.md)

@@ -226,4 +226,4 @@ See [values.yaml](values.yaml) for all available configuration options with comm
 
 ## License
 
-[MIT](../../LICENSE)
+[GNU GPL v3.0](../../LICENSE.md)
