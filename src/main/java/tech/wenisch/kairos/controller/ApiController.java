@@ -17,9 +17,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import tech.wenisch.kairos.service.ResourceStatusStreamService;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +43,7 @@ public class ApiController {
 
     private final ResourceService resourceService;
     private final AnnouncementService announcementService;
+    private final ResourceStatusStreamService resourceStatusStreamService;
 
     /**
      * Returns all currently active monitored resources.
@@ -56,6 +60,11 @@ public class ApiController {
     @GetMapping("/resources")
     public ResponseEntity<List<MonitoredResource>> listResources() {
         return ResponseEntity.ok(resourceService.findAllActive());
+    }
+
+    @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamResourceUpdates() {
+        return resourceStatusStreamService.subscribe();
     }
 
     /**

@@ -10,13 +10,52 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
 </head>
-<body>
+<body class="landing-modern">
 <nav th:replace="~{layout :: navbar}"></nav>
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0"><i class="bi bi-activity me-2"></i>Status Dashboard</h1>
-        <small class="text-muted">Last 24 hours</small>
+<div class="container-fluid py-4 dashboard-shell">
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">Resource submitted successfully.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">Public resource submission is currently disabled.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="dashboard-hero mb-4">
+        <div>
+            <p class="dashboard-kicker mb-2">KAIROS MONITORING</p>
+            <h1 class="h3 mb-2"><i class="bi bi-activity me-2"></i>Status Dashboard</h1>
+            <p class="text-muted mb-0">Live status, refreshed automatically as checks run.</p>
+        </div>
+        <div class="dashboard-meta">
+            <span class="live-pill"><span class="live-dot"></span>Live</span>
+            <small class="text-muted">Last 24 hours</small>
+            <button type="button" class="btn btn-sm btn-primary mt-1" th:if="${allowPublicAdd}"
+                    data-bs-toggle="modal" data-bs-target="#publicResourceModal">
+                <i class="bi bi-plus-circle me-1"></i>Submit Resource
+            </button>
+        </div>
+    </div>
+
+    <div class="status-snapshot mb-4" th:unless="${#lists.isEmpty(resources)}">
+        <div class="snapshot-item">
+            <small>Total</small>
+            <strong th:text="${#lists.size(resources)}">0</strong>
+        </div>
+        <div class="snapshot-item snapshot-ok">
+            <small>Available</small>
+            <strong th:text="${#lists.size(resources.?[currentStatus == 'available'])}">0</strong>
+        </div>
+        <div class="snapshot-item snapshot-down">
+            <small>Down</small>
+            <strong th:text="${#lists.size(resources.?[currentStatus == 'not-available'])}">0</strong>
+        </div>
+        <div class="snapshot-item snapshot-unknown">
+            <small>Unknown</small>
+            <strong th:text="${#lists.size(resources.?[currentStatus == 'unknown'])}">0</strong>
+        </div>
     </div>
 
     <div class="mb-4" th:if="${!#lists.isEmpty(announcements)}">
@@ -41,24 +80,28 @@
     <div th:if="${#lists.isEmpty(resources)}" class="text-center py-5">
         <i class="bi bi-emoji-smile display-1 text-muted"></i>
         <p class="text-muted mt-3">No resources being monitored yet.</p>
+        <button type="button" class="btn btn-primary" th:if="${allowPublicAdd}"
+                data-bs-toggle="modal" data-bs-target="#publicResourceModal">
+            <i class="bi bi-plus-circle me-1"></i>Submit Resource
+        </button>
         <a th:href="@{/admin/resources}" sec:authorize="hasRole('ADMIN')" class="btn btn-primary">
             <i class="bi bi-plus-circle me-1"></i>Add Resources
         </a>
     </div>
 
-    <div class="card" th:unless="${#lists.isEmpty(resources)}">
+    <div class="card resource-panel" th:unless="${#lists.isEmpty(resources)}">
         <div class="card-body p-0">
-            <div th:each="vm : ${resources}" class="resource-row border-bottom p-3">
+            <div th:each="vm : ${resources}" class="resource-row p-3" th:attr="data-resource-id=${vm.resource.id}">
                 <div class="row align-items-center">
                     <div class="col-md-3">
                         <div class="d-flex align-items-center">
-                            <span th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                            <span data-role="status-dot" th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
                             <div>
                                 <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
                                    class="text-decoration-none fw-semibold"
                                    th:text="${vm.resource.name}">Resource Name</a>
-                                <div>
-                                    <small class="text-muted" th:text="${vm.resource.resourceType}">TYPE</small>
+                                <div class="resource-subline">
+                                    <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
                                     <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                            th:text="${vm.resource.target}">target</small>
                                 </div>
@@ -72,13 +115,48 @@
                                   th:title="${block}"></span>
                         </div>
                     </div>
-                    <div class="col-md-2 text-end">
-                        <span class="fw-bold" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                    <div class="col-md-2 text-end resource-score">
+                        <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
                         <br>
                         <small class="text-muted">uptime</small>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="publicResourceModal" tabindex="-1" aria-labelledby="publicResourceModalLabel" aria-hidden="true"
+     th:if="${allowPublicAdd}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="publicResourceModalLabel">Submit New Resource</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" th:action="@{/resources/submit}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resource-name" class="form-label">Name</label>
+                        <input id="resource-name" name="name" class="form-control" type="text" maxlength="255" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="resource-type" class="form-label">Type</label>
+                        <select id="resource-type" name="resourceType" class="form-select" required>
+                            <option th:each="resourceType : ${resourceTypes}" th:value="${resourceType}" th:text="${resourceType}">HTTP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="resource-target" class="form-label">Target</label>
+                        <input id="resource-target" name="target" class="form-control" type="text" maxlength="1000" required
+                               placeholder="https://example.com/health or image:tag">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

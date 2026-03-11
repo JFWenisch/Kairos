@@ -25,6 +25,7 @@ public class HttpCheckService {
 
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
+    private final ResourceStatusStreamService resourceStatusStreamService;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -69,7 +70,9 @@ public class HttpCheckService {
                         .errorCode(String.valueOf(statusCode))
                         .build();
             }
-            return checkResultRepository.save(result);
+            CheckResult saved = checkResultRepository.save(result);
+            resourceStatusStreamService.publishResourceUpdate(resource);
+            return saved;
         } catch (Exception e) {
             log.warn("HTTP check failed for {}: {}", url, e.getMessage());
             CheckResult result = CheckResult.builder()
@@ -79,7 +82,9 @@ public class HttpCheckService {
                     .message(e.getMessage())
                     .errorCode("CONNECTION_ERROR")
                     .build();
-            return checkResultRepository.save(result);
+            CheckResult saved = checkResultRepository.save(result);
+            resourceStatusStreamService.publishResourceUpdate(resource);
+            return saved;
         }
     }
 }

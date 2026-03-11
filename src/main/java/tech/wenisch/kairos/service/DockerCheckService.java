@@ -28,6 +28,7 @@ public class DockerCheckService {
 
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
+    private final ResourceStatusStreamService resourceStatusStreamService;
 
     public CheckResult check(MonitoredResource resource) {
         String image = resource.getTarget();
@@ -77,7 +78,9 @@ public class DockerCheckService {
                     .checkedAt(LocalDateTime.now())
                     .message("Image pulled successfully")
                     .build();
-            return checkResultRepository.save(result);
+            CheckResult saved = checkResultRepository.save(result);
+            resourceStatusStreamService.publishResourceUpdate(resource);
+            return saved;
 
         } catch (Exception e) {
             log.warn("Docker check failed for image {}: {}", image, e.getMessage());
@@ -88,7 +91,9 @@ public class DockerCheckService {
                     .message(e.getMessage())
                     .errorCode("DOCKER_ERROR")
                     .build();
-            return checkResultRepository.save(result);
+            CheckResult saved = checkResultRepository.save(result);
+            resourceStatusStreamService.publishResourceUpdate(resource);
+            return saved;
         } finally {
             if (dockerClient != null) {
                 try {

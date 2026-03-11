@@ -10,24 +10,25 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
 </head>
-<body>
+<body class="detail-modern">
 <nav th:replace="~{layout :: navbar}"></nav>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 resource-detail detail-shell" th:attr="data-resource-id=${vm.resource.id}">
     <div class="mb-3">
-        <a th:href="@{/}" class="btn btn-outline-secondary btn-sm">
+        <a th:href="@{/}" class="btn btn-outline-secondary btn-sm detail-back-btn">
             <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
         </a>
     </div>
 
     <div class="row mb-4">
         <div class="col">
-            <div class="d-flex align-items-center">
-                <span th:class="'status-dot-lg me-3 status-' + ${vm.currentStatus}"></span>
+            <div class="d-flex align-items-center detail-hero">
+                <span data-role="status-dot" th:class="'status-dot-lg me-3 status-' + ${vm.currentStatus}"></span>
                 <div>
-                    <h1 class="h2 mb-0" th:text="${vm.resource.name}">Resource Name</h1>
-                    <p class="text-muted mb-0">
-                        <span class="badge bg-secondary me-2" th:text="${vm.resource.resourceType}">TYPE</span>
+                    <p class="detail-kicker mb-2">RESOURCE DETAIL</p>
+                    <h1 class="h2 mb-0 detail-title" th:text="${vm.resource.name}">Resource Name</h1>
+                    <p class="text-muted mb-0 detail-subline">
+                        <span class="badge detail-type-badge me-2" th:text="${vm.resource.resourceType}">TYPE</span>
                         <code th:text="${vm.resource.target}">target</code>
                     </p>
                 </div>
@@ -38,10 +39,10 @@
     <!-- Uptime Stats -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card text-center">
+            <div class="card text-center detail-stat-card">
                 <div class="card-body">
                     <h5 class="card-title">Last 24 Hours</h5>
-                    <div class="display-6 fw-bold"
+                    <div class="display-6 fw-bold resource-uptime"
                          th:text="${#numbers.formatDecimal(uptime24h, 1, 1)} + '%'"
                          th:classappend="${uptime24h >= 99} ? 'text-success' : (${uptime24h >= 95} ? 'text-warning' : 'text-danger')">
                         99.9%
@@ -50,7 +51,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center">
+            <div class="card text-center detail-stat-card">
                 <div class="card-body">
                     <h5 class="card-title">Last 7 Days</h5>
                     <div class="display-6 fw-bold"
@@ -62,7 +63,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center">
+            <div class="card text-center detail-stat-card">
                 <div class="card-body">
                     <h5 class="card-title">Last 30 Days</h5>
                     <div class="display-6 fw-bold"
@@ -76,8 +77,8 @@
     </div>
 
     <!-- Timeline -->
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card mb-4 detail-card">
+        <div class="card-header detail-card-header">
             <h5 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>24-Hour Timeline</h5>
         </div>
         <div class="card-body">
@@ -94,15 +95,56 @@
     </div>
 
     <!-- Recent History -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Check History</h5>
+    <div class="card detail-card">
+        <div class="card-header detail-card-header">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Check History</h5>
+                <small class="text-muted" th:text="'Showing ' + ${historyFrom} + '-' + ${historyTo} + ' of ' + ${historyPage.totalElements} + ' entries'">
+                    Showing 0-0 of 0 entries
+                </small>
+            </div>
+        </div>
+        <div class="card-body border-bottom detail-history-toolbar">
+            <form class="row g-2 align-items-end" method="get" th:action="@{/resources/{id}(id=${vm.resource.id})}">
+                <div class="col-12 col-md-2">
+                    <label class="form-label mb-1" for="history-status">Status</label>
+                    <select id="history-status" name="status" class="form-select form-select-sm">
+                        <option value="" th:selected="${historyStatus == ''}">All</option>
+                        <option value="AVAILABLE" th:selected="${historyStatus == 'AVAILABLE'}">AVAILABLE</option>
+                        <option value="NOT_AVAILABLE" th:selected="${historyStatus == 'NOT_AVAILABLE'}">NOT_AVAILABLE</option>
+                        <option value="UNKNOWN" th:selected="${historyStatus == 'UNKNOWN'}">UNKNOWN</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label mb-1" for="history-code">Code</label>
+                    <input id="history-code" name="code" type="text" class="form-control form-control-sm"
+                           placeholder="e.g. 500 or CONNECTION_ERROR" th:value="${historyCode}">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label mb-1" for="history-message">Message</label>
+                    <input id="history-message" name="message" type="text" class="form-control form-control-sm"
+                           placeholder="Search in message..." th:value="${historyMessage}">
+                </div>
+                <div class="col-6 col-md-1">
+                    <label class="form-label mb-1" for="history-size">Rows</label>
+                    <select id="history-size" name="size" class="form-select form-select-sm">
+                        <option value="10" th:selected="${historySize == 10}">10</option>
+                        <option value="20" th:selected="${historySize == 20}">20</option>
+                        <option value="50" th:selected="${historySize == 50}">50</option>
+                        <option value="100" th:selected="${historySize == 100}">100</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                    <a class="btn btn-sm btn-outline-secondary" th:href="@{/resources/{id}(id=${vm.resource.id})}">Reset</a>
+                </div>
+            </form>
         </div>
         <div class="card-body p-0">
             <div th:if="${#lists.isEmpty(recentHistory)}" class="p-3 text-muted">
                 No check history available yet.
             </div>
-            <table class="table table-sm mb-0" th:unless="${#lists.isEmpty(recentHistory)}">
+            <table class="table table-sm mb-0 detail-history-table" th:unless="${#lists.isEmpty(recentHistory)}">
                 <thead>
                     <tr>
                         <th>Time</th>
@@ -123,6 +165,26 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="card-footer bg-transparent border-0 pt-3" th:if="${historyPage.totalPages > 1}">
+            <nav aria-label="History pagination">
+                <ul class="pagination pagination-sm mb-0 justify-content-end">
+                    <li class="page-item" th:classappend="${historyPage.first} ? ' disabled'">
+                        <a class="page-link" th:href="@{/resources/{id}(id=${vm.resource.id}, page=${historyPage.number - 1}, size=${historySize}, status=${historyStatus}, code=${historyCode}, message=${historyMessage})}">Prev</a>
+                    </li>
+                    <li class="page-item"
+                        th:each="pageNumber : ${#numbers.sequence(0, historyPage.totalPages - 1)}"
+                        th:if="${pageNumber >= historyPage.number - 2 and pageNumber <= historyPage.number + 2}"
+                        th:classappend="${pageNumber == historyPage.number} ? ' active'">
+                        <a class="page-link"
+                           th:text="${pageNumber + 1}"
+                           th:href="@{/resources/{id}(id=${vm.resource.id}, page=${pageNumber}, size=${historySize}, status=${historyStatus}, code=${historyCode}, message=${historyMessage})}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${historyPage.last} ? ' disabled'">
+                        <a class="page-link" th:href="@{/resources/{id}(id=${vm.resource.id}, page=${historyPage.number + 1}, size=${historySize}, status=${historyStatus}, code=${historyCode}, message=${historyMessage})}">Next</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </div>
