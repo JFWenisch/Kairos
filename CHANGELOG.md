@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.7.0 - 2026-03-11
+
+## [0.7.0](https://github.com/JFWenisch/Kairos/compare/v0.6.0...v0.7.0) (2026-03-11)
+
+
+### Features
+
+* Add support for skil TLS / Hostname verification for HTTP Resources ([4737384](https://github.com/JFWenisch/Kairos/commit/4737384c1b577e116c22689414f86dac983b9752))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.7.0
+
+
 ## v0.6.0 - 2026-03-11
 
 ## [0.6.0](https://github.com/JFWenisch/Kairos/compare/v0.5.0...v0.6.0) (2026-03-11)
