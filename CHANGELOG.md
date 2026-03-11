@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.4.0 - 2026-03-11
+
+## [0.4.0](https://github.com/JFWenisch/Kairos/compare/v0.3.1...v0.4.0) (2026-03-11)
+
+
+### Features
+
+* add api-docs link to menu and admin panel ([14a518c](https://github.com/JFWenisch/Kairos/commit/14a518c89eb56ecf47e508598a355dc981156ce5))
+* add support for API keys ([fdec01f](https://github.com/JFWenisch/Kairos/commit/fdec01fd826b35013a385463fe76ef620bd416f6))
+* add swaggerdocs ([4cc569e](https://github.com/JFWenisch/Kairos/commit/4cc569ee5358373281ef269dfff21e558db2c749))
+* added endpoint to get information by resource without history ([1ac7076](https://github.com/JFWenisch/Kairos/commit/1ac70764b51d46d39835b412d8ac8f8d123f235c))
+* added functionality for managing announcements via api ([885d7bf](https://github.com/JFWenisch/Kairos/commit/885d7bf5590564c4cc7185823ff6e0e0664ae238))
+* updated API and addes upport for API keys ([cf192ce](https://github.com/JFWenisch/Kairos/commit/cf192ce4c6c903a9ce614b6f5d1e43ce9721a1f4))
+
+
+### Code Refactoring
+
+* update package naming ([82ed8f8](https://github.com/JFWenisch/Kairos/commit/82ed8f8cb8931e70ab1625004e1f1393466c1cfd))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.4.0
+
+
 ## v0.3.1 - 2026-03-11
 
 ### [0.3.1](https://github.com/JFWenisch/Kairos/compare/v0.3.0...v0.3.1) (2026-03-11)
