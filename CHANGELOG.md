@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.5.0 - 2026-03-11
+
+## [0.5.0](https://github.com/JFWenisch/Kairos/compare/v0.4.0...v0.5.0) (2026-03-11)
+
+
+### Features
+
+* flex design for resourcestatus and spinning indicator for fetches ([2be7ba6](https://github.com/JFWenisch/Kairos/commit/2be7ba691f169f3bfff2827e553bfcc6a10fd55a))
+* Modernization of UI ([00e5d71](https://github.com/JFWenisch/Kairos/commit/00e5d711148fd0d794d82e167bc102c7ff223676)), closes [#7](https://github.com/JFWenisch/Kairos/issues/7)
+* modernized UI and added filter to status detailpage ([d7195a2](https://github.com/JFWenisch/Kairos/commit/d7195a2314f68dce496c89f1f5e4091187f74d42))
+
+
+### Bug Fixes
+
+* added necessary mocks for running tests ([ac54bda](https://github.com/JFWenisch/Kairos/commit/ac54bda6a3b7481bcb03f1efd03ab8e0259bc0cb))
+* cleanup button color and gradient usage ([dd558f9](https://github.com/JFWenisch/Kairos/commit/dd558f9fc42e8c1311f0cda09335321a555dda4b))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.5.0
+
+
 ## v0.4.0 - 2026-03-11
 
 ## [0.4.0](https://github.com/JFWenisch/Kairos/compare/v0.3.1...v0.4.0) (2026-03-11)
