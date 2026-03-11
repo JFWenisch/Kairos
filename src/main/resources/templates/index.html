@@ -48,11 +48,11 @@
 
     <div class="card" th:unless="${#lists.isEmpty(resources)}">
         <div class="card-body p-0">
-            <div th:each="vm : ${resources}" class="resource-row border-bottom p-3">
+            <div th:each="vm : ${resources}" class="resource-row border-bottom p-3" th:attr="data-resource-id=${vm.resource.id}">
                 <div class="row align-items-center">
                     <div class="col-md-3">
                         <div class="d-flex align-items-center">
-                            <span th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                            <span data-role="status-dot" th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
                             <div>
                                 <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
                                    class="text-decoration-none fw-semibold"
@@ -73,7 +73,7 @@
                         </div>
                     </div>
                     <div class="col-md-2 text-end">
-                        <span class="fw-bold" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                        <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
                         <br>
                         <small class="text-muted">uptime</small>
                     </div>

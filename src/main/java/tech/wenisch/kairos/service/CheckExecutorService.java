@@ -25,6 +25,7 @@ public class CheckExecutorService {
 
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
+    private final ResourceStatusStreamService resourceStatusStreamService;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
 
@@ -34,10 +35,12 @@ public class CheckExecutorService {
     public CheckExecutorService(
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
+            ResourceStatusStreamService resourceStatusStreamService,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
+        this.resourceStatusStreamService = resourceStatusStreamService;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
     }
@@ -65,6 +68,7 @@ public class CheckExecutorService {
                     final MonitoredResource r = resource;
                     executor.submit(() -> {
                         try {
+                            resourceStatusStreamService.publishResourceChecking(r);
                             if (type == ResourceType.HTTP) {
                                 httpCheckService.check(r);
                             } else if (type == ResourceType.DOCKER) {

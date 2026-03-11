@@ -13,7 +13,7 @@
 <body>
 <nav th:replace="~{layout :: navbar}"></nav>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 resource-detail" th:attr="data-resource-id=${vm.resource.id}">
     <div class="mb-3">
         <a th:href="@{/}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
@@ -23,7 +23,7 @@
     <div class="row mb-4">
         <div class="col">
             <div class="d-flex align-items-center">
-                <span th:class="'status-dot-lg me-3 status-' + ${vm.currentStatus}"></span>
+                <span data-role="status-dot" th:class="'status-dot-lg me-3 status-' + ${vm.currentStatus}"></span>
                 <div>
                     <h1 class="h2 mb-0" th:text="${vm.resource.name}">Resource Name</h1>
                     <p class="text-muted mb-0">
@@ -41,7 +41,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h5 class="card-title">Last 24 Hours</h5>
-                    <div class="display-6 fw-bold"
+                    <div class="display-6 fw-bold resource-uptime"
                          th:text="${#numbers.formatDecimal(uptime24h, 1, 1)} + '%'"
                          th:classappend="${uptime24h >= 99} ? 'text-success' : (${uptime24h >= 95} ? 'text-warning' : 'text-danger')">
                         99.9%
