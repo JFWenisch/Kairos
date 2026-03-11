@@ -5,16 +5,23 @@ import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApiKeyService;
+import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller
@@ -26,6 +33,7 @@ public class AdminController {
     private final UserService userService;
     private final AnnouncementService announcementService;
     private final ApiKeyService apiKeyService;
+    private final ResourceExchangeService resourceExchangeService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
 
@@ -60,6 +68,37 @@ public class AdminController {
         model.addAttribute("resources", resourceService.findAll());
         model.addAttribute("resourceTypes", ResourceType.values());
         return "admin/resources";
+    }
+
+    @GetMapping("/resources/export")
+    public ResponseEntity<byte[]> exportResources() throws Exception {
+        String yaml = resourceExchangeService.exportResourcesAsYaml();
+        String fileName = "kairos-resources-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")) + ".yaml";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.parseMediaType("application/x-yaml"))
+                .body(yaml.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @PostMapping("/resources/import")
+    public String importResources(@RequestParam("file") MultipartFile file,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            ResourceExchangeService.ImportResult result = resourceExchangeService.importResourcesFromYaml(file);
+            String message = "Import finished: " + result.getImported() + " created, "
+                    + result.getUpdated() + " updated, " + result.getSkipped() + " skipped.";
+            redirectAttributes.addFlashAttribute("successMessage", message);
+
+            if (!result.getNotes().isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", String.join(" | ", result.getNotes()));
+            }
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Could not import YAML: " + ex.getMessage());
+        }
+        return "redirect:/admin/resources";
     }
 
     @PostMapping("/resources/add")
