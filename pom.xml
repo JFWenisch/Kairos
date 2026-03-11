@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.jfwendisch</groupId>
+    <groupId>tech.wenisch</groupId>
     <artifactId>kairos</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>

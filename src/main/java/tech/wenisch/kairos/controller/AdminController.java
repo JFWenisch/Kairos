@@ -1,0 +1,259 @@
+package tech.wenisch.kairos.controller;
+
+import tech.wenisch.kairos.entity.*;
+import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
+import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ResourceService;
+import tech.wenisch.kairos.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Controller
+@RequestMapping("/admin")
+@RequiredArgsConstructor
+public class AdminController {
+
+    private final ResourceService resourceService;
+    private final UserService userService;
+    private final AnnouncementService announcementService;
+    private final ResourceTypeConfigRepository resourceTypeConfigRepository;
+    private final ResourceTypeAuthRepository resourceTypeAuthRepository;
+
+    @GetMapping
+    public String admin() {
+        return "redirect:/admin/settings";
+    }
+
+    @GetMapping("/settings")
+    public String settings(Model model) {
+        List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
+        model.addAttribute("allowPublicAdd", allowPublicAdd);
+        model.addAttribute("configs", configs);
+        return "admin/settings";
+    }
+
+    @PostMapping("/settings")
+    public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAdd,
+                               RedirectAttributes redirectAttributes) {
+        List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        for (ResourceTypeConfig config : configs) {
+            config.setAllowPublicAdd(allowPublicAdd);
+            resourceTypeConfigRepository.save(config);
+        }
+        redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");
+        return "redirect:/admin/settings";
+    }
+
+    @GetMapping("/resources")
+    public String resources(Model model) {
+        model.addAttribute("resources", resourceService.findAll());
+        model.addAttribute("resourceTypes", ResourceType.values());
+        return "admin/resources";
+    }
+
+    @PostMapping("/resources/add")
+    public String addResource(@RequestParam String name,
+                              @RequestParam ResourceType resourceType,
+                              @RequestParam String target,
+                              RedirectAttributes redirectAttributes) {
+        MonitoredResource resource = MonitoredResource.builder()
+                .name(name)
+                .resourceType(resourceType)
+                .target(target)
+                .active(true)
+                .build();
+        resourceService.save(resource);
+        redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
+        return "redirect:/admin/resources";
+    }
+
+    @PostMapping("/resources/delete/{id}")
+    public String deleteResource(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        resourceService.findById(id).ifPresent(r -> {
+            resourceService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Resource deleted: " + r.getName());
+        });
+        return "redirect:/admin/resources";
+    }
+
+    @GetMapping("/resource-types")
+    public String resourceTypes(Model model) {
+        model.addAttribute("configs", resourceTypeConfigRepository.findAll());
+        return "admin/resource-types";
+    }
+
+    @PostMapping("/resource-types/update")
+    public String updateResourceType(@RequestParam Long id,
+                                     @RequestParam int checkIntervalMinutes,
+                                     @RequestParam int parallelism,
+                                     RedirectAttributes redirectAttributes) {
+        resourceTypeConfigRepository.findById(id).ifPresent(config -> {
+            config.setCheckIntervalMinutes(checkIntervalMinutes);
+            config.setParallelism(parallelism);
+            resourceTypeConfigRepository.save(config);
+        });
+        redirectAttributes.addFlashAttribute("successMessage", "Configuration updated");
+        return "redirect:/admin/resource-types";
+    }
+
+    @PostMapping("/resource-types/{configId}/auth/add")
+    public String addAuth(@PathVariable Long configId,
+                          @RequestParam String name,
+                          @RequestParam String urlPattern,
+                          @RequestParam String username,
+                          @RequestParam String password,
+                          RedirectAttributes redirectAttributes) {
+        resourceTypeConfigRepository.findById(configId).ifPresent(config -> {
+            ResourceTypeAuth auth = ResourceTypeAuth.builder()
+                    .resourceTypeConfig(config)
+                    .name(name)
+                    .authType(AuthType.BASIC)
+                    .urlPattern(urlPattern)
+                    .username(username)
+                    .password(password)
+                    .build();
+            resourceTypeAuthRepository.save(auth);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + name + "' added to " + config.getTypeName());
+        });
+        return "redirect:/admin/resource-types";
+    }
+
+    @PostMapping("/resource-types/auth/delete/{authId}")
+    public String deleteAuth(@PathVariable Long authId, RedirectAttributes redirectAttributes) {
+        resourceTypeAuthRepository.findById(authId).ifPresent(auth -> {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + auth.getName() + "' deleted");
+            resourceTypeAuthRepository.delete(auth);
+        });
+        return "redirect:/admin/resource-types";
+    }
+
+    @GetMapping("/users")
+    public String users(Model model) {
+        model.addAttribute("users", userService.findAll());
+        return "admin/users";
+    }
+
+    @GetMapping("/announcements")
+    public String announcements(Model model) {
+        model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
+        return "admin/announcements";
+    }
+
+    @GetMapping("/announcements/new")
+    public String newAnnouncement(Model model) {
+        Announcement announcement = Announcement.builder()
+                .active(true)
+                .kind(AnnouncementKind.INFORMATION)
+                .build();
+        model.addAttribute("announcement", announcement);
+        model.addAttribute("announcementKinds", AnnouncementKind.values());
+        model.addAttribute("formAction", "/admin/announcements/add");
+        model.addAttribute("pageTitle", "Create Announcement");
+        model.addAttribute("submitLabel", "Create Announcement");
+        return "admin/announcement-form";
+    }
+
+    @PostMapping("/announcements/add")
+    public String addAnnouncement(@RequestParam AnnouncementKind kind,
+                                  @RequestParam String content,
+                                  @RequestParam(defaultValue = "false") boolean active,
+                                  @RequestParam(required = false) String activeUntil,
+                      Authentication authentication,
+                                  RedirectAttributes redirectAttributes) {
+        Announcement announcement = Announcement.builder()
+                .kind(kind)
+                .content(content)
+            .createdBy(authentication != null ? authentication.getName() : "system")
+                .active(active)
+                .activeUntil(parseDateTime(activeUntil))
+                .build();
+        announcementService.save(announcement);
+        redirectAttributes.addFlashAttribute("successMessage", "Announcement created");
+        return "redirect:/admin/announcements";
+    }
+
+    @GetMapping("/announcements/edit/{id}")
+    public String editAnnouncement(@PathVariable Long id,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
+        return announcementService.findById(id).map(announcement -> {
+            model.addAttribute("announcement", announcement);
+            model.addAttribute("announcementKinds", AnnouncementKind.values());
+            model.addAttribute("formAction", "/admin/announcements/update/" + id);
+            model.addAttribute("pageTitle", "Edit Announcement");
+            model.addAttribute("submitLabel", "Update Announcement");
+            return "admin/announcement-form";
+        }).orElseGet(() -> {
+            redirectAttributes.addFlashAttribute("errorMessage", "Announcement not found");
+            return "redirect:/admin/announcements";
+        });
+    }
+
+    @PostMapping("/announcements/update/{id}")
+    public String updateAnnouncement(@PathVariable Long id,
+                                     @RequestParam AnnouncementKind kind,
+                                     @RequestParam String content,
+                                     @RequestParam(defaultValue = "false") boolean active,
+                                     @RequestParam(required = false) String activeUntil,
+                                     RedirectAttributes redirectAttributes) {
+        announcementService.findById(id).ifPresent(announcement -> {
+            announcement.setKind(kind);
+            announcement.setContent(content);
+            announcement.setActive(active);
+            announcement.setActiveUntil(parseDateTime(activeUntil));
+            announcementService.save(announcement);
+        });
+        redirectAttributes.addFlashAttribute("successMessage", "Announcement updated");
+        return "redirect:/admin/announcements";
+    }
+
+    @PostMapping("/announcements/delete/{id}")
+    public String deleteAnnouncement(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        announcementService.findById(id).ifPresent(a -> {
+            announcementService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Announcement deleted");
+        });
+        return "redirect:/admin/announcements";
+    }
+
+    @PostMapping("/users/add")
+    public String addUser(@RequestParam String email,
+                          @RequestParam String password,
+                          @RequestParam(defaultValue = "USER") UserRole role,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            userService.createUser(email, password, role);
+            redirectAttributes.addFlashAttribute("successMessage", "User created: " + email);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating user: " + e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/users/delete/{id}")
+    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        userService.findById(id).ifPresent(u -> {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "User deleted: " + u.getEmail());
+        });
+        return "redirect:/admin/users";
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return LocalDateTime.parse(value);
+    }
+}
