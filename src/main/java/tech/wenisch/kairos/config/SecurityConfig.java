@@ -72,9 +72,11 @@ public class SecurityConfig {
                         "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api").permitAll()
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/resources/*/history").authenticated()
                 .requestMatchers("/api/resources/**").hasRole("ADMIN")
+                .requestMatchers("/api/announcements/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -87,7 +89,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/resources")
+                .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/announcements", "/api/announcements/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
