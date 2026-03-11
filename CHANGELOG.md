@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.1 - 2026-03-11
+
+### [0.3.1](https://github.com/JFWenisch/Kairos/compare/v0.3.0...v0.3.1) (2026-03-11)
+
+
+### Documentation
+
+* update docs regarding announcement functionality and updated license information ([1d03706](https://github.com/JFWenisch/Kairos/commit/1d03706711362c9537ae02a8e0a532e4fa4d63df))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.3.1
+
+
 ## v0.3.0 - 2026-03-11
 
 ## [0.3.0](https://github.com/JFWenisch/Kairos/compare/v0.2.0...v0.3.0) (2026-03-11)
