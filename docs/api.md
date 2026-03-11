@@ -7,6 +7,7 @@ Kairos exposes a JSON REST API under the `/api` prefix.
 | Endpoint | Required role |
 |----------|--------------|
 | `GET /api/resources` | None (public) |
+| `GET /api/resources/{id}` | `ADMIN` |
 | `POST /api/resources` | `ADMIN` — or none when *public submission* is enabled |
 | `DELETE /api/resources/{id}` | `ADMIN` |
 | `GET /api/resources/{id}/history` | Any authenticated user |
@@ -51,6 +52,32 @@ Returns all **active** monitored resources.
   }
 ]
 ```
+
+---
+
+### `GET /api/resources/{id}`
+
+Returns a single resource by ID including general resource information and latest health status.
+
+**Response** `200 OK`
+
+```json
+{
+  "id": 1,
+  "name": "GitHub",
+  "resourceType": "HTTP",
+  "target": "https://github.com",
+  "active": true,
+  "createdAt": "2026-03-11T10:00:00",
+  "currentStatus": "available",
+  "latestCheckStatus": "AVAILABLE",
+  "latestCheckedAt": "2026-03-11T10:30:00",
+  "latestMessage": "HTTP 200",
+  "latestErrorCode": "200"
+}
+```
+
+**Response** `404 Not Found` — if the resource ID does not exist.
 
 ---
 

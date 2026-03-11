@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
@@ -69,6 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/announcements", "/resources/**", "/login", "/css/**", "/js/**",
                         "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**").permitAll()
                 .requestMatchers("/api/resources").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/resources/*/history").authenticated()
                 .requestMatchers("/api/resources/**").hasRole("ADMIN")

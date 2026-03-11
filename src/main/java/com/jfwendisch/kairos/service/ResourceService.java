@@ -128,6 +128,10 @@ public class ResourceService {
                 .orElse("unknown");
     }
 
+    public Optional<CheckResult> getLatestCheckResult(MonitoredResource resource) {
+        return checkResultRepository.findTopByResourceOrderByCheckedAtDesc(resource);
+    }
+
     public List<MonitoredResource> findByType(ResourceType type) {
         return resourceRepository.findByResourceTypeAndActiveTrue(type);
     }
