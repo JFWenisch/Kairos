@@ -66,7 +66,7 @@ public class SecurityConfig {
             AuthenticationSuccessHandler formLoginSuccessHandler) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/resources/**", "/login", "/css/**", "/js/**",
+                .requestMatchers("/", "/announcements", "/resources/**", "/login", "/css/**", "/js/**",
                         "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**").permitAll()
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")

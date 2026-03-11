@@ -47,3 +47,34 @@
 .status-dot.status-not-available {
     animation: pulse 2s infinite;
 }
+
+.announcement-card {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.announcement-information {
+    border-color: rgba(13, 202, 240, 0.6) !important;
+}
+
+.announcement-warning {
+    border-color: rgba(255, 193, 7, 0.7) !important;
+}
+
+.announcement-problem {
+    border-color: rgba(220, 53, 69, 0.7) !important;
+}
+
+.announcement-content-preview {
+    max-height: 80px;
+    overflow: hidden;
+}
+
+.announcement-content a,
+.announcement-content-preview a {
+    color: #6ea8fe;
+}
+
+.quill-editor {
+    min-height: 220px;
+    background-color: var(--bs-body-bg);
+}

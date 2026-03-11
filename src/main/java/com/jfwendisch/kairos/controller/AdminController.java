@@ -3,14 +3,17 @@ package com.jfwendisch.kairos.controller;
 import com.jfwendisch.kairos.entity.*;
 import com.jfwendisch.kairos.repository.ResourceTypeAuthRepository;
 import com.jfwendisch.kairos.repository.ResourceTypeConfigRepository;
+import com.jfwendisch.kairos.service.AnnouncementService;
 import com.jfwendisch.kairos.service.ResourceService;
 import com.jfwendisch.kairos.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -20,6 +23,7 @@ public class AdminController {
 
     private final ResourceService resourceService;
     private final UserService userService;
+    private final AnnouncementService announcementService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
 
@@ -140,6 +144,89 @@ public class AdminController {
         return "admin/users";
     }
 
+    @GetMapping("/announcements")
+    public String announcements(Model model) {
+        model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
+        return "admin/announcements";
+    }
+
+    @GetMapping("/announcements/new")
+    public String newAnnouncement(Model model) {
+        Announcement announcement = Announcement.builder()
+                .active(true)
+                .kind(AnnouncementKind.INFORMATION)
+                .build();
+        model.addAttribute("announcement", announcement);
+        model.addAttribute("announcementKinds", AnnouncementKind.values());
+        model.addAttribute("formAction", "/admin/announcements/add");
+        model.addAttribute("pageTitle", "Create Announcement");
+        model.addAttribute("submitLabel", "Create Announcement");
+        return "admin/announcement-form";
+    }
+
+    @PostMapping("/announcements/add")
+    public String addAnnouncement(@RequestParam AnnouncementKind kind,
+                                  @RequestParam String content,
+                                  @RequestParam(defaultValue = "false") boolean active,
+                                  @RequestParam(required = false) String activeUntil,
+                      Authentication authentication,
+                                  RedirectAttributes redirectAttributes) {
+        Announcement announcement = Announcement.builder()
+                .kind(kind)
+                .content(content)
+            .createdBy(authentication != null ? authentication.getName() : "system")
+                .active(active)
+                .activeUntil(parseDateTime(activeUntil))
+                .build();
+        announcementService.save(announcement);
+        redirectAttributes.addFlashAttribute("successMessage", "Announcement created");
+        return "redirect:/admin/announcements";
+    }
+
+    @GetMapping("/announcements/edit/{id}")
+    public String editAnnouncement(@PathVariable Long id,
+                                   Model model,
+                                   RedirectAttributes redirectAttributes) {
+        return announcementService.findById(id).map(announcement -> {
+            model.addAttribute("announcement", announcement);
+            model.addAttribute("announcementKinds", AnnouncementKind.values());
+            model.addAttribute("formAction", "/admin/announcements/update/" + id);
+            model.addAttribute("pageTitle", "Edit Announcement");
+            model.addAttribute("submitLabel", "Update Announcement");
+            return "admin/announcement-form";
+        }).orElseGet(() -> {
+            redirectAttributes.addFlashAttribute("errorMessage", "Announcement not found");
+            return "redirect:/admin/announcements";
+        });
+    }
+
+    @PostMapping("/announcements/update/{id}")
+    public String updateAnnouncement(@PathVariable Long id,
+                                     @RequestParam AnnouncementKind kind,
+                                     @RequestParam String content,
+                                     @RequestParam(defaultValue = "false") boolean active,
+                                     @RequestParam(required = false) String activeUntil,
+                                     RedirectAttributes redirectAttributes) {
+        announcementService.findById(id).ifPresent(announcement -> {
+            announcement.setKind(kind);
+            announcement.setContent(content);
+            announcement.setActive(active);
+            announcement.setActiveUntil(parseDateTime(activeUntil));
+            announcementService.save(announcement);
+        });
+        redirectAttributes.addFlashAttribute("successMessage", "Announcement updated");
+        return "redirect:/admin/announcements";
+    }
+
+    @PostMapping("/announcements/delete/{id}")
+    public String deleteAnnouncement(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        announcementService.findById(id).ifPresent(a -> {
+            announcementService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Announcement deleted");
+        });
+        return "redirect:/admin/announcements";
+    }
+
     @PostMapping("/users/add")
     public String addUser(@RequestParam String email,
                           @RequestParam String password,
@@ -161,5 +248,12 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("successMessage", "User deleted: " + u.getEmail());
         });
         return "redirect:/admin/users";
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return LocalDateTime.parse(value);
     }
 }

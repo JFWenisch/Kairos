@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' - Kairos Admin'">Announcement - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}"><i class="bi bi-clock-history me-2"></i>Kairos</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div class="d-flex flex-column">
+                <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
+                <a th:href="@{/admin/settings}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-sliders me-2"></i>General Settings</a>
+                <a th:href="@{/admin/resources}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-hdd-network me-2"></i>Manage Resources</a>
+                <a th:href="@{/admin/resource-types}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>Resource Types</a>
+                <a th:href="@{/admin/users}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-people me-2"></i>Users</a>
+                <a th:href="@{/admin/announcements}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-megaphone me-2"></i>Announcements</a>
+            </div>
+        </div>
+
+        <div class="col-md-10 py-4 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0"><i class="bi bi-megaphone me-2"></i><span th:text="${pageTitle}">Create Announcement</span></h2>
+                <a th:href="@{/admin/announcements}" class="btn btn-outline-secondary">Back</a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="@{${formAction}}" method="post" id="announcementForm">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Type</label>
+                                <select class="form-select" name="kind" required>
+                                    <option th:each="kind : ${announcementKinds}" th:value="${kind}"
+                                            th:selected="${kind == announcement.kind}" th:text="${kind}">INFORMATION</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="active" name="active"
+                                           th:checked="${announcement.active}">
+                                    <label class="form-check-label" for="active">Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Active Until (optional)</label>
+                                <input type="datetime-local" class="form-control" name="activeUntil"
+                                       th:value="${announcement.activeUntil != null} ? ${#temporals.format(announcement.activeUntil, 'yyyy-MM-dd''T''HH:mm')} : ''">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Content</label>
+                                <div id="editor" class="quill-editor"></div>
+                                <input type="hidden" id="content" name="content">
+                                <div class="form-text">Supports formatted text, links, and paste from clipboard.</div>
+                                <div class="mt-3 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check2-circle me-1"></i>Save Announcement
+                                    </button>
+                                    <a th:href="@{/admin/announcements}" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script th:src="@{/js/kairos.js}"></script>
+<script th:inline="javascript">
+    const initialContent = /*[[${announcement.content}]]*/ '';
+
+    const quill = new Quill('#editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+            ]
+        }
+    });
+
+    if (initialContent) {
+        quill.clipboard.dangerouslyPasteHTML(initialContent);
+    }
+
+    document.getElementById('announcementForm').addEventListener('submit', function (event) {
+        const html = quill.root.innerHTML.trim();
+        const emptyHtml = '<p><br></p>';
+        if (!html || html === emptyHtml) {
+            event.preventDefault();
+            alert('Announcement content is required.');
+            return;
+        }
+        document.getElementById('content').value = html;
+    });
+</script>
+</body>
+</html>
