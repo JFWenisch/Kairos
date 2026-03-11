@@ -28,6 +28,7 @@
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
 - **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
+- **YAML import / export** — export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** — publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
 - **Public announcements** — active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
 - **Public submission mode** — optionally allow unauthenticated users to add resources via the REST API
@@ -155,7 +156,10 @@ See [docs/announcements.md](docs/announcements.md) for announcement management a
 - [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
 - [docs/authentication.md](docs/authentication.md) — resource check authentication and credential matching
 - [docs/configuration.md](docs/configuration.md) — runtime configuration, database setup and OIDC
+- [docs/importexport.md](docs/importexport.md) — YAML import/export workflow, format and compatibility notes
 - [docs/announcements.md](docs/announcements.md) — announcement features, permissions and lifecycle
+
+See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.
 
 ---
 
