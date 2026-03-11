@@ -68,7 +68,8 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/announcements", "/resources/**", "/login", "/css/**", "/js/**",
-                        "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**").permitAll()
+                        "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**",
+                        "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api").permitAll()
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -86,7 +87,7 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/resources")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
