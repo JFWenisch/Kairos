@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.3.0 - 2026-03-11
+
+## [0.3.0](https://github.com/JFWenisch/Kairos/compare/v0.2.0...v0.3.0) (2026-03-11)
+
+
+### Features
+
+* add support for announcements ([fa435db](https://github.com/JFWenisch/Kairos/commit/fa435dbc80c3123b477375cee6c57243067eb682))
+* add support for announcements ([13beeeb](https://github.com/JFWenisch/Kairos/commit/13beeeb3ab457df2d63cb5368b8d352afa1c6217)), closes [#5](https://github.com/JFWenisch/Kairos/issues/5)
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.3.0
+
+
 ## v0.2.0 - 2026-03-10
 
 ## [0.2.0](https://github.com/JFWenisch/Kairos/compare/v0.1.0...v0.2.0) (2026-03-10)
