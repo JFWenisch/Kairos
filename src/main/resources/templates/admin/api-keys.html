@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Announcements - Kairos Admin</title>
+    <title>API Keys - Kairos Admin</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
@@ -38,11 +38,10 @@
                 <a th:href="@{/admin/resources}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-hdd-network me-2"></i>Manage Resources</a>
                 <a th:href="@{/admin/resource-types}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>Resource Types</a>
                 <a th:href="@{/admin/users}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-people me-2"></i>Users</a>
-                <a th:href="@{/admin/announcements}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-megaphone me-2"></i>Announcements</a>
-                <a th:href="@{/admin/api-keys}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-key me-2"></i>API Keys</a>
+                <a th:href="@{/admin/announcements}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-megaphone me-2"></i>Announcements</a>
+                <a th:href="@{/admin/api-keys}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-key me-2"></i>API Keys</a>
             </div>
         </div>
-
         <div class="col-md-10 py-4 px-4">
             <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
                 <span th:text="${successMessage}">Success</span>
@@ -53,56 +52,60 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
+            <div th:if="${newApiKeyToken}" class="alert alert-warning">
+                <h6 class="fw-bold mb-2"><i class="bi bi-shield-lock me-1"></i>Copy this API key now</h6>
+                <p class="mb-2">This token is shown only once and cannot be retrieved again after you leave this page.</p>
+                <div class="input-group">
+                    <input id="new-api-key-token" type="text" class="form-control font-monospace" th:value="${newApiKeyToken}" readonly>
+                    <button type="button" class="btn btn-outline-light" onclick="copyApiKeyToken()">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                </div>
+            </div>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h4 mb-0"><i class="bi bi-megaphone me-2"></i>Announcements</h2>
-                <a th:href="@{/admin/announcements/new}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i>Create Announcement
-                </a>
+                <h2 class="h4 mb-0"><i class="bi bi-key me-2"></i>API Key Management</h2>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Create API key</h5>
+                    <form th:action="@{/admin/api-keys/add}" method="post" class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" maxlength="120" placeholder="e.g. CI Deploy Token" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-circle me-1"></i>Create API Key
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div class="card">
                 <div class="card-body p-0">
-                    <div th:if="${#lists.isEmpty(announcements)}" class="p-3">
-                        <p class="text-muted mb-3">No announcements configured.</p>
-                        <a th:href="@{/admin/announcements/new}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i>Create your first announcement
-                        </a>
-                    </div>
-                    <table class="table table-hover mb-0" th:unless="${#lists.isEmpty(announcements)}">
+                    <div th:if="${#lists.isEmpty(apiKeys)}" class="p-3 text-muted">No API keys configured.</div>
+                    <table class="table table-hover mb-0" th:unless="${#lists.isEmpty(apiKeys)}">
                         <thead>
                         <tr>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Active Until</th>
+                            <th>Name</th>
                             <th>Created By</th>
-                            <th>Created At</th>
-                            <th style="width: 45%">Preview</th>
+                            <th>Created</th>
+                            <th>Key ID</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="announcement : ${announcements}">
+                        <tr th:each="apiKey : ${apiKeys}">
+                            <td th:text="${apiKey.name}">Name</td>
+                            <td th:text="${apiKey.createdBy}">creator</td>
+                            <td th:text="${apiKey.createdAt != null} ? ${#temporals.format(apiKey.createdAt, 'yyyy-MM-dd HH:mm')} : '-'">date</td>
+                            <td><code th:text="${apiKey.keyId}">id</code></td>
                             <td>
-                                <span class="badge"
-                                      th:classappend="${announcement.kind.name() == 'INFORMATION'} ? ' bg-info text-dark' : (${announcement.kind.name() == 'WARNING'} ? ' bg-warning text-dark' : ' bg-danger')"
-                                      th:text="${announcement.kind}">INFORMATION</span>
-                            </td>
-                            <td>
-                                <span th:if="${announcement.active}" class="badge bg-success">Active</span>
-                                <span th:unless="${announcement.active}" class="badge bg-secondary">Inactive</span>
-                            </td>
-                            <td th:text="${announcement.activeUntil != null} ? ${#temporals.format(announcement.activeUntil, 'yyyy-MM-dd HH:mm')} : '-'">-</td>
-                            <td th:text="${announcement.createdBy != null && !announcement.createdBy.isBlank()} ? ${announcement.createdBy} : 'Unknown'">Unknown</td>
-                            <td th:text="${announcement.createdAt != null} ? ${#temporals.format(announcement.createdAt, 'yyyy-MM-dd HH:mm')} : '-'">-</td>
-                            <td>
-                                <div class="announcement-content-preview" th:utext="${announcement.content}"></div>
-                            </td>
-                            <td>
-                                <a th:href="@{/admin/announcements/edit/{id}(id=${announcement.id})}" class="btn btn-outline-primary btn-sm">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form th:action="@{/admin/announcements/delete/{id}(id=${announcement.id})}" method="post" class="d-inline"
-                                      onsubmit="return confirm('Delete this announcement?')">
+                                <form th:action="@{/admin/api-keys/delete/{id}(id=${apiKey.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this API key? Clients using it will lose access immediately.')">
                                     <button type="submit" class="btn btn-danger btn-sm">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -119,5 +122,16 @@
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/kairos.js}"></script>
+<script>
+    function copyApiKeyToken() {
+        const input = document.getElementById('new-api-key-token');
+        if (!input) {
+            return;
+        }
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value);
+    }
+</script>
 </body>
 </html>

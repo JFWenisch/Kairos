@@ -161,14 +161,22 @@ See [docs/announcements.md](docs/announcements.md) for announcement management a
 
 ## REST API
 
-The REST API is available at `/api`. The public pages (`/`, `/announcements` and `/resources/**`) are publicly accessible; write endpoints require an authenticated admin session.
+The REST API is available at `/api`. An **interactive Swagger UI** (auto-generated from the OpenAPI spec) is served at **[/api](http://localhost:8080/api)** — no separate tooling needed.
+
+The raw OpenAPI JSON spec is at `/v3/api-docs`.
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/resources` | Public | List all active resources |
-| `POST` | `/api/resources` | Admin (or Public if enabled) | Add a new resource |
+| `GET` | `/api/resources/{id}` | Public | Get resource details + latest health status |
+| `POST` | `/api/resources` | Admin | Add a new resource |
 | `DELETE` | `/api/resources/{id}` | Admin | Delete a resource |
 | `GET` | `/api/resources/{id}/history` | Authenticated | Full check history for a resource |
+| `GET` | `/api/announcements` | Public | List all announcements |
+| `GET` | `/api/announcements/{id}` | Public | Get a single announcement |
+| `POST` | `/api/announcements` | Admin | Create an announcement |
+| `PUT` | `/api/announcements/{id}` | Admin | Update an announcement |
+| `DELETE` | `/api/announcements/{id}` | Admin | Delete an announcement |
 
 See [docs/api.md](docs/api.md) for full request/response examples.
 
