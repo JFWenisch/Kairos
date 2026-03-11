@@ -67,6 +67,11 @@
                        class="nav-link px-2 py-2 rounded mb-1">
                         <i class="bi bi-megaphone me-2"></i>Announcements
                     </a>
+                          <a th:href="@{/admin/api-keys}"
+                              th:classappend="${#httpServletRequest.requestURI.contains('/api-keys')} ? 'active' : ''"
+                              class="nav-link px-2 py-2 rounded mb-1">
+                                <i class="bi bi-key me-2"></i>API Keys
+                          </a>
                     <hr class="border-secondary my-2">
                     <a th:href="@{/api}"
                        class="nav-link px-2 py-2 rounded mb-1">

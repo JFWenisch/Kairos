@@ -4,6 +4,7 @@ import tech.wenisch.kairos.entity.*;
 import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApiKeyService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class AdminController {
     private final ResourceService resourceService;
     private final UserService userService;
     private final AnnouncementService announcementService;
+    private final ApiKeyService apiKeyService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
 
@@ -142,6 +144,32 @@ public class AdminController {
     public String users(Model model) {
         model.addAttribute("users", userService.findAll());
         return "admin/users";
+    }
+
+    @GetMapping("/api-keys")
+    public String apiKeys(Model model) {
+        model.addAttribute("apiKeys", apiKeyService.findAllOrderedByCreatedAtDesc());
+        return "admin/api-keys";
+    }
+
+    @PostMapping("/api-keys/add")
+    public String addApiKey(@RequestParam String name,
+                            Authentication authentication,
+                            RedirectAttributes redirectAttributes) {
+        String creator = authentication != null ? authentication.getName() : "system";
+        ApiKeyService.CreatedApiKey createdApiKey = apiKeyService.create(name, creator);
+        redirectAttributes.addFlashAttribute("successMessage", "API key created: " + createdApiKey.apiKey().getName());
+        redirectAttributes.addFlashAttribute("newApiKeyToken", createdApiKey.token());
+        return "redirect:/admin/api-keys";
+    }
+
+    @PostMapping("/api-keys/delete/{id}")
+    public String deleteApiKey(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        apiKeyService.findById(id).ifPresent(apiKey -> {
+            apiKeyService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "API key deleted: " + apiKey.getName());
+        });
+        return "redirect:/admin/api-keys";
     }
 
     @GetMapping("/announcements")

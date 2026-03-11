@@ -24,7 +24,7 @@ public class OpenApiConfig {
      * <p>Two authentication schemes are declared:
      * <ul>
      *   <li><b>cookieAuth</b> – session cookie obtained via {@code POST /login} (form login)</li>
-     *   <li><b>basicAuth</b> – HTTP Basic, useful for scripted API access</li>
+        *   <li><b>apiKeyAuth</b> – bearer JWT token created in the Admin Panel</li>
      * </ul>
      *
      * @return a fully populated {@link OpenAPI} instance
@@ -32,7 +32,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI kairosOpenAPI() {
         final String cookieScheme = "cookieAuth";
-        final String basicScheme  = "basicAuth";
+                final String apiKeyScheme = "apiKeyAuth";
 
         return new OpenAPI()
                 .info(new Info()
@@ -41,10 +41,11 @@ public class OpenApiConfig {
                                 REST API for the **Kairos** uptime-monitoring platform.
 
                                 ### Authentication
-                                Most write endpoints require an authenticated session or HTTP Basic credentials with the `ADMIN` role.  \s
-                                Read-only resource endpoints (`GET /api/resources`, `GET /api/resources/{id}`) are public.
+                                Most write endpoints require an authenticated session or API key JWT with `ADMIN` permissions.  \s
+                                Read-only endpoints (`GET /api/resources`, `GET /api/resources/{id}`, `GET /api/announcements`, `GET /api/announcements/{id}`) are public.
 
-                                Obtain a session by `POST`-ing credentials to `/login`, or supply HTTP Basic credentials on every request.
+                                Obtain a session by `POST`-ing credentials to `/login`,
+                                or use an API key JWT created in **Admin → API Keys** as `Authorization: Bearer <token>`.
                                 """)
                         .version("1.0.0")
                         .contact(new Contact()
@@ -59,12 +60,13 @@ public class OpenApiConfig {
                                 .in(SecurityScheme.In.COOKIE)
                                 .name("JSESSIONID")
                                 .description("Session cookie acquired via form login at `/login`"))
-                        .addSecuritySchemes(basicScheme, new SecurityScheme()
+                        .addSecuritySchemes(apiKeyScheme, new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
-                                .scheme("basic")
-                                .description("HTTP Basic authentication with an ADMIN-role account")))
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("Bearer JWT API key token created in Admin → API Keys")))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(cookieScheme)
-                        .addList(basicScheme));
+                        .addList(apiKeyScheme));
     }
 }

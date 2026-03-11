@@ -111,7 +111,7 @@ public class ApiController {
      */
     @Operation(summary = "Create a resource",
                description = "Adds a new monitored resource and activates it immediately. Requires ADMIN role.",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resource created successfully",
                      content = @Content(schema = @Schema(implementation = MonitoredResource.class))),
@@ -138,7 +138,7 @@ public class ApiController {
      */
     @Operation(summary = "Delete a resource",
                description = "Permanently removes a monitored resource and its entire check history. Requires ADMIN role.",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resource deleted"),
         @ApiResponse(responseCode = "403", description = "Caller does not hold the ADMIN role", content = @Content)
@@ -163,7 +163,7 @@ public class ApiController {
      */
     @Operation(summary = "Get check history",
                description = "Returns every historical health-check result for the specified resource, newest first. Requires authentication.",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "History returned (may be empty)"),
         @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
@@ -238,7 +238,7 @@ public class ApiController {
     @Operation(summary = "Create an announcement",
                description = "Creates a new announcement. createdBy is set from the authenticated user. Requires ADMIN role.",
                tags = "Announcements",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Announcement created",
                      content = @Content(schema = @Schema(implementation = Announcement.class))),
@@ -272,7 +272,7 @@ public class ApiController {
     @Operation(summary = "Update an announcement",
                description = "Fully replaces a stored announcement's fields. createdBy and createdAt are preserved. Requires ADMIN role.",
                tags = "Announcements",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Announcement updated",
                      content = @Content(schema = @Schema(implementation = Announcement.class))),
@@ -306,7 +306,7 @@ public class ApiController {
     @Operation(summary = "Delete an announcement",
                description = "Permanently removes an announcement. Requires ADMIN role.",
                tags = "Announcements",
-               security = @SecurityRequirement(name = "cookieAuth"))
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Announcement deleted"),
         @ApiResponse(responseCode = "403", description = "Caller does not hold the ADMIN role", content = @Content)

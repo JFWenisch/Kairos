@@ -21,6 +21,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -63,8 +64,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
-            AuthenticationSuccessHandler formLoginSuccessHandler) throws Exception {
+        public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
+            AuthenticationSuccessHandler formLoginSuccessHandler,
+            ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/announcements", "/resources/**", "/login", "/css/**", "/js/**",
@@ -89,11 +91,13 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/announcements", "/api/announcements/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/resources/**", "/api/announcements", "/api/announcements/**")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             );
+
+        http.addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         if (oidcEnabled && !oidcClientId.isBlank() && !oidcClientSecret.isBlank() && !oidcIssuerUri.isBlank()) {
             log.info("OIDC authentication enabled");

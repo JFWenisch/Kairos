@@ -18,7 +18,14 @@ The raw OpenAPI JSON spec is available at `/v3/api-docs`.
 
 ## Authentication
 
-Session-based authentication (cookie) is used. Log in via the browser login form or programmatically:
+Protected endpoints support two authentication methods:
+
+1. **Session cookie** (`JSESSIONID`) from `/login`
+2. **API key JWT** (`Authorization: Bearer <token>`) created in **Admin → API Keys**
+
+### Session-based authentication
+
+Log in via the browser login form or programmatically:
 
 ```bash
 # Obtain a session cookie
@@ -26,7 +33,27 @@ curl -c cookies.txt -X POST http://localhost:8080/login \
   -d "username=admin%40kairos.local&*****"
 ```
 
-> Note: Spring Security CSRF protection is active. Browser-initiated requests include the token automatically. For programmatic access, retrieve the CSRF token from the login page first (look for `<input name="_csrf">`), then include it in POST/PUT/DELETE requests.
+> Note: Spring Security CSRF protection is active for session-based authentication. Browser-initiated requests include the token automatically. For programmatic access with session cookies, retrieve the CSRF token from the login page first (look for `<input name="_csrf">`) and include it in POST/PUT/DELETE requests.
+
+### API key JWT authentication
+
+Admins can create API keys in the Admin panel:
+
+1. Open `Admin → API Keys`
+2. Enter a key name and create it
+3. Copy the token immediately (**shown only once**)
+
+Use the token in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer <api-key-jwt>" http://localhost:8080/api/resources
+```
+
+You can also use the alternative header prefix:
+
+```bash
+Authorization: ApiKey <api-key-jwt>
+```
 
 ### Endpoint access summary
 
@@ -34,14 +61,14 @@ curl -c cookies.txt -X POST http://localhost:8080/login \
 |----------|---------------|
 | `GET /api/resources` | Public |
 | `GET /api/resources/{id}` | Public |
-| `POST /api/resources` | `ADMIN` — or none when *public submission* is enabled |
+| `POST /api/resources` | `ADMIN` |
 | `DELETE /api/resources/{id}` | `ADMIN` |
-| `GET /api/resources/{id}/history` | Any authenticated user |
+| `GET /api/resources/{id}/history` | Any authenticated user (session or API key) |
 | `GET /api/announcements` | Public |
 | `GET /api/announcements/{id}` | Public |
-| `POST /api/announcements` | `ADMIN` |
-| `PUT /api/announcements/{id}` | `ADMIN` |
-| `DELETE /api/announcements/{id}` | `ADMIN` |
+| `POST /api/announcements` | `ADMIN` (session or API key) |
+| `PUT /api/announcements/{id}` | `ADMIN` (session or API key) |
+| `DELETE /api/announcements/{id}` | `ADMIN` (session or API key) |
 
 ---
 
