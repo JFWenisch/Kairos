@@ -7,6 +7,8 @@ import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +57,26 @@ public class ResourceService {
                         resource, PageRequest.of(0, limit)).getContent())
                 .orElse(Collections.emptyList());
     }
+
+        public Page<CheckResult> getHistoryPage(
+            Long resourceId,
+            int page,
+            int size,
+            CheckStatus status,
+            String errorCode,
+            String message
+        ) {
+        PageRequest pageable = PageRequest.of(page, size);
+        return resourceRepository.findById(resourceId)
+            .map(resource -> checkResultRepository.findHistoryFiltered(
+                resource,
+                status,
+                normalizeFilter(errorCode),
+                normalizeFilter(message),
+                pageable
+            ))
+            .orElseGet(() -> new PageImpl<>(Collections.emptyList(), pageable, 0));
+        }
 
     public List<CheckResult> getFullHistory(Long resourceId) {
         return resourceRepository.findById(resourceId)
@@ -134,5 +156,13 @@ public class ResourceService {
 
     public List<MonitoredResource> findByType(ResourceType type) {
         return resourceRepository.findByResourceTypeAndActiveTrue(type);
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
