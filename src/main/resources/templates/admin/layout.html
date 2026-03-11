@@ -62,6 +62,11 @@
                        class="nav-link px-2 py-2 rounded mb-1">
                         <i class="bi bi-people me-2"></i>Users
                     </a>
+                    <a th:href="@{/admin/announcements}"
+                       th:classappend="${#httpServletRequest.requestURI.contains('/announcements')} ? 'active' : ''"
+                       class="nav-link px-2 py-2 rounded mb-1">
+                        <i class="bi bi-megaphone me-2"></i>Announcements
+                    </a>
                 </div>
             </div>
 

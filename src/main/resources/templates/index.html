@@ -19,6 +19,25 @@
         <small class="text-muted">Last 24 hours</small>
     </div>
 
+    <div class="mb-4" th:if="${!#lists.isEmpty(announcements)}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2 class="h5 mb-0"><i class="bi bi-megaphone me-2"></i>Announcements</h2>
+            <a th:href="@{/announcements}" class="small">View all</a>
+        </div>
+        <div class="vstack gap-2">
+            <div th:each="announcement : ${announcements}"
+                 class="announcement-card p-3 rounded border"
+                 th:classappend="${announcement.kind.name() == 'INFORMATION'} ? ' announcement-information' : (${announcement.kind.name() == 'WARNING'} ? ' announcement-warning' : ' announcement-problem')">
+                <div class="announcement-content" th:utext="${announcement.content}"></div>
+                <small class="text-muted d-block mt-2">
+                    by <span th:text="${announcement.createdBy != null && !announcement.createdBy.isBlank()} ? ${announcement.createdBy} : 'Unknown'">Unknown</span>
+                    ·
+                    <span th:text="${announcement.createdAt != null} ? ${#temporals.format(announcement.createdAt, 'yyyy-MM-dd HH:mm')} : '-'">-</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
     <div th:if="${#lists.isEmpty(resources)}" class="text-center py-5">
         <i class="bi bi-emoji-smile display-1 text-muted"></i>
         <p class="text-muted mt-3">No resources being monitored yet.</p>

@@ -2,6 +2,7 @@ package com.jfwendisch.kairos.controller;
 
 import com.jfwendisch.kairos.dto.ResourceViewModel;
 import com.jfwendisch.kairos.entity.MonitoredResource;
+import com.jfwendisch.kairos.service.AnnouncementService;
 import com.jfwendisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class HomeController {
 
     private final ResourceService resourceService;
+    private final AnnouncementService announcementService;
 
     @GetMapping("/")
     public String index(Model model) {
@@ -41,7 +43,14 @@ public class HomeController {
         })).collect(Collectors.toList());
 
         model.addAttribute("resources", viewModels);
+        model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         return "index";
+    }
+
+    @GetMapping("/announcements")
+    public String announcements(Model model) {
+        model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
+        return "announcements";
     }
 
     @GetMapping("/resources/{id}")
