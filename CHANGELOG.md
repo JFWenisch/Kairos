@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.6.0 - 2026-03-11
+
+## [0.6.0](https://github.com/JFWenisch/Kairos/compare/v0.5.0...v0.6.0) (2026-03-11)
+
+
+### Features
+
+* introducing import / export of resources ([19c7738](https://github.com/JFWenisch/Kairos/commit/19c7738626f6ec7af9286371a5e4f9312998686b))
+
+
+### Bug Fixes
+
+* add import / export ([8c54bfc](https://github.com/JFWenisch/Kairos/commit/8c54bfc59203e87b5ff5c50758767157e2c149b8))
+* add import / export ([13a78b8](https://github.com/JFWenisch/Kairos/commit/13a78b8c2fcb32a9da711b7cb79cddeb4d41bc5d))
+
+
+### Documentation
+
+* update documentation regarding import / export functionality ([9e98e54](https://github.com/JFWenisch/Kairos/commit/9e98e541c2e6b7011006c0602ebd2cfbbc98af37))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.6.0
+
+
 ## v0.5.0 - 2026-03-11
 
 ## [0.5.0](https://github.com/JFWenisch/Kairos/compare/v0.4.0...v0.5.0) (2026-03-11)
