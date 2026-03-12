@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.9.0 - 2026-03-12
+
+## [0.9.0](https://github.com/JFWenisch/Kairos/compare/v0.8.1...v0.9.0) (2026-03-12)
+
+
+### Features
+
+* added grouping functionality for resources ([e763b92](https://github.com/JFWenisch/Kairos/commit/e763b92fe9a4f6544ab1e1dab1d72f52212b7959))
+* added grouping functionality for resources ([27550e4](https://github.com/JFWenisch/Kairos/commit/27550e4f603d88efd9a4d773512adb9e40c2947f))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.9.0
+
+
 ## v0.8.1 - 2026-03-12
 
 ### [0.8.1](https://github.com/JFWenisch/Kairos/compare/v0.8.0...v0.8.1) (2026-03-12)
