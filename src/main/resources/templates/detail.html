@@ -28,7 +28,7 @@
             <a th:href="@{/}" class="btn btn-outline-secondary btn-sm detail-back-btn">
                 <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
             </a>
-            <form th:action="@{/resources/{id}/check(id=${vm.resource.id})}" method="post" sec:authorize="hasRole('ADMIN')">
+            <form th:action="@{/resources/{id}/check(id=${vm.resource.id})}" method="post" th:if="${allowCheckNow}">
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="bi bi-lightning-charge me-1"></i>Run Check Now
                 </button>

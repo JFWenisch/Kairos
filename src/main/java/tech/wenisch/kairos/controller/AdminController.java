@@ -46,17 +46,21 @@ public class AdminController {
     public String settings(Model model) {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
+        boolean allowPublicCheckNow = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
+        model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
         model.addAttribute("configs", configs);
         return "admin/settings";
     }
 
     @PostMapping("/settings")
     public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAdd,
+                               @RequestParam(defaultValue = "false") boolean allowPublicCheckNow,
                                RedirectAttributes redirectAttributes) {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
             config.setAllowPublicAdd(allowPublicAdd);
+            config.setAllowPublicCheckNow(allowPublicCheckNow);
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");

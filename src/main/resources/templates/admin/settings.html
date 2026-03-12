@@ -63,6 +63,14 @@
                             </label>
                             <div class="form-text">When enabled, unauthenticated users can add resources via the API.</div>
                         </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="allowPublicCheckNow"
+                                   name="allowPublicCheckNow" th:checked="${allowPublicCheckNow}">
+                            <label class="form-check-label" for="allowPublicCheckNow">
+                                Allow public "Check Now"
+                            </label>
+                            <div class="form-text">When enabled, unauthenticated users can manually trigger a check on any resource detail page.</div>
+                        </div>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save me-1"></i>Save Settings
                         </button>

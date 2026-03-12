@@ -27,6 +27,8 @@ public class ResourceTypeConfig {
 
     private boolean allowPublicAdd;
 
+    private boolean allowPublicCheckNow;
+
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResourceTypeAuth> authentications = new ArrayList<>();
