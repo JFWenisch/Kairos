@@ -6,9 +6,6 @@
 
 ## Screenshots
 
-### Login Page
-![Login](docs/img/login.png)
-
 ### Status Dashboard
 ![Status Dashboard](docs/img/dashboard.png)
 
