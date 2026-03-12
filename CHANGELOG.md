@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.8.1 - 2026-03-12
+
+### [0.8.1](https://github.com/JFWenisch/Kairos/compare/v0.8.0...v0.8.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* minor updates to UI including adding of logo and display of version in the bottom right ([f345b7b](https://github.com/JFWenisch/Kairos/commit/f345b7bd2d6b6494a3650c53dbf103319db0f500))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.8.1
+
+
 ## v0.7.0 - 2026-03-11
 
 ## [0.7.0](https://github.com/JFWenisch/Kairos/compare/v0.6.0...v0.7.0) (2026-03-11)
