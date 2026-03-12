@@ -10,6 +10,8 @@ public class ResourceDTO {
     private String name;
     private ResourceType resourceType;
     private String target;
+    private Long groupId;
+    private Integer displayOrder;
     @JsonProperty("skipTLS")
     @JsonAlias("skipTls")
     private boolean skipTls;

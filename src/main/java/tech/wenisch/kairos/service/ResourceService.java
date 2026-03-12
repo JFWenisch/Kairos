@@ -3,9 +3,11 @@ package tech.wenisch.kairos.service;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.ResourceGroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -22,13 +24,14 @@ public class ResourceService {
 
     private final MonitoredResourceRepository resourceRepository;
     private final CheckResultRepository checkResultRepository;
+    private final ResourceGroupRepository resourceGroupRepository;
 
     public List<MonitoredResource> findAllActive() {
-        return resourceRepository.findByActiveTrue();
+        return resourceRepository.findAllActiveForLanding();
     }
 
     public List<MonitoredResource> findAll() {
-        return resourceRepository.findAll();
+        return resourceRepository.findAllForAdmin();
     }
 
     public Optional<MonitoredResource> findById(Long id) {
@@ -158,11 +161,30 @@ public class ResourceService {
         return resourceRepository.findByResourceTypeAndActiveTrue(type);
     }
 
+    @Transactional
+    public int clearGroupAssignment(Long groupId) {
+        List<MonitoredResource> resources = resourceRepository.findByGroup_Id(groupId);
+        for (MonitoredResource resource : resources) {
+            resource.setGroup(null);
+        }
+        resourceRepository.saveAll(resources);
+        return resources.size();
+    }
+
     private String normalizeFilter(String value) {
         if (value == null) {
             return null;
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    @Transactional
+    public ResourceGroup findOrCreateGroupByName(String groupName) {
+        return resourceGroupRepository.findByNameIgnoreCase(groupName)
+                .orElseGet(() -> resourceGroupRepository.save(ResourceGroup.builder()
+                        .name(groupName)
+                        .displayOrder(0)
+                        .build()));
     }
 }

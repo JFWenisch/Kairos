@@ -11,6 +11,9 @@ public record ResourceDetailsDTO(
         String name,
         ResourceType resourceType,
         String target,
+        Long groupId,
+        String groupName,
+        int displayOrder,
         @JsonProperty("skipTLS")
         boolean skipTls,
         boolean active,

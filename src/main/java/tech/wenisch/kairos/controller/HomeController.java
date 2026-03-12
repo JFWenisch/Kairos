@@ -1,9 +1,11 @@
 package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.ResourceViewModel;
+import tech.wenisch.kairos.dto.ResourceGroupViewModel;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
@@ -22,10 +24,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
@@ -41,24 +44,43 @@ public class HomeController {
     public String index(Model model) {
         List<MonitoredResource> resources = resourceService.findAllActive();
 
-        List<ResourceViewModel> viewModels = resources.stream().map(resource -> {
-            String currentStatus = resourceService.getCurrentStatus(resource);
-            List<String> timelineBlocks = resourceService.getTimelineBlocks(resource);
-            double uptime = resourceService.getUptimePercentage(resource, 24);
+        List<ResourceViewModel> allViewModels = resources.stream()
+                .map(this::toResourceViewModel)
+                .toList();
 
-            return ResourceViewModel.builder()
-                    .resource(resource)
-                    .currentStatus(currentStatus)
-                    .timelineBlocks(timelineBlocks)
-                    .uptimePercentage(uptime)
-                    .build();
-        }).sorted(Comparator.comparing(vm -> {
-            if ("not-available".equals(vm.getCurrentStatus())) return 0;
-            if ("available".equals(vm.getCurrentStatus())) return 2;
-            return 1;
-        })).collect(Collectors.toList());
+        List<ResourceViewModel> ungroupedResources = new ArrayList<>();
+        Map<Long, ResourceGroup> groupsById = new LinkedHashMap<>();
+        Map<Long, List<ResourceViewModel>> groupedResourceMap = new LinkedHashMap<>();
 
-        model.addAttribute("resources", viewModels);
+        for (ResourceViewModel viewModel : allViewModels) {
+            ResourceGroup group = viewModel.getResource().getGroup();
+            if (group == null) {
+                ungroupedResources.add(viewModel);
+                continue;
+            }
+            groupsById.putIfAbsent(group.getId(), group);
+            groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(viewModel);
+        }
+
+        List<ResourceGroupViewModel> groupedResources = groupedResourceMap.entrySet().stream()
+                .map(entry -> {
+                    List<ResourceViewModel> groupItems = entry.getValue();
+                    long availableCount = groupItems.stream().filter(vm -> "available".equals(vm.getCurrentStatus())).count();
+                    long downCount = groupItems.stream().filter(vm -> "not-available".equals(vm.getCurrentStatus())).count();
+                    long unknownCount = groupItems.stream().filter(vm -> "unknown".equals(vm.getCurrentStatus())).count();
+                    return ResourceGroupViewModel.builder()
+                            .group(groupsById.get(entry.getKey()))
+                            .resources(groupItems)
+                            .availableCount(availableCount)
+                            .downCount(downCount)
+                            .unknownCount(unknownCount)
+                            .build();
+                })
+                .toList();
+
+        model.addAttribute("allResources", allViewModels);
+        model.addAttribute("ungroupedResources", ungroupedResources);
+        model.addAttribute("groupedResources", groupedResources);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
         model.addAttribute("resourceTypes", ResourceType.values());
@@ -211,5 +233,18 @@ public class HomeController {
 
     private boolean isPublicCheckNowAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+    }
+
+    private ResourceViewModel toResourceViewModel(MonitoredResource resource) {
+        String currentStatus = resourceService.getCurrentStatus(resource);
+        List<String> timelineBlocks = resourceService.getTimelineBlocks(resource);
+        double uptime = resourceService.getUptimePercentage(resource, 24);
+
+        return ResourceViewModel.builder()
+                .resource(resource)
+                .currentStatus(currentStatus)
+                .timelineBlocks(timelineBlocks)
+                .uptimePercentage(uptime)
+                .build();
     }
 }

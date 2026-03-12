@@ -26,7 +26,7 @@ public class MetricsService {
 
     @PostConstruct
     public void registerMetrics() {
-        List<MonitoredResource> resources = resourceRepository.findByActiveTrue();
+        List<MonitoredResource> resources = resourceRepository.findAllActiveForLanding();
         for (MonitoredResource resource : resources) {
             registerResourceMetric(resource);
         }

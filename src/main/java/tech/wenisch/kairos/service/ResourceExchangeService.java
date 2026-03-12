@@ -93,6 +93,15 @@ public class ResourceExchangeService {
             resource.setTarget(target.trim());
             resource.setSkipTls(readBoolean(node, false, "skipTLS", "skipTls"));
             resource.setActive(readBoolean(node, "active", true));
+            resource.setDisplayOrder(readInt(node, "displayOrder", "order").orElse(0));
+
+            String groupName = firstText(node, "groupName", "group");
+            if (groupName != null && !groupName.isBlank()) {
+                // Keep YAML compatibility simple by importing group names as plain labels when available.
+                resource.setGroup(resourceService.findOrCreateGroupByName(groupName.trim()));
+            } else {
+                resource.setGroup(null);
+            }
 
             if (isNew) {
                 readDateTime(node, "createdAt").ifPresent(resource::setCreatedAt);
@@ -118,6 +127,8 @@ public class ResourceExchangeService {
         node.put("target", resource.getTarget());
         node.put("skipTLS", resource.isSkipTls());
         node.put("active", resource.isActive());
+        node.put("displayOrder", resource.getDisplayOrder());
+        node.put("groupName", resource.getGroup() != null ? resource.getGroup().getName() : null);
         node.put("createdAt", resource.getCreatedAt());
         return node;
     }
@@ -189,6 +200,26 @@ public class ResourceExchangeService {
         } catch (DateTimeParseException ex) {
             return Optional.empty();
         }
+    }
+
+    private Optional<Integer> readInt(JsonNode node, String... names) {
+        for (String name : names) {
+            JsonNode candidate = node.path(name);
+            if (!candidate.isMissingNode() && !candidate.isNull()) {
+                if (candidate.isInt() || candidate.isLong()) {
+                    return Optional.of(candidate.asInt());
+                }
+                String value = candidate.asText();
+                if (value != null && !value.isBlank()) {
+                    try {
+                        return Optional.of(Integer.parseInt(value.trim()));
+                    } catch (NumberFormatException ignored) {
+                        return Optional.empty();
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private ObjectMapper yamlMapper() {

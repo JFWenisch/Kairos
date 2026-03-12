@@ -3,11 +3,33 @@ package tech.wenisch.kairos.repository;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
 public interface MonitoredResourceRepository extends JpaRepository<MonitoredResource, Long> {
-    List<MonitoredResource> findByActiveTrue();
+    @Query("""
+            select r from MonitoredResource r
+            left join fetch r.group g
+            where r.active = true
+            order by case when g.id is null then 0 else 1 end,
+                     g.displayOrder asc,
+                     r.displayOrder asc,
+                     lower(r.name) asc
+            """)
+    List<MonitoredResource> findAllActiveForLanding();
+
+    @Query("""
+            select r from MonitoredResource r
+            left join fetch r.group g
+            order by case when g.id is null then 0 else 1 end,
+                     g.displayOrder asc,
+                     r.displayOrder asc,
+                     lower(r.name) asc
+            """)
+    List<MonitoredResource> findAllForAdmin();
+
     List<MonitoredResource> findByResourceTypeAndActiveTrue(ResourceType resourceType);
+    List<MonitoredResource> findByGroup_Id(Long groupId);
 }
