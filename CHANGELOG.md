@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.9.2 - 2026-03-12
+
+### [0.9.2](https://github.com/JFWenisch/Kairos/compare/v0.9.1...v0.9.2) (2026-03-12)
+
+
+### Documentation
+
+* Remove login page screenshot ([6293f94](https://github.com/JFWenisch/Kairos/commit/6293f94cd80543dd6bf1dbc092615d55da9391bd))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.9.2
+
+
 ## v0.9.0 - 2026-03-12
 
 ## [0.9.0](https://github.com/JFWenisch/Kairos/compare/v0.8.1...v0.9.0) (2026-03-12)
