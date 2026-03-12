@@ -126,20 +126,15 @@ Check intervals and parallelism are configured per resource type via **Admin →
 
 ---
 
-## Docker Socket Access
+## Docker / OCI Registry Checks (Socketless)
 
-For Docker image monitoring, Kairos needs access to the Docker daemon. By default it uses the system default (`unix:///var/run/docker.sock` on Linux/macOS).
+Kairos checks Docker resources directly against the registry HTTP API and validates pullability by probing manifest and blob endpoints. It does **not** require Docker Engine, Podman, CRI access, or a mounted socket.
 
-When running Kairos in a container, mount the socket:
+For hardened Kubernetes deployments, this means no `/var/run/docker.sock` mount is needed.
 
-```yaml
-kairos:
-  image: ghcr.io/jfwendisch/kairos:latest
-  volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-```
+If a registry uses custom or self-signed TLS certificates, enable `skipTLS` on the resource to bypass certificate and hostname validation for that resource's HTTPS check.
 
-> ⚠️ Exposing the Docker socket grants significant privileges. Use a Docker socket proxy (e.g. [Tecnativa/docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy)) in production.
+For the exact request flow and auth behavior, see [docker-pullability.md](docker-pullability.md).
 
 ---
 

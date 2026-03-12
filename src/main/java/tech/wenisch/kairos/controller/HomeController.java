@@ -8,6 +8,7 @@ import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 public class HomeController {
 
     private final ResourceService resourceService;
+    private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
@@ -94,6 +96,18 @@ public class HomeController {
     public String announcements(Model model) {
         model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
         return "announcements";
+    }
+
+    @PostMapping("/resources/{id}/check")
+    public String runManualCheck(@PathVariable Long id,
+                                 RedirectAttributes redirectAttributes) {
+        boolean triggered = checkExecutorService.runImmediateCheck(id);
+        if (triggered) {
+            redirectAttributes.addFlashAttribute("successMessage", "Check started immediately.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Resource not found, inactive, or unsupported type.");
+        }
+        return "redirect:/resources/" + id;
     }
 
         @GetMapping("/resources/{id}")

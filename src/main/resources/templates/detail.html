@@ -14,10 +14,26 @@
 <nav th:replace="~{layout :: navbar}"></nav>
 
 <div class="container-fluid py-4 resource-detail detail-shell" th:attr="data-resource-id=${vm.resource.id}">
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${successMessage}">Check started immediately.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${errorMessage}">Could not start check.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="mb-3">
-        <a th:href="@{/}" class="btn btn-outline-secondary btn-sm detail-back-btn">
-            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
-        </a>
+        <div class="d-flex gap-2 align-items-center">
+            <a th:href="@{/}" class="btn btn-outline-secondary btn-sm detail-back-btn">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+            <form th:action="@{/resources/{id}/check(id=${vm.resource.id})}" method="post" sec:authorize="hasRole('ADMIN')">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-lightning-charge me-1"></i>Run Check Now
+                </button>
+            </form>
+        </div>
     </div>
 
     <div class="row mb-4">
