@@ -82,7 +82,7 @@ Any HTTP resource whose target starts with `https://internal.example.com` will i
 
 ### Docker Checks
 
-When a matching credential is found, Kairos runs `docker login` against the resolved registry **before** attempting to pull the image. The password is supplied via stdin (not as a command-line argument) to keep it out of the process list.
+When a matching credential is found, Kairos sends `Authorization: Basic ...` for registry API requests and token endpoint requests when Bearer-token negotiation is required. No `docker login` command is executed. Kairos then probes blob download access to validate pullability, not only manifest visibility.
 
 The registry is extracted from the image reference:
 
@@ -101,7 +101,7 @@ The registry is extracted from the image reference:
 | Username | `github-username` |
 | Password | `ghp_yourPersonalAccessToken` |
 
-Any Docker resource whose target starts with `ghcr.io` will trigger `docker login ghcr.io` before the pull.
+Any Docker resource whose target starts with `ghcr.io` will use those credentials for registry authentication.
 
 **Example setup for a self-hosted registry:**
 
@@ -112,7 +112,9 @@ Any Docker resource whose target starts with `ghcr.io` will trigger `docker logi
 | Username | `deploy` |
 | Password | `registrypassword` |
 
-> **Note:** `docker login` writes credentials to `~/.docker/config.json` on the host. Ensure the Kairos process has a writable home directory when running inside a container.
+Any Docker resource whose target starts with `registry.example.com` will use those credentials for registry authentication.
+
+> **Note:** Registry checks are socketless and do not need local Docker/Podman binaries.
 
 ---
 

@@ -3,12 +3,14 @@ package tech.wenisch.kairos.service;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,7 @@ public class CheckExecutorService {
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final CheckResultRepository checkResultRepository;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
 
@@ -36,11 +39,13 @@ public class CheckExecutorService {
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
             ResourceStatusStreamService resourceStatusStreamService,
+            CheckResultRepository checkResultRepository,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
         this.resourceStatusStreamService = resourceStatusStreamService;
+        this.checkResultRepository = checkResultRepository;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
     }
@@ -82,6 +87,31 @@ public class CheckExecutorService {
                 log.debug("Dispatched checks for type {} ({} resources)", typeName, resources.size());
             }
         }
+    }
+
+    @Transactional
+    public boolean runImmediateCheck(Long resourceId) {
+        return resourceRepository.findById(resourceId)
+                .map(this::runImmediateCheck)
+                .orElse(false);
+    }
+
+    @Transactional
+    public boolean runImmediateCheck(MonitoredResource resource) {
+        if (resource == null || !resource.isActive()) {
+            return false;
+        }
+
+        resourceStatusStreamService.publishResourceChecking(resource);
+        if (resource.getResourceType() == ResourceType.HTTP) {
+            httpCheckService.check(resource);
+            return true;
+        }
+        if (resource.getResourceType() == ResourceType.DOCKER) {
+            dockerCheckService.check(resource);
+            return true;
+        }
+        return false;
     }
 
     /**

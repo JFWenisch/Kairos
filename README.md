@@ -23,10 +23,11 @@
 ## Features
 
 - **HTTP monitoring** — HTTP GET checks with configurable interval and parallelism
-- **Docker image monitoring** — pulls an image and verifies it is accessible from the configured registry
-- **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks run `docker login` before pulling
+- **Docker image monitoring** — validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
+- **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks use credentials for registry API/token requests
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
+- **Manual instant checks** — admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
 - **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **YAML import / export** — export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** — publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
@@ -45,7 +46,7 @@
 
 - Java 17+
 - Maven 3.8+ (or use the included `./mvnw`)
-- Docker socket accessible at the default path if you want Docker image checks
+- Network access to target Docker/OCI registries if you want Docker image checks
 
 ### Run from source
 
@@ -157,6 +158,7 @@ See [docs/announcements.md](docs/announcements.md) for announcement management a
 - [docs/authentication.md](docs/authentication.md) — resource check authentication and credential matching
 - [docs/configuration.md](docs/configuration.md) — runtime configuration, database setup and OIDC
 - [docs/importexport.md](docs/importexport.md) — YAML import/export workflow, format and compatibility notes
+- [docs/docker-pullability.md](docs/docker-pullability.md) — socketless Docker/OCI pullability validation behavior
 - [docs/announcements.md](docs/announcements.md) — announcement features, permissions and lifecycle
 
 See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.

@@ -151,7 +151,7 @@ Add a new resource to monitor.
 | `name` | string | Any display name | Yes |
 | `resourceType` | string | `HTTP` or `DOCKER` | Yes |
 | `target` | string | Full URL or Docker image reference | Yes |
-| `skipTLS` | boolean | `true` or `false`; only applies to `HTTP` resources | No |
+| `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections (HTTP checks and Docker registry checks) | No |
 
 **Response** `200 OK` — the created resource object
 

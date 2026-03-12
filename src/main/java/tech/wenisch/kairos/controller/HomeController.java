@@ -8,9 +8,11 @@ import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 public class HomeController {
 
     private final ResourceService resourceService;
+    private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
@@ -96,6 +99,25 @@ public class HomeController {
         return "announcements";
     }
 
+    @PostMapping("/resources/{id}/check")
+    public String runManualCheck(@PathVariable Long id,
+                                 Authentication authentication,
+                                 RedirectAttributes redirectAttributes) {
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !isPublicCheckNowAllowed()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Manual checks are not available for public users.");
+            return "redirect:/resources/" + id;
+        }
+        boolean triggered = checkExecutorService.runImmediateCheck(id);
+        if (triggered) {
+            redirectAttributes.addFlashAttribute("successMessage", "Check started immediately.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Resource not found, inactive, or unsupported type.");
+        }
+        return "redirect:/resources/" + id;
+    }
+
         @GetMapping("/resources/{id}")
         public String detail(
             @PathVariable Long id,
@@ -104,8 +126,13 @@ public class HomeController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String message,
+            Authentication authentication,
             Model model
         ) {
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        model.addAttribute("allowCheckNow", isAdmin || isPublicCheckNowAllowed());
+
         return resourceService.findById(id).map(resource -> {
             int sanitizedPage = Math.max(0, page);
             int sanitizedSize = normalizePageSize(size);
@@ -177,5 +204,9 @@ public class HomeController {
 
     private boolean isPublicAddAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
+    }
+
+    private boolean isPublicCheckNowAllowed() {
+        return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
     }
 }
