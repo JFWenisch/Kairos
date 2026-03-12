@@ -139,6 +139,8 @@
 
 .dashboard-shell {
     max-width: 1360px;
+    position: relative;
+    padding-bottom: 2rem;
 }
 
 .dashboard-hero {
@@ -235,6 +237,62 @@
     overflow: hidden;
 }
 
+.grouped-resource-accordion .accordion-item {
+    border: 1px solid var(--landing-border);
+    border-radius: 1rem;
+    background-color: var(--landing-surface-soft);
+    overflow: hidden;
+}
+
+.grouped-resource-accordion .accordion-button {
+    background: transparent;
+    color: var(--landing-text);
+    border-bottom: 1px solid var(--landing-border-soft);
+}
+
+.grouped-resource-accordion .group-header-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-right: 0.8rem;
+}
+
+.grouped-resource-accordion .accordion-button:not(.collapsed) {
+    background: var(--landing-surface);
+    box-shadow: none;
+}
+
+.grouped-resource-accordion .accordion-body {
+    background-color: transparent;
+}
+
+.group-status-summary .badge {
+    min-width: 2rem;
+}
+
+.resource-sort-item {
+    user-select: none;
+}
+
+.resource-sort-list {
+    min-height: 3.2rem;
+}
+
+.resource-sort-item .drag-handle {
+    cursor: grab;
+}
+
+.resource-sort-item.is-dragging {
+    opacity: 0.55;
+    background-color: rgba(13, 202, 240, 0.08);
+}
+
+.empty-drop-hint {
+    border: 1px dashed rgba(13, 202, 240, 0.35);
+    border-radius: 0.35rem;
+    margin: 0.6rem;
+}
+
 .landing-modern .resource-row {
     border-bottom: 1px solid var(--landing-border-soft);
     transition: background-color 0.2s ease;
@@ -262,10 +320,9 @@
 }
 
 .landing-credit {
-    position: fixed;
+    position: absolute;
     right: 12px;
     bottom: 5px;
-    z-index: 10;
     text-align: right;
     white-space: nowrap;
     font-size: 0.74rem;

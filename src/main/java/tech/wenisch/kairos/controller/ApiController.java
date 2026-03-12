@@ -6,7 +6,9 @@ import tech.wenisch.kairos.dto.ResourceDetailsDTO;
 import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,6 +44,7 @@ import java.util.Optional;
 public class ApiController {
 
     private final ResourceService resourceService;
+    private final ResourceGroupService resourceGroupService;
     private final AnnouncementService announcementService;
     private final ResourceStatusStreamService resourceStatusStreamService;
 
@@ -96,6 +99,9 @@ public class ApiController {
                             resource.getName(),
                             resource.getResourceType(),
                             resource.getTarget(),
+                            resource.getGroup() != null ? resource.getGroup().getId() : null,
+                            resource.getGroup() != null ? resource.getGroup().getName() : null,
+                            resource.getDisplayOrder(),
                             resource.isSkipTls(),
                             resource.isActive(),
                             resource.getCreatedAt(),
@@ -129,11 +135,18 @@ public class ApiController {
     })
     @PostMapping("/resources")
     public ResponseEntity<MonitoredResource> addResource(@RequestBody ResourceDTO dto) {
+        ResourceGroup group = null;
+        if (dto.getGroupId() != null) {
+            group = resourceGroupService.findById(dto.getGroupId()).orElse(null);
+        }
+
         MonitoredResource resource = MonitoredResource.builder()
                 .name(dto.getName())
                 .resourceType(dto.getResourceType())
                 .target(dto.getTarget())
                 .skipTls(dto.isSkipTls())
+                .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
+                .group(group)
                 .active(true)
                 .build();
         return ResponseEntity.ok(resourceService.save(resource));

@@ -1,11 +1,13 @@
 package tech.wenisch.kairos.controller;
 
+import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
 import tech.wenisch.kairos.entity.*;
 import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApiKeyService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
+import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -34,6 +41,7 @@ public class AdminController {
     private final AnnouncementService announcementService;
     private final ApiKeyService apiKeyService;
     private final ResourceExchangeService resourceExchangeService;
+    private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
 
@@ -69,9 +77,113 @@ public class AdminController {
 
     @GetMapping("/resources")
     public String resources(Model model) {
-        model.addAttribute("resources", resourceService.findAll());
+        List<MonitoredResource> resources = resourceService.findAll();
+        List<ResourceGroup> groups = resourceGroupService.findAllOrdered();
+
+        model.addAttribute("resources", resources);
+        model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
+        model.addAttribute("adminResourceGroups", buildAdminResourceGroups(resources, groups));
         model.addAttribute("resourceTypes", ResourceType.values());
         return "admin/resources";
+    }
+
+    @PostMapping("/resources/reorder")
+    public String reorderResources(@RequestParam(required = false) Long groupId,
+                                   @RequestParam String orderedResourceIds,
+                                   RedirectAttributes redirectAttributes) {
+        if (orderedResourceIds == null || orderedResourceIds.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No resource order provided.");
+            return "redirect:/admin/resources";
+        }
+
+        Map<Long, MonitoredResource> resourcesById = resourceService.findAll().stream()
+                .collect(Collectors.toMap(MonitoredResource::getId, r -> r));
+
+        ResourceGroup targetGroup = resolveGroup(groupId);
+        int updated = 0;
+        int reassigned = 0;
+        int nextOrder = 0;
+        String[] ids = orderedResourceIds.split(",");
+
+        for (String rawId : ids) {
+            String trimmed = rawId.trim();
+            if (trimmed.isBlank()) {
+                continue;
+            }
+
+            Long resourceId;
+            try {
+                resourceId = Long.parseLong(trimmed);
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+
+            MonitoredResource resource = resourcesById.get(resourceId);
+            if (resource == null) {
+                continue;
+            }
+
+            Long resourceGroupId = resource.getGroup() != null ? resource.getGroup().getId() : null;
+            if (!Objects.equals(resourceGroupId, groupId)) {
+                resource.setGroup(targetGroup);
+                reassigned++;
+            }
+
+            resource.setDisplayOrder(nextOrder);
+            resourceService.save(resource);
+            nextOrder += 10;
+            updated++;
+        }
+
+        redirectAttributes.addFlashAttribute(
+                "successMessage",
+                "Updated order for " + updated + " resources"
+                        + (reassigned > 0 ? " and reassigned " + reassigned + "." : ".")
+        );
+        return "redirect:/admin/resources";
+    }
+
+    @PostMapping("/resource-groups/add")
+    public String addResourceGroup(@RequestParam String name,
+                                   @RequestParam(defaultValue = "0") int displayOrder,
+                                   RedirectAttributes redirectAttributes) {
+        if (name == null || name.isBlank()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Group name is required.");
+            return "redirect:/admin/resources";
+        }
+
+        ResourceGroup group = ResourceGroup.builder()
+                .name(name.trim())
+                .displayOrder(displayOrder)
+                .build();
+        resourceGroupService.save(group);
+        redirectAttributes.addFlashAttribute("successMessage", "Group added: " + group.getName());
+        return "redirect:/admin/resources";
+    }
+
+    @PostMapping("/resource-groups/update/{id}")
+    public String updateResourceGroup(@PathVariable Long id,
+                                      @RequestParam String name,
+                                      @RequestParam(defaultValue = "0") int displayOrder,
+                                      RedirectAttributes redirectAttributes) {
+        resourceGroupService.findById(id).ifPresent(group -> {
+            group.setName(name);
+            group.setDisplayOrder(displayOrder);
+            resourceGroupService.save(group);
+            redirectAttributes.addFlashAttribute("successMessage", "Group updated: " + group.getName());
+        });
+        return "redirect:/admin/resources";
+    }
+
+    @PostMapping("/resource-groups/delete/{id}")
+    public String deleteResourceGroup(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        int unassignedCount = resourceService.clearGroupAssignment(id);
+        resourceGroupService.findById(id).ifPresent(group -> {
+            resourceGroupService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Group deleted: " + group.getName() + " (" + unassignedCount + " resources unassigned)");
+        });
+        return "redirect:/admin/resources";
     }
 
     @GetMapping("/resources/export")
@@ -110,16 +222,34 @@ public class AdminController {
                               @RequestParam ResourceType resourceType,
                               @RequestParam String target,
                               @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                              @RequestParam(required = false) Long groupId,
+                              @RequestParam(defaultValue = "0") int displayOrder,
                               RedirectAttributes redirectAttributes) {
         MonitoredResource resource = MonitoredResource.builder()
                 .name(name)
                 .resourceType(resourceType)
                 .target(target)
-            .skipTls(skipTls)
+                .skipTls(skipTls)
                 .active(true)
+                .displayOrder(displayOrder)
+                .group(resolveGroup(groupId))
                 .build();
         resourceService.save(resource);
         redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
+        return "redirect:/admin/resources";
+    }
+
+    @PostMapping("/resources/update/{id}")
+    public String updateResourceGrouping(@PathVariable Long id,
+                                         @RequestParam(required = false) Long groupId,
+                                         @RequestParam(defaultValue = "0") int displayOrder,
+                                         RedirectAttributes redirectAttributes) {
+        resourceService.findById(id).ifPresent(resource -> {
+            resource.setGroup(resolveGroup(groupId));
+            resource.setDisplayOrder(displayOrder);
+            resourceService.save(resource);
+            redirectAttributes.addFlashAttribute("successMessage", "Resource order updated: " + resource.getName());
+        });
         return "redirect:/admin/resources";
     }
 
@@ -328,5 +458,46 @@ public class AdminController {
             return null;
         }
         return LocalDateTime.parse(value);
+    }
+
+    private ResourceGroup resolveGroup(Long groupId) {
+        if (groupId == null || groupId <= 0) {
+            return null;
+        }
+        return resourceGroupService.findById(groupId).orElse(null);
+    }
+
+    private List<AdminResourceGroupViewModel> buildAdminResourceGroups(List<MonitoredResource> resources,
+                                                                        List<ResourceGroup> groups) {
+        Map<Long, List<MonitoredResource>> byGroupId = new LinkedHashMap<>();
+        List<MonitoredResource> ungrouped = new ArrayList<>();
+
+        for (MonitoredResource resource : resources) {
+            if (resource.getGroup() == null) {
+                ungrouped.add(resource);
+                continue;
+            }
+            byGroupId.computeIfAbsent(resource.getGroup().getId(), ignored -> new ArrayList<>()).add(resource);
+        }
+
+        List<AdminResourceGroupViewModel> result = new ArrayList<>();
+        result.add(AdminResourceGroupViewModel.builder()
+                .groupId(null)
+                .groupName("Ungrouped")
+                .ungrouped(true)
+                .resources(ungrouped)
+                .build());
+
+        for (ResourceGroup group : groups) {
+            List<MonitoredResource> groupedResources = byGroupId.getOrDefault(group.getId(), new ArrayList<>());
+            result.add(AdminResourceGroupViewModel.builder()
+                    .groupId(group.getId())
+                    .groupName(group.getName())
+                    .ungrouped(false)
+                    .resources(groupedResources)
+                    .build());
+        }
+
+        return result;
     }
 }

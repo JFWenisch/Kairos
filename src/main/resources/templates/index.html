@@ -39,22 +39,22 @@
         </div>
     </div>
 
-    <div class="status-snapshot mb-4" th:unless="${#lists.isEmpty(resources)}">
+    <div class="status-snapshot mb-4" th:unless="${#lists.isEmpty(allResources)}">
         <div class="snapshot-item">
             <small>Total</small>
-            <strong th:text="${#lists.size(resources)}">0</strong>
+            <strong th:text="${#lists.size(allResources)}">0</strong>
         </div>
         <div class="snapshot-item snapshot-ok">
             <small>Available</small>
-            <strong th:text="${#lists.size(resources.?[currentStatus == 'available'])}">0</strong>
+            <strong th:text="${#lists.size(allResources.?[currentStatus == 'available'])}">0</strong>
         </div>
         <div class="snapshot-item snapshot-down">
             <small>Down</small>
-            <strong th:text="${#lists.size(resources.?[currentStatus == 'not-available'])}">0</strong>
+            <strong th:text="${#lists.size(allResources.?[currentStatus == 'not-available'])}">0</strong>
         </div>
         <div class="snapshot-item snapshot-unknown">
             <small>Unknown</small>
-            <strong th:text="${#lists.size(resources.?[currentStatus == 'unknown'])}">0</strong>
+            <strong th:text="${#lists.size(allResources.?[currentStatus == 'unknown'])}">0</strong>
         </div>
     </div>
 
@@ -77,7 +77,7 @@
         </div>
     </div>
 
-    <div th:if="${#lists.isEmpty(resources)}" class="text-center py-5">
+    <div th:if="${#lists.isEmpty(ungroupedResources) and #lists.isEmpty(groupedResources)}" class="text-center py-5">
         <i class="bi bi-emoji-smile display-1 text-muted"></i>
         <p class="text-muted mt-3">No resources being monitored yet.</p>
         <button type="button" class="btn btn-primary" th:if="${allowPublicAdd}"
@@ -89,9 +89,10 @@
         </a>
     </div>
 
-    <div class="card resource-panel" th:unless="${#lists.isEmpty(resources)}">
+    <div class="card resource-panel mb-4" th:unless="${#lists.isEmpty(ungroupedResources)}">
         <div class="card-body p-0">
-            <div th:each="vm : ${resources}" class="resource-row p-3" th:attr="data-resource-id=${vm.resource.id}">
+            <div th:each="vm : ${ungroupedResources}" class="resource-row p-3"
+                 th:attr="data-resource-id=${vm.resource.id},data-group-id='ungrouped'">
                 <div class="row align-items-center">
                     <div class="col-md-3">
                         <div class="d-flex align-items-center">
@@ -119,6 +120,66 @@
                         <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
                         <br>
                         <small class="text-muted">uptime</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion grouped-resource-accordion" id="groupedResourceAccordion" th:unless="${#lists.isEmpty(groupedResources)}">
+        <div class="accordion-item mb-3" th:each="groupVm : ${groupedResources}"
+             th:attr="data-group-id=${groupVm.group.id}">
+            <h2 class="accordion-header" th:id="'group-heading-' + ${groupVm.group.id}">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                        th:attr="data-bs-target='#group-collapse-' + ${groupVm.group.id},aria-controls='group-collapse-' + ${groupVm.group.id}">
+                  <span class="group-header-content">
+                    <span class="fw-semibold me-3" th:text="${groupVm.group.name}">Group Name</span>
+                    <span class="group-status-summary ms-auto">
+                        <span class="badge text-bg-success me-1" th:attr="data-group-counter='available',data-group-id=${groupVm.group.id}"
+                            th:text="${groupVm.availableCount}">0</span>
+                        <span class="badge text-bg-danger me-1" th:attr="data-group-counter='not-available',data-group-id=${groupVm.group.id}"
+                            th:text="${groupVm.downCount}">0</span>
+                        <span class="badge text-bg-secondary" th:attr="data-group-counter='unknown',data-group-id=${groupVm.group.id}"
+                            th:text="${groupVm.unknownCount}">0</span>
+                    </span>
+                  </span>
+                </button>
+            </h2>
+            <div class="accordion-collapse collapse show"
+                 th:id="'group-collapse-' + ${groupVm.group.id}"
+                 th:attr="aria-labelledby='group-heading-' + ${groupVm.group.id}">
+                <div class="accordion-body p-0">
+                    <div class="resource-row p-3" th:each="vm : ${groupVm.resources}"
+                         th:attr="data-resource-id=${vm.resource.id},data-group-id=${groupVm.group.id}">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <span data-role="status-dot" th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                                    <div>
+                                        <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                                           class="text-decoration-none fw-semibold"
+                                           th:text="${vm.resource.name}">Resource Name</a>
+                                        <div class="resource-subline">
+                                            <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
+                                            <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
+                                                   th:text="${vm.resource.target}">target</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="timeline-container">
+                                    <span th:each="block : ${vm.timelineBlocks}"
+                                          th:class="'timeline-block ' + ${block}"
+                                          th:title="${block}"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end resource-score">
+                                <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                                <br>
+                                <small class="text-muted">uptime</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

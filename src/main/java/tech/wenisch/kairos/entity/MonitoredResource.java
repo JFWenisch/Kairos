@@ -27,7 +27,15 @@ public class MonitoredResource {
     @JsonAlias("skipTls")
     private boolean skipTls;
 
+    @Builder.Default
     private boolean active = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_group_id")
+    private ResourceGroup group;
+
+    @Builder.Default
+    private int displayOrder = 0;
 
     private LocalDateTime createdAt;
 }
