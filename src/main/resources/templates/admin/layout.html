@@ -14,8 +14,9 @@
 <div th:fragment="adminLayout(title, content)">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" th:href="@{/}">
-                <i class="bi bi-clock-history me-2"></i>Kairos
+            <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
+                <img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2">
+                <span>Kairos</span>
             </a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto align-items-center">
@@ -47,6 +48,11 @@
                        class="nav-link px-2 py-2 rounded mb-1">
                         <i class="bi bi-sliders me-2"></i>General Settings
                     </a>
+                    <a th:href="@{/admin/announcements}"
+                       th:classappend="${#httpServletRequest.requestURI.contains('/announcements')} ? 'active' : ''"
+                       class="nav-link px-2 py-2 rounded mb-1">
+                        <i class="bi bi-megaphone me-2"></i>Announcements
+                    </a>
                     <a th:href="@{/admin/resources}"
                        th:classappend="${#httpServletRequest.requestURI.contains('/admin/resources')} ? 'active' : ''"
                        class="nav-link px-2 py-2 rounded mb-1">
@@ -62,11 +68,7 @@
                        class="nav-link px-2 py-2 rounded mb-1">
                         <i class="bi bi-people me-2"></i>Users
                     </a>
-                    <a th:href="@{/admin/announcements}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/announcements')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-megaphone me-2"></i>Announcements
-                    </a>
+                    
                           <a th:href="@{/admin/api-keys}"
                               th:classappend="${#httpServletRequest.requestURI.contains('/api-keys')} ? 'active' : ''"
                               class="nav-link px-2 py-2 rounded mb-1">

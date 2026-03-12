@@ -8,6 +8,7 @@ import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class HomeController {
     private final ResourceService resourceService;
     private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
+    private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     @GetMapping("/")
@@ -60,6 +62,7 @@ public class HomeController {
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
         model.addAttribute("resourceTypes", ResourceType.values());
+        model.addAttribute("appVersion", applicationVersionService.getVersion());
         return "index";
     }
 

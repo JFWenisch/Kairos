@@ -261,6 +261,27 @@
     font-size: 1.18rem;
 }
 
+.landing-credit {
+    position: fixed;
+    right: 12px;
+    bottom: 5px;
+    z-index: 10;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    color: rgba(170, 178, 188, 0.55);
+}
+
+.landing-credit a {
+    color: inherit;
+    text-decoration-color: rgba(170, 178, 188, 0.32);
+}
+
+.landing-credit a:hover {
+    color: rgba(185, 193, 203, 0.68);
+    text-decoration-color: currentColor;
+}
+
 @media (max-width: 991px) {
     .status-snapshot {
         grid-template-columns: repeat(2, minmax(0, 1fr));
