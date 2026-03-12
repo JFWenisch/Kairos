@@ -6,6 +6,9 @@
 
 ## Screenshots
 
+### Login Page
+![Login](docs/img/login.png)
+
 ### Status Dashboard
 ![Status Dashboard](docs/img/dashboard.png)
 
@@ -18,6 +21,18 @@
 ### Admin — Resource Type Configuration
 ![Resource Types](docs/img/admin-resource-types.png)
 
+### Admin — Announcements
+![Announcements](docs/img/admin-announcements.png)
+
+### Admin — API Keys
+![API Keys](docs/img/admin-api-keys.png)
+
+### Admin — Users
+![Users](docs/img/admin-users.png)
+
+### Admin — General Settings
+![Settings](docs/img/admin-settings.png)
+
 ---
 
 ## Features
@@ -26,9 +41,12 @@
 - **Docker image monitoring** — validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
 - **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks use credentials for registry API/token requests
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
-- **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource
+- **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
 - **Manual instant checks** — admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
+- **Public "Check Now"** — optionally allow unauthenticated users to trigger an immediate check from the resource detail page
+- **Resource groups** — organise resources into named groups; drag-and-drop reordering within and across groups
 - **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
+- **API keys** — generate and revoke named API keys for machine-to-machine access to the REST API
 - **YAML import / export** — export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** — publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
 - **Public announcements** — active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
