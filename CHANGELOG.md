@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.10.0 - 2026-03-13
+
+## [0.10.0](https://github.com/JFWenisch/Kairos/compare/v0.9.2...v0.10.0) (2026-03-13)
+
+
+### Features
+
+* add dependabot for docker,maven github actions ([1852e86](https://github.com/JFWenisch/Kairos/commit/1852e86916d50a726d7d38fc13e208625b1f805a))
+
+
+### Bug Fixes
+
+* update jackson and tomcat version to fix cves ([40c9351](https://github.com/JFWenisch/Kairos/commit/40c9351daed490186e1c98ee54a1bc09a2fc3033))
+* Updated dependencies to fix CVEs and also add dependabot support for automatic updates ([150cc79](https://github.com/JFWenisch/Kairos/commit/150cc792a367a62b19f04facc9d91752497b3056))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.10.0
+
+
 ## v0.9.2 - 2026-03-12
 
 ### [0.9.2](https://github.com/JFWenisch/Kairos/compare/v0.9.1...v0.9.2) (2026-03-12)
