@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.10.1 - 2026-03-13
+
+### [0.10.1](https://github.com/JFWenisch/Kairos/compare/v0.10.0...v0.10.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* added additional logic for fetching error message for debugging pull problems ([f92ca15](https://github.com/JFWenisch/Kairos/commit/f92ca158115462fd17f5aed44d0ad5555a977860))
+* added additional logic for fetching error message for debugging pull problems ([e23aa85](https://github.com/JFWenisch/Kairos/commit/e23aa853cb9927d2aaf6613523121f498c3b507b))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.10.1
+
+
 ## v0.10.0 - 2026-03-13
 
 ## [0.10.0](https://github.com/JFWenisch/Kairos/compare/v0.9.2...v0.10.0) (2026-03-13)
