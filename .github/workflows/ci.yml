@@ -237,19 +237,19 @@ jobs:
       - name: Update Helm chart version
         run:  |
           version="${{ needs.versioning.outputs.version }}"
-          yq eval '.appVersion = "$version"' -i chart/kairos/Chart.yaml
+          yq eval '.appVersion = "$version"' -i chartss/kairos/Chart.yaml
           yq eval '.version = "$version"' -i chart/kairos/Chart.yaml
 
       - name: Commit and push updated Helm chart
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add chart/kairos/Chart.yaml
+          git add charts/kairos/Chart.yaml
           git commit -m "[skip ci] Update Helm chart appVersion to ${{ needs.versioning.outputs.tag }}"
           git push origin ${{ github.ref }}
 
       - name: Package Helm chart
-        run: helm package chart/ --destination ./release
+        run: helm package charts/kairos/ --destination ./release
 
 
       - name: Upload Helm chart artifact
@@ -263,7 +263,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
           git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git
-          cp ./release/*.tgz charts/kairos/
+          cp ./release/*.tgz kairos/
           cd charts
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
