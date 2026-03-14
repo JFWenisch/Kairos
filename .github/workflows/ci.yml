@@ -233,35 +233,6 @@ jobs:
           docker push "$image:latest"
           docker push "$image:main"
           docker push "$image:sha-$short_sha"
-
-      - name: Update Helm chart version
-        run:  |
-          version="${{ needs.versioning.outputs.version }}"
-          yq eval '.appVersion = "$version"' -i charts/kairos/Chart.yaml
-          yq eval '.version = "$version"' -i charts/kairos/Chart.yaml
-
-      - name: Package Helm chart
-        run: helm package charts/kairos/ --destination ./release
-
-
-      - name: Upload Helm chart artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: helm-chart
-          path: ./release/*.tgz
-          
-      - name: Clone charts repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
-        run: |
-          git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git
-          cp ./release/*.tgz kairos/
-          cd charts
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m "Add Kairos helm chart in version ${{ needs.versioning.outputs.version }}"
-          git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
@@ -333,6 +304,28 @@ jobs:
           git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml
           git commit -m "chore(release): ${{ needs.versioning.outputs.tag }} [skip ci]" || exit 0
           git push
+
+      - name: Package Helm chart
+        run: helm package charts/kairos/ --destination ./release
+
+      - name: Upload Helm chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: ./release/*.tgz
+
+      - name: Publish Helm chart package to charts repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
+        run: |
+          git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git
+          cp ./release/*.tgz charts/
+          cd charts
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "Add Kairos helm chart in version ${{ needs.versioning.outputs.version }}"
+          git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
