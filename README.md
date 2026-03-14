@@ -163,10 +163,6 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 
 See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Docker socket access, and OIDC.
 
-See [docs/authentication.md](docs/authentication.md) for details on configuring authentication credentials for resource checks.
-
-See [docs/announcements.md](docs/announcements.md) for announcement management and behavior details.
-
 ## Documentation
 
 - [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
