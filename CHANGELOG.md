@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.6 - 2026-03-14
+
+### [0.11.6](https://github.com/JFWenisch/Kairos/compare/v0.11.5...v0.11.6) (2026-03-14)
+
+
+### Bug Fixes
+
+* fixed chart upload ([b645398](https://github.com/JFWenisch/Kairos/commit/b645398b30ec43f200948dc538e390a6c36f950e))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.6
+
+
 ## v0.11.5 - 2026-03-14
 
 ### [0.11.5](https://github.com/JFWenisch/Kairos/compare/v0.11.4...v0.11.5) (2026-03-14)
