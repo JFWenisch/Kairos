@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.5 - 2026-03-14
+
+### [0.11.5](https://github.com/JFWenisch/Kairos/compare/v0.11.4...v0.11.5) (2026-03-14)
+
+
+### Bug Fixes
+
+* update problem with setting app verison in helm chart using yq ([fd46695](https://github.com/JFWenisch/Kairos/commit/fd4669548eaaac3e96ab284c9da72a0d7e3f3c2c))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.5
+
+
 ## v0.11.4 - 2026-03-14
 
 ### [0.11.4](https://github.com/JFWenisch/Kairos/compare/v0.11.3...v0.11.4) (2026-03-14)
