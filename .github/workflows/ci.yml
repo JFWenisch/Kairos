@@ -240,14 +240,6 @@ jobs:
           yq eval '.appVersion = "$version"' -i charts/kairos/Chart.yaml
           yq eval '.version = "$version"' -i charts/kairos/Chart.yaml
 
-      - name: Commit and push updated Helm chart
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add charts/kairos/Chart.yaml
-          git commit -m "[skip ci] Update Helm chart appVersion to ${{ needs.versioning.outputs.tag }}"
-          git push origin ${{ github.ref }}
-
       - name: Package Helm chart
         run: helm package charts/kairos/ --destination ./release
 
@@ -321,13 +313,24 @@ jobs:
             } > CHANGELOG.md
           fi
 
-      - name: Commit changelog
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ needs.versioning.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Update Helm chart version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.versioning.outputs.version }}"
+          yq eval '.appVersion = "$version"' -i charts/kairos/Chart.yaml
+          yq eval '.version = "$version"' -i charts/kairos/Chart.yaml
+
+      - name: Commit release files
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
+          git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml
           git commit -m "chore(release): ${{ needs.versioning.outputs.tag }} [skip ci]" || exit 0
           git push
 
