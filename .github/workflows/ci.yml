@@ -237,8 +237,8 @@ jobs:
       - name: Update Helm chart version
         run:  |
           version="${{ needs.versioning.outputs.version }}"
-          yq eval '.appVersion = "$version"' -i chartss/kairos/Chart.yaml
-          yq eval '.version = "$version"' -i chart/kairos/Chart.yaml
+          yq eval '.appVersion = "$version"' -i charts/kairos/Chart.yaml
+          yq eval '.version = "$version"' -i charts/kairos/Chart.yaml
 
       - name: Commit and push updated Helm chart
         run: |
