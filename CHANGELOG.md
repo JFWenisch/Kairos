@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.7 - 2026-03-14
+
+### [0.11.7](https://github.com/JFWenisch/Kairos/compare/v0.11.6...v0.11.7) (2026-03-14)
+
+
+### Documentation
+
+* update readme according configuration steps ([78aefc5](https://github.com/JFWenisch/Kairos/commit/78aefc5d519ab4412aa3380b582f9451a3988dc2))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.7
+
+
 ## v0.11.6 - 2026-03-14
 
 ### [0.11.6](https://github.com/JFWenisch/Kairos/compare/v0.11.5...v0.11.6) (2026-03-14)
