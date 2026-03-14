@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.4 - 2026-03-14
+
+### [0.11.4](https://github.com/JFWenisch/Kairos/compare/v0.11.3...v0.11.4) (2026-03-14)
+
+
+### Bug Fixes
+
+* refactor ci to release artifacts together in last step ([86edd29](https://github.com/JFWenisch/Kairos/commit/86edd2991f29fafff4a702e4f36bc276002e0504))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.4
+
+
 ## v0.10.1 - 2026-03-13
 
 ### [0.10.1](https://github.com/JFWenisch/Kairos/compare/v0.10.0...v0.10.1) (2026-03-13)
