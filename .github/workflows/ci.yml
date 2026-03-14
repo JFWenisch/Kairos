@@ -292,8 +292,8 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ needs.versioning.outputs.version }}"
-          yq eval '.appVersion = "$version"' -i charts/kairos/Chart.yaml
-          yq eval '.version = "$version"' -i charts/kairos/Chart.yaml
+          yq eval ".appVersion = \"$version\"" -i charts/kairos/Chart.yaml
+          yq eval ".version = \"$version\"" -i charts/kairos/Chart.yaml
 
       - name: Commit release files
         shell: bash
