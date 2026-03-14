@@ -318,13 +318,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUBTOKEN }}
         run: |
-          git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git
-          cp ./release/*.tgz charts/
-          cd charts
+          git clone https://$GH_TOKEN@github.com/JFWenisch/charts.git charts-repo
+          cp ./release/*.tgz charts-repo/kairos/
+          cd charts-repo
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
-          git commit -m "Add Kairos helm chart in version ${{ needs.versioning.outputs.version }}"
+          git commit -m "Add Kairos helm chart in version ${{ needs.versioning.outputs.version }}" || echo "No chart changes to commit"
           git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
 
       - name: Create GitHub release
