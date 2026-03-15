@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.8 - 2026-03-15
+
+### [0.11.8](https://github.com/JFWenisch/Kairos/compare/v0.11.7...v0.11.8) (2026-03-15)
+
+
+### Documentation
+
+* Added signature and attestation ([592b939](https://github.com/JFWenisch/Kairos/commit/592b9398cd4881cf4a350ae6eaeba3cd85c68c8e))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.8
+
+
 ## v0.11.7 - 2026-03-14
 
 ### [0.11.7](https://github.com/JFWenisch/Kairos/compare/v0.11.6...v0.11.7) (2026-03-14)
