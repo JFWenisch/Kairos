@@ -250,8 +250,11 @@ jobs:
           set -euo pipefail
           image="${{ needs.versioning.outputs.image }}"
           version="${{ needs.versioning.outputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
           digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$version" | cut -d@ -f2)
-          cosign sign --yes "$image@$digest"
+          for tag in "$image:$version" "$image:latest" "$image:main" "$image:sha-$short_sha"; do
+            cosign sign --yes "$tag"
+          done
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
