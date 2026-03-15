@@ -87,10 +87,11 @@ jobs:
           yq eval ".version = \"$version\"" -i charts/kairos/Chart.yaml
 
       - name: Generate Helm values schema
-        uses: losisin/helm-values-schema-json@v1
-        with:
-          input: charts/kairos/values.yaml
-          output: charts/kairos/values.schema.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git
+          helm schema-gen charts/kairos/values.yaml > charts/kairos/values.schema.json
 
       - name: Commit release files
         shell: bash
