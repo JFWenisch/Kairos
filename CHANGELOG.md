@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.9 - 2026-03-15
+
+### [0.11.9](https://github.com/JFWenisch/Kairos/compare/v0.11.8...v0.11.9) (2026-03-15)
+
+
+### Documentation
+
+* update linking of signature ([ed61a32](https://github.com/JFWenisch/Kairos/commit/ed61a32c64df4dd3da7920dbc611f015c3df7d86))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.9
+
+
 ## v0.11.8 - 2026-03-15
 
 ### [0.11.8](https://github.com/JFWenisch/Kairos/compare/v0.11.7...v0.11.8) (2026-03-15)
