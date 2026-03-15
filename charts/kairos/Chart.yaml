@@ -11,8 +11,47 @@ keywords:
   - docker
   - http
 home: https://github.com/JFWenisch/Kairos
+icon: https://raw.githubusercontent.com/JFWenisch/Kairos/main/src/main/resources/static/img/kairos.png
 sources:
   - https://github.com/JFWenisch/Kairos
 maintainers:
   - name: JFWenisch
     url: https://github.com/JFWenisch
+annotations:
+  artifacthub.io/category: monitoring-logging
+  artifacthub.io/license: GPL-3.0
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/signKey: |
+    fingerprint: keyless (Sigstore/Cosign via GitHub Actions OIDC)
+    url: https://github.com/JFWenisch/Kairos/actions
+  artifacthub.io/images: |
+    - name: kairos
+      image: ghcr.io/jfwenisch/kairos:latest
+  artifacthub.io/links: |
+    - name: GitHub Repository
+      url: https://github.com/JFWenisch/Kairos
+    - name: Documentation
+      url: https://github.com/JFWenisch/Kairos/tree/main/docs
+    - name: Changelog
+      url: https://github.com/JFWenisch/Kairos/blob/main/CHANGELOG.md
+    - name: Container Registry
+      url: https://github.com/JFWenisch/Kairos/pkgs/container/kairos
+  artifacthub.io/screenshots: |
+    - title: Dashboard
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/dashboard.png
+    - title: Resource Detail
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/resource-detail.png
+    - title: Admin Resources
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-resources.png
+    - title: Admin Resource Types
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-resource-types.png
+    - title: Admin Users
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-users.png
+    - title: Admin Settings
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-settings.png
+    - title: Admin API Keys
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-api-keys.png
+    - title: Admin Announcements
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/admin-announcements.png
+    - title: Login
+      url: https://raw.githubusercontent.com/JFWenisch/Kairos/main/docs/img/login.png
