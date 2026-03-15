@@ -106,6 +106,10 @@ jobs:
       packages: write
       pull-requests: write
       issues: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.sign.outputs.digest }}
 
     steps:
       - name: Checkout
@@ -233,6 +237,29 @@ jobs:
           docker push "$image:latest"
           docker push "$image:main"
           docker push "$image:sha-$short_sha"
+
+      - name: Install Cosign
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: sign
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ needs.versioning.outputs.image }}"
+          version="${{ needs.versioning.outputs.version }}"
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$version" | cut -d@ -f2)
+          cosign sign --yes "$image@$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ needs.versioning.outputs.image }}
+          subject-digest: ${{ steps.sign.outputs.digest }}
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
@@ -335,4 +362,25 @@ jobs:
           body: |
             ${{ needs.versioning.outputs.changelog }}
 
-            Docker image: ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
+            ## Docker image
+            ```
+            ${{ needs.versioning.outputs.image }}:${{ needs.versioning.outputs.version }}
+            ${{ needs.versioning.outputs.image }}@${{ needs.docker-build-scan.outputs.digest }}
+            ```
+
+            ## Signature & Attestation
+            This image was signed using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) with keyless signing via GitHub Actions OIDC.
+            A [SLSA provenance attestation](https://slsa.dev/provenance) is attached and visible under the package's **Attestations** tab.
+
+            **Verify signature:**
+            ```bash
+            cosign verify ${{ needs.versioning.outputs.image }}@${{ needs.docker-build-scan.outputs.digest }} \
+              --certificate-identity-regexp="https://github.com/${{ github.repository }}" \
+              --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
+            ```
+
+            **Verify provenance attestation:**
+            ```bash
+            gh attestation verify oci://${{ needs.versioning.outputs.image }}@${{ needs.docker-build-scan.outputs.digest }} \
+              --repo ${{ github.repository }}
+            ```
