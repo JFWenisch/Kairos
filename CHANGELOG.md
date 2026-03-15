@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.11.12 - 2026-03-15
+
+### [0.11.12](https://github.com/JFWenisch/Kairos/compare/v0.11.11...v0.11.12) (2026-03-15)
+
+
+### Bug Fixes
+
+* update helm values creation ([98f3b9c](https://github.com/JFWenisch/Kairos/commit/98f3b9cdb019f3ad5081bb55ac2851fe2b31ba7e))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.11.12
+
+
 ## v0.11.9 - 2026-03-15
 
 ### [0.11.9](https://github.com/JFWenisch/Kairos/compare/v0.11.8...v0.11.9) (2026-03-15)
