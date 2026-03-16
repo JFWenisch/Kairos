@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class AnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
@@ -41,6 +43,7 @@ public class AnnouncementService {
         return announcementRepository.findById(id);
     }
 
+    @Transactional
     public Announcement save(Announcement announcement) {
         if (announcement.getCreatedAt() == null) {
             announcement.setCreatedAt(LocalDateTime.now());
@@ -48,11 +51,13 @@ public class AnnouncementService {
         return announcementRepository.save(announcement);
     }
 
+    @Transactional
     public void delete(Long id) {
         announcementRepository.deleteById(id);
     }
 
     @Scheduled(fixedDelay = 60000)
+    @Transactional
     public void deactivateExpiredAnnouncements() {
         LocalDateTime now = LocalDateTime.now();
         List<Announcement> expired = announcementRepository.findByActiveTrueAndActiveUntilLessThanEqual(now);
