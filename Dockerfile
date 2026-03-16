@@ -19,7 +19,7 @@ LABEL org.opencontainers.image.title="Kairos" \
       org.opencontainers.image.revision="${BUILD_REVISION}" \
       org.opencontainers.image.created="${BUILD_DATE}"
 
-USER nonroot
+
 
 # Runtime-only image: Docker/OCI checks use registry HTTPS APIs.
 # No Docker daemon, Docker CLI, or Podman tooling is included.
