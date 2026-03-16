@@ -174,6 +174,44 @@ kairos_resource_status{resource_name="<name>",resource_type="<URL|DOCKER>"}
 
 ---
 
+## Web Server Runtime (Tomcat)
+
+Kairos uses Spring MVC + JPA + Thymeleaf on the servlet stack. For this workload, embedded Tomcat is generally a solid default and usually not the main bottleneck.
+
+To tune for smaller containers, these properties are available:
+
+| Property | Env var | Default | Purpose |
+|----------|---------|---------|---------|
+| `server.tomcat.threads.max` | `SERVER_TOMCAT_THREADS_MAX` | `80` | Maximum request worker threads |
+| `server.tomcat.threads.min-spare` | `SERVER_TOMCAT_THREADS_MIN_SPARE` | `10` | Spare idle request threads |
+| `server.tomcat.accept-count` | `SERVER_TOMCAT_ACCEPT_COUNT` | `100` | Queue length when worker threads are busy |
+| `server.tomcat.max-connections` | `SERVER_TOMCAT_MAX_CONNECTIONS` | `512` | Maximum open HTTP connections |
+| `server.tomcat.connection-timeout` | `SERVER_TOMCAT_CONNECTION_TIMEOUT` | `5s` | Timeout for establishing request data |
+| `server.tomcat.keep-alive-timeout` | `SERVER_TOMCAT_KEEP_ALIVE_TIMEOUT` | `20s` | Keep-alive timeout for persistent connections |
+
+HTTP response compression is enabled by default for common text payloads.
+
+Example for a constrained container:
+
+```bash
+SERVER_TOMCAT_THREADS_MAX=40
+SERVER_TOMCAT_MAX_CONNECTIONS=300
+```
+
+If you still want to evaluate Jetty/Undertow, run the same post-build container latency checks for both variants and compare P95 latencies plus CPU usage under identical load.
+
+Kairos includes a Maven profile for Jetty-based comparison builds:
+
+```bash
+# Default runtime (Tomcat)
+mvn -B -DskipTests package
+
+# Jetty runtime variant
+mvn -B -Pjetty -DskipTests package
+```
+
+---
+
 ## Public Resource Submission
 
 When **Allow public resource submission** is enabled in **Admin → General Settings**, unauthenticated users can `POST /api/resources` to add new monitoring targets. This is useful for self-registration flows but should only be enabled in trusted network environments.

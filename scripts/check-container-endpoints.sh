@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <image:tag> <host-port>"
+if [ "$#" -lt 2 ] || [ "$#" -gt 4 ]; then
+  echo "Usage: $0 <image:tag> <host-port> [report-file] [label]"
   exit 2
 fi
 
 IMAGE="$1"
 HOST_PORT="$2"
+REPORT_FILE="${3:-container-endpoint-latency.md}"
+LABEL="${4:-Container Endpoint Check}"
 CONTAINER_NAME="kairos-endpoint-check"
 BASE_URL="http://127.0.0.1:${HOST_PORT}"
-REPORT_FILE="container-endpoint-latency.md"
 
 cleanup() {
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
@@ -38,7 +39,7 @@ if [ "$ready" -ne 1 ]; then
   echo "Container did not become ready in time"
   docker logs "$CONTAINER_NAME" | tail -n 200 || true
   {
-    echo "# Container Endpoint Check"
+    echo "# ${LABEL}"
     echo
     echo "Status: FAILED"
     echo
@@ -87,7 +88,7 @@ results+=("$(check_endpoint_latency "/api/resources" 1500 || overall_fail=1)")
 results+=("$(check_endpoint_latency "/actuator/health" 1200 || overall_fail=1)")
 
 {
-  echo "# Container Endpoint Check"
+  echo "# ${LABEL}"
   echo
   echo "Image: ${IMAGE}"
   echo
