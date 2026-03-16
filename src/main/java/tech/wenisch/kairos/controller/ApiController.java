@@ -3,6 +3,7 @@ package tech.wenisch.kairos.controller;
 import tech.wenisch.kairos.dto.AnnouncementDTO;
 import tech.wenisch.kairos.dto.ResourceDTO;
 import tech.wenisch.kairos.dto.ResourceDetailsDTO;
+import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
@@ -19,6 +20,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -66,8 +69,17 @@ public class ApiController {
     }
 
     @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamResourceUpdates() {
-        return resourceStatusStreamService.subscribe();
+    public ResponseEntity<SseEmitter> streamResourceUpdates() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(CacheControl.noStore().mustRevalidate());
+        headers.add(HttpHeaders.PRAGMA, "no-cache");
+        headers.add("X-Accel-Buffering", "no");
+        return ResponseEntity.ok().headers(headers).body(resourceStatusStreamService.subscribe());
+    }
+
+    @GetMapping("/resources/status-updates")
+    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates() {
+        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot());
     }
 
     /**

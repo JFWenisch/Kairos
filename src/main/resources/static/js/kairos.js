@@ -16,18 +16,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initResourceStatusStream() {
     const hasLiveResourceView = document.querySelector('.resource-row[data-resource-id], .resource-detail[data-resource-id]');
-    if (!hasLiveResourceView || typeof EventSource === 'undefined') {
+    if (!hasLiveResourceView) {
+        return;
+    }
+
+    const pollIntervalMs = 10000;
+    let pollingStarted = false;
+
+    function applySnapshot(updates) {
+        if (!Array.isArray(updates)) {
+            return;
+        }
+        updates.forEach(updateResourceRow);
+    }
+
+    function startHttpPolling() {
+        if (pollingStarted) {
+            return;
+        }
+        pollingStarted = true;
+
+        const fetchSnapshot = function() {
+            fetch('/api/resources/status-updates', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                cache: 'no-store'
+            })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Polling failed with status ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(applySnapshot)
+                .catch(function() {
+                    // Retry on next interval.
+                });
+        };
+
+        fetchSnapshot();
+        window.setInterval(fetchSnapshot, pollIntervalMs);
+    }
+
+    if (typeof EventSource === 'undefined') {
+        startHttpPolling();
         return;
     }
 
     const eventSource = new EventSource('/api/resources/stream');
 
     eventSource.addEventListener('snapshot', function(event) {
-        const updates = parseUpdatePayload(event.data);
-        if (!Array.isArray(updates)) {
-            return;
-        }
-        updates.forEach(updateResourceRow);
+        applySnapshot(parseUpdatePayload(event.data));
     });
 
     eventSource.addEventListener('resource-update', function(event) {
@@ -47,7 +88,8 @@ function initResourceStatusStream() {
     });
 
     eventSource.onerror = function() {
-        // Browser EventSource handles reconnects automatically.
+        eventSource.close();
+        startHttpPolling();
     };
 }
 
