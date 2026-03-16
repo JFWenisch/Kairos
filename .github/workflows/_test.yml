@@ -10,6 +10,10 @@ on:
 jobs:
   test-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -27,8 +31,43 @@ jobs:
       - name: Set Maven version
         run: mvn -B versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
 
-      - name: Run tests
-        run: mvn -B test
+      - name: Run tests and coverage verification
+        run: mvn -B verify
+
+      - name: Publish JUnit report
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Maven Tests
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+
+      - name: Upload test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-and-coverage-reports
+          path: |
+            target/surefire-reports/*.xml
+            target/site/jacoco/jacoco.xml
+            target/site/jacoco/index.html
+
+      - name: Generate coverage summary
+        if: always()
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: target/site/jacoco/jacoco.xml
+          format: markdown
+          output: both
+          indicators: true
+          fail_below_min: false
+
+      - name: Add coverage summary to pull request
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
       - name: Build JAR
         run: mvn -B -DskipTests package
