@@ -46,6 +46,10 @@ public class ResourceStatusStreamService {
         }
     }
 
+    public List<ResourceStatusUpdateDTO> getSnapshot() {
+        return buildSnapshot();
+    }
+
     private List<ResourceStatusUpdateDTO> buildSnapshot() {
         return resourceService.findAllActive().stream()
                 .map(this::buildUpdate)

@@ -41,7 +41,7 @@ jobs:
       - name: Set Maven version
         run: mvn -B versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
 
-      - name: Build application JAR
+      - name: Build application JAR (Tomcat)
         run: mvn -B -DskipTests package
 
       - name: Generate build metadata
@@ -64,6 +64,89 @@ jobs:
             BUILD_DATE=${{ steps.build_meta.outputs.date }}
             BUILD_VERSION=${{ inputs.version }}
             BUILD_REVISION=${{ github.sha }}
+
+      - name: Make container check script executable
+        run: chmod +x scripts/check-container-endpoints.sh
+
+      - name: Validate container endpoints and latency
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}:${{ inputs.version }}"
+          ./scripts/check-container-endpoints.sh "$image" 18080 container-endpoint-latency-tomcat.md "Container Endpoint Check (Tomcat)"
+
+      - name: Build application JAR (Jetty)
+        if: github.event_name == 'pull_request'
+        run: mvn -B -Pjetty -DskipTests package
+
+      - name: Build Docker image (Jetty, local)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ inputs.image }}:${{ inputs.version }}-jetty
+          build-args: |
+            BUILD_DATE=${{ steps.build_meta.outputs.date }}
+            BUILD_VERSION=${{ inputs.version }}-jetty
+            BUILD_REVISION=${{ github.sha }}
+
+      - name: Validate container endpoints and latency (Jetty)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}:${{ inputs.version }}-jetty"
+          ./scripts/check-container-endpoints.sh "$image" 18081 container-endpoint-latency-jetty.md "Container Endpoint Check (Jetty)"
+
+      - name: Build runtime comparison report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f container-endpoint-latency-jetty.md ]; then
+            {
+              echo "# Runtime Comparison (Tomcat vs Jetty)"
+              echo
+              echo "## Tomcat"
+              echo
+              cat container-endpoint-latency-tomcat.md
+              echo
+              echo "## Jetty"
+              echo
+              cat container-endpoint-latency-jetty.md
+            } > container-runtime-comparison.md
+          else
+            cp container-endpoint-latency-tomcat.md container-runtime-comparison.md
+          fi
+
+      - name: Upload container endpoint check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-endpoint-check-${{ github.run_id }}
+          path: |
+            container-endpoint-latency-tomcat.md
+            container-endpoint-latency-jetty.md
+            container-runtime-comparison.md
+
+      - name: Add container endpoint check to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('container-runtime-comparison.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
 
       - name: Set up Trivy
         uses: aquasecurity/setup-trivy@v0.2.2

@@ -25,6 +25,7 @@ USER nonroot
 # No Docker daemon, Docker CLI, or Podman tooling is included.
 ENV DOCKER_HOST=unix:///dev/null
 ENV CONTAINERS_CONF=/dev/null
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0 -XX:+UseG1GC -Djava.security.egd=file:/dev/urandom"
 
 COPY target/kairos-*.jar /app/app.jar
 
