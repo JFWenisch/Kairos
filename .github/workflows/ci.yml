@@ -79,6 +79,7 @@ jobs:
     uses: ./.github/workflows/_test.yml
     with:
       version: ${{ needs.versioning.outputs.version }}
+      is_pull_request: ${{ github.event_name == 'pull_request' }}
 
   docker:
     if: (github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]')) && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
