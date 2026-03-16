@@ -198,18 +198,6 @@ SERVER_TOMCAT_THREADS_MAX=40
 SERVER_TOMCAT_MAX_CONNECTIONS=300
 ```
 
-If you still want to evaluate Jetty/Undertow, run the same post-build container latency checks for both variants and compare P95 latencies plus CPU usage under identical load.
-
-Kairos includes a Maven profile for Jetty-based comparison builds:
-
-```bash
-# Default runtime (Tomcat)
-mvn -B -DskipTests package
-
-# Jetty runtime variant
-mvn -B -Pjetty -DskipTests package
-```
-
 ---
 
 ## Public Resource Submission
