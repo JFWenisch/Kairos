@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.13.1 - 2026-03-16
+
+### [0.13.1](https://github.com/JFWenisch/Kairos/compare/v0.13.0...v0.13.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* removed user instruction from dockerfile ([4c71d07](https://github.com/JFWenisch/Kairos/commit/4c71d0729b2e37bf3f21c3c243fdaefcda0532c7))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.13.1
+
+
 ## v0.11.12 - 2026-03-15
 
 ### [0.11.12](https://github.com/JFWenisch/Kairos/compare/v0.11.11...v0.11.12) (2026-03-15)

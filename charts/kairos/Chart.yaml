@@ -2,8 +2,8 @@ apiVersion: v2
 name: kairos
 description: A self-hosted uptime and availability monitoring application
 type: application
-version: 0.11.12
-appVersion: "0.11.12"
+version: 0.13.1
+appVersion: "0.13.1"
 keywords:
   - monitoring
   - uptime
