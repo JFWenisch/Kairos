@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.13.2 - 2026-03-16
+
+### [0.13.2](https://github.com/JFWenisch/Kairos/compare/v0.13.1...v0.13.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* removed stale committer for sse ([84d99cc](https://github.com/JFWenisch/Kairos/commit/84d99ccf69861507e3a30484e079754403e01be6))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.13.2
+
+
 ## v0.13.1 - 2026-03-16
 
 ### [0.13.1](https://github.com/JFWenisch/Kairos/compare/v0.13.0...v0.13.1) (2026-03-16)
