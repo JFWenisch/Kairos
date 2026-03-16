@@ -21,7 +21,7 @@ permissions:
 # ─────────────────────────────────────────────────────────────────────────────
 # Orchestrator: computes version/tag, then delegates to reusable workflows.
 #   _test.yml    — compile, test, build JAR
-#   _docker.yml  — docker build, Trivy scan, push, cosign sign, attest
+#   _docker.yml  — docker build, container endpoint/latency checks, Trivy scan, push, cosign sign, attest
 #   _release.yml — helm chart versioning, schema, sign, publish, gh release
 # ─────────────────────────────────────────────────────────────────────────────
 

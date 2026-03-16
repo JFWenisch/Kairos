@@ -65,6 +65,39 @@ jobs:
             BUILD_VERSION=${{ inputs.version }}
             BUILD_REVISION=${{ github.sha }}
 
+      - name: Make container check script executable
+        run: chmod +x scripts/check-container-endpoints.sh
+
+      - name: Validate container endpoints and latency
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}:${{ inputs.version }}"
+          ./scripts/check-container-endpoints.sh "$image" 18080
+
+      - name: Upload container endpoint check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-endpoint-check-${{ github.run_id }}
+          path: container-endpoint-latency.md
+
+      - name: Add container endpoint check to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('container-endpoint-latency.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
       - name: Set up Trivy
         uses: aquasecurity/setup-trivy@v0.2.2
 
