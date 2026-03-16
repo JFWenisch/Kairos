@@ -7,7 +7,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.MonitoredResource;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -68,9 +67,12 @@ public class ResourceStatusStreamService {
     private void sendEvent(SseEmitter emitter, String eventName, Object payload) {
         try {
             emitter.send(SseEmitter.event().name(eventName).data(payload));
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             emitters.remove(emitter);
-            emitter.completeWithError(ex);
+            try {
+                emitter.complete();
+            } catch (Exception ignored) {
+            }
             log.debug("Removed stale SSE emitter after send failure: {}", ex.getMessage());
         }
     }
