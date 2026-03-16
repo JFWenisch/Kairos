@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.13.3 - 2026-03-16
+
+### [0.13.3](https://github.com/JFWenisch/Kairos/compare/v0.13.2...v0.13.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* fixed transaction handling for writing/reading announcements ([69cf1b4](https://github.com/JFWenisch/Kairos/commit/69cf1b4c15bbb788000e22d1a5bbb5b0655685a2))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.13.3
+
+
 ## v0.13.2 - 2026-03-16
 
 ### [0.13.2](https://github.com/JFWenisch/Kairos/compare/v0.13.1...v0.13.2) (2026-03-16)
