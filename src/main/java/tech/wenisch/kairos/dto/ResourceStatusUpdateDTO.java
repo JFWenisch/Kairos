@@ -5,7 +5,7 @@ import java.util.List;
 public record ResourceStatusUpdateDTO(
         Long resourceId,
         String currentStatus,
-        List<String> timelineBlocks,
+        List<TimelineBlockDTO> timelineBlocks,
         double uptimePercentage
 ) {
 }

@@ -5,6 +5,7 @@ import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
@@ -108,7 +109,7 @@ public class ResourceService {
     /** Number of color-coded blocks displayed in the 24-hour timeline visualization (one block ≈ 16 min). */
     private static final int TIMELINE_BUCKETS = 90;
 
-    public List<String> getTimelineBlocks(MonitoredResource resource) {
+    public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime start = now.minusHours(24);
 
@@ -118,7 +119,7 @@ public class ResourceService {
         long totalMinutes = 24 * 60;
         long bucketMinutes = totalMinutes / TIMELINE_BUCKETS;
 
-        List<String> blocks = new ArrayList<>(TIMELINE_BUCKETS);
+        List<TimelineBlockDTO> blocks = new ArrayList<>(TIMELINE_BUCKETS);
         for (int i = 0; i < TIMELINE_BUCKETS; i++) {
             LocalDateTime bucketStart = start.plusMinutes(i * bucketMinutes);
             LocalDateTime bucketEnd = bucketStart.plusMinutes(bucketMinutes);
@@ -130,26 +131,24 @@ public class ResourceService {
                 }
             }
 
-            if (lastInBucket == null) {
-                blocks.add("unknown");
-            } else {
-                switch (lastInBucket.getStatus()) {
-                    case AVAILABLE -> blocks.add("available");
-                    case NOT_AVAILABLE -> blocks.add("not-available");
-                    default -> blocks.add("unknown");
-                }
-            }
+            String status = lastInBucket == null ? "unknown" : mapStatus(lastInBucket.getStatus());
+            LocalDateTime timestamp = lastInBucket == null ? bucketEnd : lastInBucket.getCheckedAt();
+            blocks.add(new TimelineBlockDTO(status, timestamp));
         }
         return blocks;
     }
 
+    private String mapStatus(CheckStatus status) {
+        return switch (status) {
+            case AVAILABLE -> "available";
+            case NOT_AVAILABLE -> "not-available";
+            default -> "unknown";
+        };
+    }
+
     public String getCurrentStatus(MonitoredResource resource) {
         return checkResultRepository.findTopByResourceOrderByCheckedAtDesc(resource)
-                .map(r -> switch (r.getStatus()) {
-                    case AVAILABLE -> "available";
-                    case NOT_AVAILABLE -> "not-available";
-                    default -> "unknown";
-                })
+                .map(r -> mapStatus(r.getStatus()))
                 .orElse("unknown");
     }
 

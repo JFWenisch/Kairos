@@ -2,6 +2,7 @@ package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.ResourceViewModel;
 import tech.wenisch.kairos.dto.ResourceGroupViewModel;
+import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
@@ -164,7 +165,7 @@ public class HomeController {
             CheckStatus statusFilter = parseStatus(status);
 
             String currentStatus = resourceService.getCurrentStatus(resource);
-            List<String> timelineBlocks = resourceService.getTimelineBlocks(resource);
+            List<TimelineBlockDTO> timelineBlocks = resourceService.getTimelineBlocks(resource);
             double uptime24h = resourceService.getUptimePercentage(resource, 24);
             double uptime7d = resourceService.getUptimePercentage(resource, 168);
             double uptime30d = resourceService.getUptimePercentage(resource, 720);
@@ -237,7 +238,7 @@ public class HomeController {
 
     private ResourceViewModel toResourceViewModel(MonitoredResource resource) {
         String currentStatus = resourceService.getCurrentStatus(resource);
-        List<String> timelineBlocks = resourceService.getTimelineBlocks(resource);
+        List<TimelineBlockDTO> timelineBlocks = resourceService.getTimelineBlocks(resource);
         double uptime = resourceService.getUptimePercentage(resource, 24);
 
         return ResourceViewModel.builder()

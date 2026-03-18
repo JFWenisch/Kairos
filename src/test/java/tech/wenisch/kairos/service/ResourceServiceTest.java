@@ -175,10 +175,11 @@ class ResourceServiceTest {
         when(checkResultRepository.findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(eq(resource), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
-        List<String> blocks = resourceService.getTimelineBlocks(resource);
+        var blocks = resourceService.getTimelineBlocks(resource);
 
         assertThat(blocks).hasSize(90);
-        assertThat(blocks).allMatch("unknown"::equals);
+        assertThat(blocks).allMatch(block -> "unknown".equals(block.status()));
+        assertThat(blocks).allMatch(block -> block.timestamp() != null);
     }
 
     @Test

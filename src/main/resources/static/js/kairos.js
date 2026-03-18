@@ -172,14 +172,55 @@ function updateTimeline(row, timelineBlocks) {
 
     const fragment = document.createDocumentFragment();
     timelineBlocks.forEach(function(block) {
-        const status = normalizeStatus(block);
+        const status = normalizeStatus(resolveTimelineBlockStatus(block));
         const blockElement = document.createElement('span');
         blockElement.className = 'timeline-block ' + status;
-        blockElement.title = status;
+        blockElement.title = buildTimelineTooltip(status, resolveTimelineBlockTimestamp(block));
         fragment.appendChild(blockElement);
     });
 
     container.replaceChildren(fragment);
+}
+
+function resolveTimelineBlockStatus(block) {
+    if (block && typeof block === 'object') {
+        return block.status;
+    }
+    return block;
+}
+
+function resolveTimelineBlockTimestamp(block) {
+    if (block && typeof block === 'object') {
+        return block.timestamp;
+    }
+    return null;
+}
+
+function buildTimelineTooltip(status, timestamp) {
+    const normalizedStatus = normalizeStatus(status);
+    const formattedTimestamp = formatTimelineTimestamp(timestamp);
+    if (!formattedTimestamp) {
+        return normalizedStatus;
+    }
+    return normalizedStatus + ' · ' + formattedTimestamp;
+}
+
+function formatTimelineTimestamp(timestamp) {
+    if (typeof timestamp !== 'string' || timestamp.length === 0) {
+        return null;
+    }
+
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+        return timestamp;
+    }
+
+    return parsed.getFullYear()
+        + '-' + String(parsed.getMonth() + 1).padStart(2, '0')
+        + '-' + String(parsed.getDate()).padStart(2, '0')
+        + ' ' + String(parsed.getHours()).padStart(2, '0')
+        + ':' + String(parsed.getMinutes()).padStart(2, '0')
+        + ':' + String(parsed.getSeconds()).padStart(2, '0');
 }
 
 function updateUptime(row, uptimePercentage) {

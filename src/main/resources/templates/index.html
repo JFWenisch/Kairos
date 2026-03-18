@@ -112,8 +112,8 @@
                     <div class="col-md-7">
                         <div class="timeline-container">
                             <span th:each="block : ${vm.timelineBlocks}"
-                                  th:class="'timeline-block ' + ${block}"
-                                  th:title="${block}"></span>
+                                  th:class="'timeline-block ' + ${block.status}"
+                                  th:title="${block.status + ' · ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
                         </div>
                     </div>
                     <div class="col-md-2 text-end resource-score">
@@ -170,8 +170,8 @@
                             <div class="col-md-7">
                                 <div class="timeline-container">
                                     <span th:each="block : ${vm.timelineBlocks}"
-                                          th:class="'timeline-block ' + ${block}"
-                                          th:title="${block}"></span>
+                                          th:class="'timeline-block ' + ${block.status}"
+                                          th:title="${block.status + ' · ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
                                 </div>
                             </div>
                             <div class="col-md-2 text-end resource-score">
