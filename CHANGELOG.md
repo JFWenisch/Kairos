@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.14.0 - 2026-03-18
+
+## [0.14.0](https://github.com/JFWenisch/Kairos/compare/v0.13.3...v0.14.0) (2026-03-18)
+
+
+### Features
+
+* timestamp is shown on hovering timeblock element ([4f9f4f1](https://github.com/JFWenisch/Kairos/commit/4f9f4f1442ff7c78a22e44a65146bf03340e8953))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.14.0
+
+
 ## v0.13.3 - 2026-03-16
 
 ### [0.13.3](https://github.com/JFWenisch/Kairos/compare/v0.13.2...v0.13.3) (2026-03-16)
