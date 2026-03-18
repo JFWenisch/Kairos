@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.15.0 - 2026-03-18
+
+## [0.15.0](https://github.com/JFWenisch/Kairos/compare/v0.14.0...v0.15.0) (2026-03-18)
+
+
+### Features
+
+* Added editing functionality for resources ([247b6a6](https://github.com/JFWenisch/Kairos/commit/247b6a64268d310d22d49603a0091e108ba67e07))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:0.15.0
+
+
 ## v0.14.0 - 2026-03-18
 
 ## [0.14.0](https://github.com/JFWenisch/Kairos/compare/v0.13.3...v0.14.0) (2026-03-18)
