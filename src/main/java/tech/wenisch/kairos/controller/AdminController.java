@@ -253,6 +253,45 @@ public class AdminController {
         return "redirect:/admin/resources";
     }
 
+    @GetMapping("/resources/edit/{id}")
+    public String editResource(@PathVariable Long id,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        return resourceService.findById(id)
+                .map(resource -> {
+                    model.addAttribute("resource", resource);
+                    model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
+                    model.addAttribute("resourceTypes", ResourceType.values());
+                    return "admin/resource-edit";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Resource not found.");
+                    return "redirect:/admin/resources";
+                });
+    }
+
+    @PostMapping("/resources/edit/{id}")
+    public String updateResource(@PathVariable Long id,
+                                 @RequestParam String name,
+                                 @RequestParam ResourceType resourceType,
+                                 @RequestParam String target,
+                                 @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                                 @RequestParam(required = false) Long groupId,
+                                 @RequestParam(defaultValue = "0") int displayOrder,
+                                 RedirectAttributes redirectAttributes) {
+        resourceService.findById(id).ifPresentOrElse(resource -> {
+            resource.setName(name == null ? "" : name.trim());
+            resource.setResourceType(resourceType);
+            resource.setTarget(target == null ? "" : target.trim());
+            resource.setSkipTls(skipTls);
+            resource.setGroup(resolveGroup(groupId));
+            resource.setDisplayOrder(displayOrder);
+            resourceService.save(resource);
+            redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
+        }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Resource not found."));
+        return "redirect:/admin/resources";
+    }
+
     @PostMapping("/resources/delete/{id}")
     public String deleteResource(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         resourceService.findById(id).ifPresent(r -> {

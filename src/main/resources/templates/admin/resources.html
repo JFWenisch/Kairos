@@ -175,6 +175,11 @@
                                     <div class="col-lg-2 text-end">
                                         <form th:action="@{/admin/resources/update/{id}(id=${resource.id})}" method="post" class="d-inline"
                                               th:id="${formId}"></form>
+                                        <a class="btn btn-outline-secondary btn-sm"
+                                           th:href="@{/admin/resources/edit/{id}(id=${resource.id})}"
+                                           title="Edit resource">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
                                         <button type="submit" class="btn btn-outline-primary btn-sm" th:attr="form=${formId}" title="Save resource changes">
                                             <i class="bi bi-check2"></i>
                                         </button>
