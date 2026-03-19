@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.0.0 - 2026-03-19
+
+## [1.0.0](https://github.com/JFWenisch/Kairos/compare/v0.15.0...v1.0.0) (2026-03-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* updated database to reflect recursive flags
+* updated database to reflect recursive flags
+
+### Features
+
+* adding additional junit tests to meet coverage ([94a0604](https://github.com/JFWenisch/Kairos/commit/94a0604f5ed426805d07feeac1f0439b0ecfc572))
+* Adding sync for dockerrepository ([5c27aff](https://github.com/JFWenisch/Kairos/commit/5c27aff438dcc4bdb2fa1e86487c605c1f6908b0))
+* Adding sync for dockerrepository  BREAKING CHANGE: updated database to reflect recursive flags ([9ff300e](https://github.com/JFWenisch/Kairos/commit/9ff300e03d06f3d7a34344c47602e20117b4dc05))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:1.0.0
+
+
 ## v0.15.0 - 2026-03-18
 
 ## [0.15.0](https://github.com/JFWenisch/Kairos/compare/v0.14.0...v0.15.0) (2026-03-18)
