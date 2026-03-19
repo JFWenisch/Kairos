@@ -49,10 +49,37 @@ public class ResourceService {
     @Transactional
     public void delete(Long id) {
         resourceRepository.findById(id).ifPresent(resource -> {
+            if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+                deleteManagedDockerResources(resource);
+            }
+
             checkResultRepository.findByResourceOrderByCheckedAtDesc(resource)
                     .forEach(checkResultRepository::delete);
             resourceRepository.delete(resource);
         });
+    }
+
+    private void deleteManagedDockerResources(MonitoredResource dockerRepositoryResource) {
+        String groupName = managedGroupName(dockerRepositoryResource);
+        resourceGroupRepository.findByNameIgnoreCase(groupName).ifPresent(group -> {
+            List<MonitoredResource> managedResources = resourceRepository
+                    .findByGroup_IdAndResourceType(group.getId(), ResourceType.DOCKER);
+
+            for (MonitoredResource managedResource : managedResources) {
+                checkResultRepository.findByResourceOrderByCheckedAtDesc(managedResource)
+                        .forEach(checkResultRepository::delete);
+                resourceRepository.delete(managedResource);
+            }
+
+            if (resourceRepository.findByGroup_Id(group.getId()).isEmpty()) {
+                resourceGroupRepository.delete(group);
+            }
+        });
+    }
+
+    private String managedGroupName(MonitoredResource dockerRepositoryResource) {
+        String target = dockerRepositoryResource.getTarget() == null ? "" : dockerRepositoryResource.getTarget().trim();
+        return "Dockerrepository: " + target;
     }
 
     public List<CheckResult> getHistory(Long resourceId, int limit) {

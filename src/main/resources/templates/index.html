@@ -215,12 +215,17 @@
                     <div>
                         <label for="resource-target" class="form-label">Target</label>
                         <input id="resource-target" name="target" class="form-control" type="text" maxlength="1000" required
-                               placeholder="https://example.com/health or image:tag">
+                               placeholder="https://example.com/health, image:tag, or ghcr.io/jfwenisch">
                     </div>
                     <div class="form-check mt-3">
                         <input id="resource-skip-tls" name="skipTLS" class="form-check-input" type="checkbox" value="true">
                         <label for="resource-skip-tls" class="form-check-label">Ignore TLS certificate and hostname errors</label>
                         <div class="form-text">Applies to HTTPS checks, including Docker registry checks.</div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input id="resource-recursive" name="recursive" class="form-check-input" type="checkbox" value="true">
+                        <label for="resource-recursive" class="form-check-label">Recursive (Dockerrepository only)</label>
+                        <div class="form-text">Includes nested repositories below the configured prefix.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
