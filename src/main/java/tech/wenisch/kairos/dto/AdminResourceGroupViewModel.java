@@ -13,4 +13,5 @@ public class AdminResourceGroupViewModel {
     private String groupName;
     private boolean ungrouped;
     private List<MonitoredResource> resources;
+    private MonitoredResource dockerRepositoryResource;
 }

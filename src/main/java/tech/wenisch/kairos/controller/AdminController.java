@@ -6,6 +6,7 @@ import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApiKeyService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
@@ -40,6 +41,7 @@ public class AdminController {
     private final UserService userService;
     private final AnnouncementService announcementService;
     private final ApiKeyService apiKeyService;
+    private final CheckExecutorService checkExecutorService;
     private final ResourceExchangeService resourceExchangeService;
     private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
@@ -222,6 +224,7 @@ public class AdminController {
                               @RequestParam ResourceType resourceType,
                               @RequestParam String target,
                               @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                      @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
                               @RequestParam(required = false) Long groupId,
                               @RequestParam(defaultValue = "0") int displayOrder,
                               RedirectAttributes redirectAttributes) {
@@ -230,11 +233,15 @@ public class AdminController {
                 .resourceType(resourceType)
                 .target(target)
                 .skipTls(skipTls)
+                .recursive(recursive)
                 .active(true)
                 .displayOrder(displayOrder)
                 .group(resolveGroup(groupId))
                 .build();
-        resourceService.save(resource);
+        MonitoredResource saved = resourceService.save(resource);
+        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            checkExecutorService.runImmediateCheck(saved);
+        }
         redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
         return "redirect:/admin/resources";
     }
@@ -276,6 +283,7 @@ public class AdminController {
                                  @RequestParam ResourceType resourceType,
                                  @RequestParam String target,
                                  @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                                 @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
                                  @RequestParam(required = false) Long groupId,
                                  @RequestParam(defaultValue = "0") int displayOrder,
                                  RedirectAttributes redirectAttributes) {
@@ -284,9 +292,13 @@ public class AdminController {
             resource.setResourceType(resourceType);
             resource.setTarget(target == null ? "" : target.trim());
             resource.setSkipTls(skipTls);
+            resource.setRecursive(recursive);
             resource.setGroup(resolveGroup(groupId));
             resource.setDisplayOrder(displayOrder);
-            resourceService.save(resource);
+            MonitoredResource saved = resourceService.save(resource);
+            if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+                checkExecutorService.runImmediateCheck(saved);
+            }
             redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
         }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Resource not found."));
         return "redirect:/admin/resources";
@@ -509,9 +521,15 @@ public class AdminController {
     private List<AdminResourceGroupViewModel> buildAdminResourceGroups(List<MonitoredResource> resources,
                                                                         List<ResourceGroup> groups) {
         Map<Long, List<MonitoredResource>> byGroupId = new LinkedHashMap<>();
+        Map<String, MonitoredResource> dockerRepositoryByManagedGroupName = new LinkedHashMap<>();
         List<MonitoredResource> ungrouped = new ArrayList<>();
 
         for (MonitoredResource resource : resources) {
+            if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+                dockerRepositoryByManagedGroupName.put(managedGroupName(resource.getTarget()), resource);
+                continue;
+            }
+
             if (resource.getGroup() == null) {
                 ungrouped.add(resource);
                 continue;
@@ -534,9 +552,15 @@ public class AdminController {
                     .groupName(group.getName())
                     .ungrouped(false)
                     .resources(groupedResources)
+                    .dockerRepositoryResource(dockerRepositoryByManagedGroupName.get(group.getName()))
                     .build());
         }
 
         return result;
+    }
+
+    private String managedGroupName(String target) {
+        String normalizedTarget = target == null ? "" : target.trim();
+        return "Dockerrepository: " + normalizedTarget;
     }
 }

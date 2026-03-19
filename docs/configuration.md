@@ -14,6 +14,9 @@ spring.datasource.driver-class-name=org.h2.Driver
 spring.datasource.username=sa
 spring.datasource.password=
 spring.jpa.hibernate.ddl-auto=update
+spring.flyway.enabled=true
+spring.flyway.baseline-on-migrate=true
+spring.flyway.baseline-version=0
 ```
 
 The H2 web console is available at `http://localhost:8080/h2-console` when `spring.h2.console.enabled=true` (the default).
@@ -28,6 +31,9 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.datasource.username=kairos
 spring.datasource.password=secret
 spring.jpa.hibernate.ddl-auto=update
+spring.flyway.enabled=true
+spring.flyway.baseline-on-migrate=true
+spring.flyway.baseline-version=0
 ```
 
 Or with environment variables:
@@ -66,6 +72,10 @@ services:
 volumes:
   pgdata:
 ```
+
+### Automatic schema migration
+
+Kairos uses Flyway for startup migrations. On an existing database without Flyway history, Kairos automatically creates a baseline and then applies pending migrations. No manual SQL steps are required for normal upgrades.
 
 ---
 
@@ -116,11 +126,14 @@ Check intervals and parallelism are configured per resource type via **Admin →
 
 | Resource Type | Default Interval | Default Parallelism |
 |---------------|-----------------|---------------------|
-| URL | 1 minute | 5 threads |
+| HTTP | 1 minute | 5 threads |
 | DOCKER | 3600 minutes (60 h) | 2 threads |
+| DOCKERREPOSITORY | 60 minutes | 1 thread |
 
 - **Check Interval (minutes)** — how often Kairos checks all resources of this type. The scheduler polls every 30 seconds; if `now − lastRun ≥ interval`, checks are dispatched.
 - **Parallelism** — number of concurrent check threads for this resource type.
+
+For `DOCKERREPOSITORY` resources, Kairos does not create direct check results. Instead, each run synchronizes discovered repository images into generated `DOCKER` resources inside an auto-created group and removes no-longer-existing ones.
 
 > **Note:** Kairos always runs an immediate check pass on startup, regardless of the configured interval. This ensures fresh status data is available as soon as the application is ready.
 
@@ -163,7 +176,7 @@ scrape_configs:
 ### Key metric
 
 ```
-kairos_resource_status{resource_name="<name>",resource_type="<URL|DOCKER>"}
+kairos_resource_status{resource_name="<name>",resource_type="<HTTP|DOCKER>"}
 ```
 
 | Value | Meaning |

@@ -95,6 +95,7 @@ public class HomeController {
             @RequestParam ResourceType resourceType,
             @RequestParam String target,
             @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+            @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
             RedirectAttributes redirectAttributes
     ) {
         if (!isPublicAddAllowed()) {
@@ -111,10 +112,14 @@ public class HomeController {
                 .name(name.trim())
                 .resourceType(resourceType)
                 .target(target.trim())
-            .skipTls(skipTls)
+                .skipTls(skipTls)
+                .recursive(recursive)
                 .active(true)
                 .build();
-        resourceService.save(resource);
+        MonitoredResource saved = resourceService.save(resource);
+        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            checkExecutorService.runImmediateCheck(saved);
+        }
         redirectAttributes.addFlashAttribute("successMessage", "Resource submitted successfully.");
         return "redirect:/";
     }

@@ -9,6 +9,7 @@ import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,7 @@ public class ApiController {
 
     private final ResourceService resourceService;
     private final ResourceGroupService resourceGroupService;
+    private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
     private final ResourceStatusStreamService resourceStatusStreamService;
 
@@ -115,6 +117,7 @@ public class ApiController {
                             resource.getGroup() != null ? resource.getGroup().getName() : null,
                             resource.getDisplayOrder(),
                             resource.isSkipTls(),
+                            resource.isRecursive(),
                             resource.isActive(),
                             resource.getCreatedAt(),
                             resourceService.getCurrentStatus(resource),
@@ -157,11 +160,16 @@ public class ApiController {
                 .resourceType(dto.getResourceType())
                 .target(dto.getTarget())
                 .skipTls(dto.isSkipTls())
+                .recursive(dto.isRecursive())
                 .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
                 .group(group)
                 .active(true)
                 .build();
-        return ResponseEntity.ok(resourceService.save(resource));
+        MonitoredResource saved = resourceService.save(resource);
+        if (saved.getResourceType() == tech.wenisch.kairos.entity.ResourceType.DOCKERREPOSITORY) {
+            checkExecutorService.runImmediateCheck(saved);
+        }
+        return ResponseEntity.ok(saved);
     }
 
     /**

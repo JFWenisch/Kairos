@@ -13,6 +13,10 @@ public interface MonitoredResourceRepository extends JpaRepository<MonitoredReso
             select r from MonitoredResource r
             left join fetch r.group g
             where r.active = true
+                                                        and r.resourceType in (
+                                                                        tech.wenisch.kairos.entity.ResourceType.HTTP,
+                                                                        tech.wenisch.kairos.entity.ResourceType.DOCKER
+                                                        )
             order by case when g.id is null then 0 else 1 end,
                      g.displayOrder asc,
                      r.displayOrder asc,
@@ -32,4 +36,5 @@ public interface MonitoredResourceRepository extends JpaRepository<MonitoredReso
 
     List<MonitoredResource> findByResourceTypeAndActiveTrue(ResourceType resourceType);
     List<MonitoredResource> findByGroup_Id(Long groupId);
+        List<MonitoredResource> findByGroup_IdAndResourceType(Long groupId, ResourceType resourceType);
 }
