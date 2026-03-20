@@ -99,7 +99,7 @@ jobs:
             });
 
       - name: Set up Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.2.6
 
       - name: Run Trivy scan
         shell: bash
