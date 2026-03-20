@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.2 - 2026-03-20
+
+### [1.0.2](https://github.com/JFWenisch/Kairos/compare/v1.0.1...v1.0.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* update setup trivy to 0.2.6 ([ce60b76](https://github.com/JFWenisch/Kairos/commit/ce60b7622754734e47a71be8b58bdcf69d85c894))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:1.0.2
+
+
 ## v1.0.0 - 2026-03-19
 
 ## [1.0.0](https://github.com/JFWenisch/Kairos/compare/v0.15.0...v1.0.0) (2026-03-19)
