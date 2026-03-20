@@ -72,7 +72,7 @@
                         <div class="mb-3">
                             <label class="form-label">Target</label>
                             <input type="text" class="form-control" name="target" required maxlength="1000" th:value="${resource.target}">
-                            <div class="form-text">URL or Docker image name</div>
+                            <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
                         </div>
 
                         <div class="mb-3">
@@ -99,6 +99,15 @@
                                 Ignore TLS certificate and hostname errors
                             </label>
                             <div class="form-text">Used for HTTPS connections (HTTP checks and Docker registry checks).</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="recursive" name="recursive" value="true"
+                                   th:checked="${resource.recursive}">
+                            <label class="form-check-label" for="recursive">
+                                Recursive (Dockerrepository only)
+                            </label>
+                            <div class="form-text">When enabled, includes nested repositories below the given prefix.</div>
                         </div>
 
                         <div class="d-flex gap-2">

@@ -92,6 +92,7 @@ public class ResourceExchangeService {
             resource.setResourceType(resourceType);
             resource.setTarget(target.trim());
             resource.setSkipTls(readBoolean(node, false, "skipTLS", "skipTls"));
+            resource.setRecursive(readBoolean(node, false, "recursive"));
             resource.setActive(readBoolean(node, "active", true));
             resource.setDisplayOrder(readInt(node, "displayOrder", "order").orElse(0));
 
@@ -126,6 +127,7 @@ public class ResourceExchangeService {
         node.put("resourceType", resource.getResourceType() != null ? resource.getResourceType().name() : null);
         node.put("target", resource.getTarget());
         node.put("skipTLS", resource.isSkipTls());
+        node.put("recursive", resource.isRecursive());
         node.put("active", resource.isActive());
         node.put("displayOrder", resource.getDisplayOrder());
         node.put("groupName", resource.getGroup() != null ? resource.getGroup().getName() : null);

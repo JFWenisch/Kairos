@@ -7,7 +7,7 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kairos)](https://artifacthub.io/packages/helm/jfwenisch/kairos)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/JFWenisch/Kairos/actions)
 
-**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
+**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, can discover Docker images from repository prefixes, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
 
 ---
 
@@ -43,6 +43,7 @@
 
 - **HTTP monitoring** — HTTP GET checks with configurable interval and parallelism
 - **Docker image monitoring** — validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
+- **Dockerrepository discovery** — provide a repository prefix (for example `ghcr.io/jfwenisch`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
 - **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks use credentials for registry API/token requests
 - **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
@@ -58,6 +59,7 @@
 - **OIDC / OAuth2 login** — plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** — `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
 - **H2 (default) or PostgreSQL** — switch databases with a single property change
+- **Automatic schema migrations** — Flyway runs database migrations automatically on startup (existing databases are baselined)
 - **Dark-mode UI** — Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
 
 ---
@@ -168,7 +170,9 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 | `OIDC_CLIENT_SECRET` | `OIDC_CLIENT_SECRET` | *(empty)* | OIDC client secret |
 | `OIDC_ISSUER_URI` | `OIDC_ISSUER_URI` | *(empty)* | OIDC issuer URI (e.g. `https://keycloak.example.com/realms/myrealm`) |
 
-See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Docker socket access, and OIDC.
+See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Flyway migrations, registry checks, and OIDC.
+
+Database schema changes are applied automatically at startup via Flyway (`spring.flyway.enabled=true`).
 
 ## Documentation
 

@@ -13,6 +13,7 @@ import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
@@ -93,6 +94,49 @@ class ResourceServiceTest {
         verify(checkResultRepository).delete(resultTwo);
         verify(resourceRepository).delete(resource);
     }
+
+        @Test
+        void deleteDockerRepositoryAlsoDeletesManagedDockerResourcesAndGroup() {
+        MonitoredResource dockerRepository = MonitoredResource.builder()
+            .id(50L)
+            .name("artifactory")
+            .resourceType(ResourceType.DOCKERREPOSITORY)
+            .target("https://registry.example.com/artifactory/plain-images/")
+            .active(true)
+            .build();
+
+        ResourceGroup managedGroup = ResourceGroup.builder()
+            .id(15L)
+            .name("Dockerrepository: https://registry.example.com/artifactory/plain-images/")
+            .build();
+
+        MonitoredResource managedDocker = MonitoredResource.builder()
+            .id(51L)
+            .name("alpine")
+            .resourceType(ResourceType.DOCKER)
+            .target("registry.example.com/plain-images/alpine:latest")
+            .group(managedGroup)
+            .active(true)
+            .build();
+
+        CheckResult managedHistory = CheckResult.builder().id(100L).resource(managedDocker).build();
+        CheckResult repositoryHistory = CheckResult.builder().id(101L).resource(dockerRepository).build();
+
+        when(resourceRepository.findById(50L)).thenReturn(Optional.of(dockerRepository));
+        when(resourceGroupRepository.findByNameIgnoreCase(managedGroup.getName())).thenReturn(Optional.of(managedGroup));
+        when(resourceRepository.findByGroup_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
+        when(resourceRepository.findByGroup_Id(15L)).thenReturn(List.of());
+        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(managedDocker)).thenReturn(List.of(managedHistory));
+        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(dockerRepository)).thenReturn(List.of(repositoryHistory));
+
+        resourceService.delete(50L);
+
+        verify(checkResultRepository).delete(managedHistory);
+        verify(resourceRepository).delete(managedDocker);
+        verify(resourceGroupRepository).delete(managedGroup);
+        verify(checkResultRepository).delete(repositoryHistory);
+        verify(resourceRepository).delete(dockerRepository);
+        }
 
     @Test
     void getHistoryPageReturnsEmptyWhenResourceMissing() {

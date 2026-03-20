@@ -128,14 +128,31 @@
                             <i class="bi" th:classappend="${groupVm.ungrouped} ? ' bi-inboxes-fill me-2' : ' bi-folder2-open me-2'"></i>
                             <span th:text="${groupVm.groupName}">Group</span>
                         </h3>
-                        <form class="d-flex align-items-center gap-2" method="post" th:action="@{/admin/resources/reorder}">
-                            <input type="hidden" name="groupId" th:if="${!groupVm.ungrouped}" th:value="${groupVm.groupId}">
-                            <input type="hidden" name="orderedResourceIds" class="ordered-resource-ids">
-                            <button type="submit" class="btn btn-sm btn-outline-primary"
-                                    th:attr="data-save-order-for-group=${groupVm.ungrouped} ? 'ungrouped' : ${groupVm.groupId}">
-                                <i class="bi bi-save me-1"></i>Save Order
-                            </button>
-                        </form>
+                        <div class="d-flex align-items-center gap-2">
+                            <div th:if="${groupVm.dockerRepositoryResource != null}" class="d-flex align-items-center gap-2">
+                                <span class="badge text-bg-info">Dockerrepository</span>
+                                <a class="btn btn-outline-secondary btn-sm"
+                                   th:href="@{/admin/resources/edit/{id}(id=${groupVm.dockerRepositoryResource.id})}"
+                                   title="Edit Dockerrepository">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/admin/resources/delete/{id}(id=${groupVm.dockerRepositoryResource.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this Dockerrepository and all managed Docker resources?')">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete Dockerrepository">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <form class="d-flex align-items-center gap-2" method="post" th:action="@{/admin/resources/reorder}">
+                                <input type="hidden" name="groupId" th:if="${!groupVm.ungrouped}" th:value="${groupVm.groupId}">
+                                <input type="hidden" name="orderedResourceIds" class="ordered-resource-ids">
+                                <button type="submit" class="btn btn-sm btn-outline-primary"
+                                        th:attr="data-save-order-for-group=${groupVm.ungrouped} ? 'ungrouped' : ${groupVm.groupId}">
+                                    <i class="bi bi-save me-1"></i>Save Order
+                                </button>
+                            </form>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush resource-sort-list"
@@ -256,8 +273,8 @@
                     <div class="mb-3">
                         <label class="form-label">Target</label>
                         <input type="text" class="form-control" name="target" required
-                               placeholder="https://example.com or nginx:latest">
-                        <div class="form-text">URL or Docker image name</div>
+                               placeholder="https://example.com, nginx:latest, or ghcr.io/jfwenisch">
+                        <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Group</label>
@@ -277,6 +294,13 @@
                             Ignore TLS certificate and hostname errors
                         </label>
                         <div class="form-text">Used for HTTPS connections (HTTP checks and Docker registry checks).</div>
+                    </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="recursive" name="recursive" value="true">
+                        <label class="form-check-label" for="recursive">
+                            Recursive (Dockerrepository only)
+                        </label>
+                        <div class="form-text">When enabled, includes nested repositories below the given prefix.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
