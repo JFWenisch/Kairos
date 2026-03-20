@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.4 - 2026-03-20
+
+### [1.0.4](https://github.com/JFWenisch/Kairos/compare/v1.0.3...v1.0.4) (2026-03-20)
+
+
+### Bug Fixes
+
+* set flyaway to version 10.22 to allow postgre support ([c44b78a](https://github.com/JFWenisch/Kairos/commit/c44b78aaff6b39e145f50620f308c2ad77938d12))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:1.0.4
+
+
 ## v1.0.2 - 2026-03-20
 
 ### [1.0.2](https://github.com/JFWenisch/Kairos/compare/v1.0.1...v1.0.2) (2026-03-20)
