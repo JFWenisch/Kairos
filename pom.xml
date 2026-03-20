@@ -24,7 +24,7 @@
         <logback.version>1.5.25</logback.version>
         <tomcat.version>11.0.18</tomcat.version>
         <jackson-bom.version>2.18.6</jackson-bom.version>
-        <spring-security.version>6.4.15</spring-security.version>
+        <spring-security.version>6.5.9</spring-security.version>
         <spring-framework.version>6.2.11</spring-framework.version>
         <nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version>
         <httpclient5.version>5.4.3</httpclient5.version>
