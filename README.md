@@ -69,7 +69,7 @@
 ### Prerequisites
 
 - Java 17+
-- Maven 3.8+ (or use the included `./mvnw`)
+- Maven 3.8+ 
 - Network access to target Docker/OCI registries if you want Docker image checks
 
 ### Run from source
@@ -97,7 +97,7 @@ docker run -d \
   --name kairos \
   -p 8080:8080 \
   -v kairos-data:/app/data \
-  ghcr.io/jfwendisch/kairos:latest
+  ghcr.io/jfwenisch/kairos:latest
 ```
 
 ### Build a JAR
@@ -119,6 +119,14 @@ Kairos includes a production-ready Helm chart for Kubernetes deployments.
 #### Install
 
 ```bash
+helm repo add jfwenisch https://charts.wenisch.tech
+helm repo update
+helm install my-kairos jfwenisch/kairos --version 1.0.4 -n kairos --create-namespace
+```
+or install from repository
+```bash
+git clone https://github.com/JFWenisch/Kairos.git
+
 helm install kairos ./charts/kairos -n kairos --create-namespace
 ```
 
@@ -176,12 +184,16 @@ Database schema changes are applied automatically at startup via Flyway (`spring
 
 ## Documentation
 
+- [docs/README.md](docs/README.md) — documentation index
+- GitHub Pages docs site (auto-published from `docs/`): https://jfwenisch.github.io/Kairos/
+- [docs/quickstart.md](docs/quickstart.md) — quick setup paths (source, Docker, Helm)
 - [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
 - [docs/authentication.md](docs/authentication.md) — resource check authentication and credential matching
 - [docs/configuration.md](docs/configuration.md) — runtime configuration, database setup and OIDC
 - [docs/importexport.md](docs/importexport.md) — YAML import/export workflow, format and compatibility notes
 - [docs/docker-pullability.md](docs/docker-pullability.md) — socketless Docker/OCI pullability validation behavior
 - [docs/announcements.md](docs/announcements.md) — announcement features, permissions and lifecycle
+- [docs/troubleshooting.md](docs/troubleshooting.md) — common issues, diagnosis steps and fixes
 
 See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.
 
