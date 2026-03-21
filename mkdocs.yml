@@ -25,6 +25,7 @@ nav:
   - Home: index.md
   - Quick Start: quickstart.md
   - Configuration:
+      - Overview: configuration.md
       - Core Runtime:
           - Database: configuration-database.md
           - Runtime (Tomcat): configuration-runtime.md

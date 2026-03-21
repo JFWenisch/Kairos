@@ -184,7 +184,7 @@ Database schema changes are applied automatically at startup via Flyway (`spring
 
 ## Documentation
 
-- [docs/README.md](docs/README.md) — documentation index
+- [docs/index.md](docs/index.md) — documentation index
 - GitHub Pages docs site (auto-published from `docs/`): https://jfwenisch.github.io/Kairos/
 - [docs/quickstart.md](docs/quickstart.md) — quick setup paths (source, Docker, Helm)
 - [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
