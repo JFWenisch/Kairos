@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.7 - 2026-03-21
+
+### [1.0.7](https://github.com/JFWenisch/Kairos/compare/v1.0.6...v1.0.7) (2026-03-21)
+
+
+### Bug Fixes
+
+* updated mkdocs structure ([a039caf](https://github.com/JFWenisch/Kairos/commit/a039caf83c850a39ac6fb17a9d1c4b1b7cc2b1d8))
+
+
+
+Docker image: ghcr.io/jfwenisch/kairos:1.0.7
+
+
 ## v1.0.4 - 2026-03-20
 
 ### [1.0.4](https://github.com/JFWenisch/Kairos/compare/v1.0.3...v1.0.4) (2026-03-20)
