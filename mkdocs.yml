@@ -1,8 +1,8 @@
 site_name: Kairos Documentation
 site_description: Documentation for Kairos uptime monitoring
-site_url: https://jfwenisch.github.io/Kairos/
-repo_url: https://github.com/JFWenisch/Kairos
-repo_name: JFWenisch/Kairos
+site_url: https://wenisch-tech.github.io/Kairos/
+repo_url: https://github.com/wenisch-tech/Kairos
+repo_name: wenisch-tech/Kairos
 docs_dir: docs
 site_dir: site
 theme:

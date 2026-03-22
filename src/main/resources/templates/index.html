@@ -70,7 +70,7 @@
                 <div class="announcement-content" th:utext="${announcement.content}"></div>
                 <small class="text-muted d-block mt-2">
                     by <span th:text="${announcement.createdBy != null && !announcement.createdBy.isBlank()} ? ${announcement.createdBy} : 'Unknown'">Unknown</span>
-                    ·
+                    Â·
                     <span th:text="${announcement.createdAt != null} ? ${#temporals.format(announcement.createdAt, 'yyyy-MM-dd HH:mm')} : '-'">-</span>
                 </small>
             </div>
@@ -113,7 +113,7 @@
                         <div class="timeline-container">
                             <span th:each="block : ${vm.timelineBlocks}"
                                   th:class="'timeline-block ' + ${block.status}"
-                                  th:title="${block.status + ' · ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                  th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
                         </div>
                     </div>
                     <div class="col-md-2 text-end resource-score">
@@ -171,7 +171,7 @@
                                 <div class="timeline-container">
                                     <span th:each="block : ${vm.timelineBlocks}"
                                           th:class="'timeline-block ' + ${block.status}"
-                                          th:title="${block.status + ' · ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                          th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
                                 </div>
                             </div>
                             <div class="col-md-2 text-end resource-score">
@@ -187,7 +187,7 @@
     </div>
 
     <p class="landing-credit mb-0">
-        <a href="https://github.com/JFWenisch/Kairos/releases" target="_blank" rel="noopener noreferrer"
+        <a href="https://github.com/wenisch-tech/Kairos/releases" target="_blank" rel="noopener noreferrer"
            th:text="'Version ' + ${appVersion}">Version 0.0.0</a>
     </p>
 </div>

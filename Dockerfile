@@ -9,9 +9,9 @@ ARG BUILD_REVISION
 
 LABEL org.opencontainers.image.title="Kairos" \
       org.opencontainers.image.description="Self-hosted uptime and availability monitoring application" \
-      org.opencontainers.image.url="https://github.com/JFWenisch/Kairos" \
-      org.opencontainers.image.source="https://github.com/JFWenisch/Kairos" \
-      org.opencontainers.image.documentation="https://github.com/JFWenisch/Kairos/tree/main/docs" \
+      org.opencontainers.image.url="https://github.com/wenisch-tech/Kairos" \
+      org.opencontainers.image.source="https://github.com/wenisch-tech/Kairos" \
+      org.opencontainers.image.documentation="https://github.com/wenisch-tech/Kairos/tree/main/docs" \
       org.opencontainers.image.authors="JFWenisch" \
       org.opencontainers.image.licenses="GPL-3.0" \
       org.opencontainers.image.vendor="JFWenisch" \

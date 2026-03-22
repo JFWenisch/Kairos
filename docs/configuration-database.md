@@ -57,7 +57,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   kairos:
-    image: ghcr.io/jfwenisch/kairos:latest
+    image: ghcr.io/wenisch-tech/kairos:latest
     ports:
       - "8080:8080"
     environment:

@@ -21,7 +21,7 @@ This guide helps you get Kairos running quickly for local testing or small deplo
 ## Option 1: Run from Source
 
 ```bash
-git clone https://github.com/JFWenisch/Kairos.git
+git clone https://github.com/wenisch-tech/Kairos.git
 cd Kairos
 ./mvnw spring-boot:run
 ```
@@ -49,7 +49,7 @@ docker run -d \
   --name kairos \
   -p 8080:8080 \
   -v kairos-data:/app/data \
-  ghcr.io/jfwenisch/kairos:latest
+  ghcr.io/wenisch-tech/kairos:latest
 ```
 
 Open `http://localhost:8080` and log in with the same default admin credentials shown above.
@@ -61,9 +61,9 @@ Open `http://localhost:8080` and log in with the same default admin credentials 
 Add chart repo and install:
 
 ```bash
-helm repo add jfwenisch https://charts.wenisch.tech
+helm repo add wenisch-tech https://charts.wenisch.tech
 helm repo update
-helm install kairos jfwenisch/kairos -n kairos --create-namespace
+helm install kairos wenisch-tech/kairos -n kairos --create-namespace
 ```
 
 Check release status:
