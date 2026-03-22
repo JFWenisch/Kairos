@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.8 - 2026-03-22
+
+### [1.0.8](https://github.com/wenisch-tech/Kairos/compare/v1.0.7...v1.0.8) (2026-03-22)
+
+
+### Documentation
+
+* updated references after move to organization ([cb66a88](https://github.com/wenisch-tech/Kairos/commit/cb66a88e5a0e262ca8dcc56eb90aeff12af7b3ed))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.0.8
+
+
 ## v1.0.7 - 2026-03-21
 
 ### [1.0.7](https://github.com/wenisch-tech/Kairos/compare/v1.0.6...v1.0.7) (2026-03-21)
