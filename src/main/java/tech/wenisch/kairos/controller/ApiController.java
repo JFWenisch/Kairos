@@ -182,6 +182,113 @@ public class ApiController {
     }
 
     /**
+     * Creates template/sample resources for testing purposes.
+     *
+     * <p>Creates a set of diverse sample resources (HTTP endpoints, Docker images)
+     * organized into groups to demonstrate Kairos functionality. Useful for testing
+     * and demos. Requires {@code ADMIN} role.
+     *
+     * @return a JSON map with status and count of created resources
+     */
+    @Operation(summary = "Create template resources",
+               description = "Creates a set of sample resources for testing (HTTP services, Docker images, groups). Requires ADMIN role.",
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Template resources created successfully"),
+        @ApiResponse(responseCode = "403", description = "Caller does not hold the ADMIN role", content = @Content)
+    })
+    @PostMapping("/resources/templates")
+    public ResponseEntity<Map<String, Object>> createTemplateResources() {
+        // Create groups
+        ResourceGroup webServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Web Services").displayOrder(1).build()
+        );
+        ResourceGroup dockerServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Docker Images").displayOrder(2).build()
+        );
+
+        // Create HTTP resources
+        MonitoredResource httpGoogle = MonitoredResource.builder()
+                .name("Google DNS")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://dns.google")
+                .skipTls(false)
+                .displayOrder(1)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpGoogle);
+
+        MonitoredResource httpGithub = MonitoredResource.builder()
+                .name("GitHub Status")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://status.github.com")
+                .skipTls(false)
+                .displayOrder(2)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpGithub);
+
+        MonitoredResource httpExample = MonitoredResource.builder()
+                .name("Example.com")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://example.com")
+                .skipTls(false)
+                .displayOrder(3)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpExample);
+
+        // Create Docker image resources
+        MonitoredResource dockerNginx = MonitoredResource.builder()
+                .name("Nginx Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .target("docker.io/library/nginx:latest")
+                .skipTls(false)
+                .displayOrder(1)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerNginx);
+
+        MonitoredResource dockerPostgres = MonitoredResource.builder()
+                .name("PostgreSQL 15")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .target("docker.io/library/postgres:15-alpine")
+                .skipTls(false)
+                .displayOrder(2)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerPostgres);
+
+        MonitoredResource dockerRedis = MonitoredResource.builder()
+                .name("Redis Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .target("docker.io/library/redis:latest")
+                .skipTls(false)
+                .displayOrder(3)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerRedis);
+
+        // Trigger immediate checks
+        checkExecutorService.runImmediateCheck(dockerNginx);
+        checkExecutorService.runImmediateCheck(dockerPostgres);
+        checkExecutorService.runImmediateCheck(dockerRedis);
+
+        return ResponseEntity.ok(Map.of(
+            "status", "success",
+            "message", "Template resources created",
+            "groupsCreated", 2,
+            "resourcesCreated", 6
+        ));
+    }
+
+    /**
      * Permanently deletes a monitored resource and all associated check history.
      *
      * <p>Requires {@code ADMIN} role.

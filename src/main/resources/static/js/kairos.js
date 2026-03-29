@@ -46,9 +46,87 @@ function initializeTimelineLabels() {
     });
 }
 
+function initializeViewModeSwitcher() {
+    const switcher = document.querySelector('[data-role="view-mode-switcher"]');
+    if (!switcher) {
+        return;
+    }
+
+    const buttons = switcher.querySelectorAll('button[data-view-mode]');
+    const savedViewMode = localStorage.getItem('viewMode') || 'timeline';
+
+    function setViewMode(mode) {
+        // Update button states
+        buttons.forEach(function(btn) {
+            const isActive = btn.getAttribute('data-view-mode') === mode;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        // Update visibility of resource containers
+        document.querySelectorAll('[data-view]').forEach(function(container) {
+            const view = container.getAttribute('data-view');
+            if (view === mode) {
+                container.style.display = '';
+            } else {
+                container.style.display = 'none';
+            }
+        });
+
+        // Save preference
+        localStorage.setItem('viewMode', mode);
+    }
+
+    // Set initial view mode
+    setViewMode(savedViewMode);
+
+    // Add click listeners to buttons
+    buttons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const mode = button.getAttribute('data-view-mode');
+            setViewMode(mode);
+        });
+    });
+}
+
+function initializeResourceCardLinks() {
+    const cards = document.querySelectorAll('.resource-card[data-resource-url]');
+    if (cards.length === 0) {
+        return;
+    }
+
+    cards.forEach(function(card) {
+        const url = card.getAttribute('data-resource-url');
+        if (!url) {
+            return;
+        }
+
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
+
+        card.addEventListener('click', function(event) {
+            // Keep native behavior for explicit links/buttons inside the card.
+            const interactive = event.target.closest('a, button, input, select, textarea, label');
+            if (interactive) {
+                return;
+            }
+            window.location.href = url;
+        });
+
+        card.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                window.location.href = url;
+            }
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
+    initializeViewModeSwitcher();
+    initializeResourceCardLinks();
     initializeTimelineLabels();
     initResourceStatusStream();
     refreshAllGroupCounters();
@@ -66,10 +144,16 @@ function initResourceStatusStream() {
     const rangeLabel = document.querySelector('[data-role="timeline-range-label"]');
     const rangeStartLabels = document.querySelectorAll('[data-role="timeline-range-start"]');
     const loadingIndicator = document.querySelector('[data-role="timeline-loading-indicator"]');
+    const cardsLoadingIndicator = document.querySelector('[data-role="cards-loading-indicator"]');
     const hasRangeSelector = rangeButtons.length > 0;
     const pollIntervalMs = 10000;
     let pollingStarted = false;
     let currentTimelineHours = 24;
+
+    function isCardsViewActive() {
+        const visibleCardsContainer = document.querySelector('[data-view="cards"]:not([style*="display: none"])');
+        return !!visibleCardsContainer;
+    }
 
     function applySnapshot(updates) {
         if (!Array.isArray(updates)) {
@@ -112,11 +196,13 @@ function initResourceStatusStream() {
     }
 
     function setTimelineLoading(loading) {
-        if (!loadingIndicator) {
-            return;
+        const cardsActive = isCardsViewActive();
+        if (loadingIndicator) {
+            loadingIndicator.hidden = !loading || cardsActive;
         }
-
-        loadingIndicator.hidden = !loading;
+        if (cardsLoadingIndicator) {
+            cardsLoadingIndicator.hidden = !loading || !cardsActive;
+        }
         rangeButtons.forEach(function(button) {
             button.disabled = loading;
         });
@@ -142,7 +228,8 @@ function initResourceStatusStream() {
 
     function fetchSnapshot(options) {
         const showLoading = options && options.showLoading === true;
-        if (showLoading) {
+        const shouldShowLoading = showLoading || isCardsViewActive();
+        if (shouldShowLoading) {
             setTimelineLoading(true);
         }
 
@@ -164,7 +251,7 @@ function initResourceStatusStream() {
                 // Retry on next interval.
             })
             .finally(function() {
-                if (showLoading) {
+                if (shouldShowLoading) {
                     setTimelineLoading(false);
                 }
             });
