@@ -35,6 +35,36 @@
     padding: 4px 0;
 }
 
+.timeline-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.timeline-labels {
+    font-size: 0.75rem;
+    color: var(--landing-muted);
+    letter-spacing: 0.02em;
+}
+
+.timeline-label-start,
+.timeline-label-end {
+    flex-shrink: 0;
+}
+
+.timeline-label-start::before {
+    content: '◄ ';
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}
+
+.timeline-label-end::after {
+    content: ' ►';
+    margin-left: 0.25rem;
+    opacity: 0.7;
+}
+
 .status-dot {
     display: inline-block;
     width: 12px;

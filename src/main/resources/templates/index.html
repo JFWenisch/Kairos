@@ -121,10 +121,16 @@
                         </div>
                     </div>
                     <div class="col-md-7">
-                        <div class="timeline-container">
-                            <span th:each="block : ${vm.timelineBlocks}"
-                                  th:class="'timeline-block ' + ${block.status}"
-                                  th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                        <div class="timeline-wrapper">
+                            <div class="timeline-container">
+                                <span th:each="block : ${vm.timelineBlocks}"
+                                      th:class="'timeline-block ' + ${block.status}"
+                                      th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            </div>
+                            <div class="timeline-labels d-flex justify-content-between align-items-center">
+                                <small class="text-muted timeline-label-start" data-role="timeline-range-start" data-hours="24">--:--</small>
+                                <small class="text-muted timeline-label-end">--:--</small>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-2 text-end resource-score">
@@ -179,10 +185,16 @@
                                 </div>
                             </div>
                             <div class="col-md-7">
-                                <div class="timeline-container">
-                                    <span th:each="block : ${vm.timelineBlocks}"
-                                          th:class="'timeline-block ' + ${block.status}"
-                                          th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                <div class="timeline-wrapper">
+                                    <div class="timeline-container">
+                                        <span th:each="block : ${vm.timelineBlocks}"
+                                              th:class="'timeline-block ' + ${block.status}"
+                                              th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                    </div>
+                                    <div class="timeline-labels d-flex justify-content-between align-items-center">
+                                        <small class="text-muted timeline-label-start" data-role="timeline-range-start" data-hours="24">--:--</small>
+                                        <small class="text-muted timeline-label-end">--:--</small>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-2 text-end resource-score">

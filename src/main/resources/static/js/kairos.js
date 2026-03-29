@@ -6,9 +6,50 @@ function toggleDarkMode() {
     localStorage.setItem('theme', next);
 }
 
+function formatDateTime(date) {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    const shortMonth = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getMonth()];
+    return shortMonth + ' ' + day + ', ' + year + ' ' + hours + ':' + mins;
+}
+
+function calculateStartDateTime(hours) {
+    const now = new Date();
+    const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
+    return start;
+}
+
+function initializeTimelineLabels() {
+    const startLabels = document.querySelectorAll('[data-role="timeline-range-start"]');
+    const endLabels = document.querySelectorAll('.timeline-label-end');
+    
+    if (startLabels.length === 0 && endLabels.length === 0) {
+        return;
+    }
+    
+    const now = new Date();
+    const start = calculateStartDateTime(24);
+    const startLabel = formatDateTime(start);
+    const endLabel = formatDateTime(now);
+    
+    startLabels.forEach(function(labelElement) {
+        labelElement.textContent = startLabel;
+        labelElement.setAttribute('title', 'Start: ' + startLabel);
+    });
+    
+    endLabels.forEach(function(labelElement) {
+        labelElement.textContent = endLabel;
+        labelElement.setAttribute('title', 'End: ' + endLabel);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
+    initializeTimelineLabels();
     initResourceStatusStream();
     refreshAllGroupCounters();
     initAdminResourceSorting();
@@ -54,11 +95,19 @@ function initResourceStatusStream() {
         }
         rangeLabel.textContent = formatRangeLabel(hours);
 
-        const startLabel = hours === 168
-            ? '7 days ago'
-            : (hours === 720 ? '30 days ago' : '24 hours ago');
+        const startDateTime = calculateStartDateTime(hours);
+        const startLabel = formatDateTime(startDateTime);
+        const endLabel = formatDateTime(new Date());
+        
         rangeStartLabels.forEach(function(labelElement) {
             labelElement.textContent = startLabel;
+            labelElement.setAttribute('title', 'Start: ' + startLabel);
+        });
+        
+        const endLabels = document.querySelectorAll('.timeline-label-end');
+        endLabels.forEach(function(labelElement) {
+            labelElement.textContent = endLabel;
+            labelElement.setAttribute('title', 'End: ' + endLabel);
         });
     }
 
@@ -147,24 +196,39 @@ function initResourceStatusStream() {
             ? Number(preselected.getAttribute('data-timeline-hours'))
             : 24;
         setSelectedRange(selectedHours === 168 || selectedHours === 720 ? selectedHours : 24);
-
-        rangeButtons.forEach(function(button) {
-            button.addEventListener('click', function() {
-                const hours = Number(button.getAttribute('data-timeline-hours'));
-                if (hours !== 24 && hours !== 168 && hours !== 720) {
-                    return;
-                }
-                if (hours === currentTimelineHours) {
-                    return;
-                }
-                setSelectedRange(hours);
-                fetchSnapshotWithOptionalLoading(true);
-            });
+    } else {
+        // Initialize timeline labels with default 24h range if no range selector
+        const startLabels = document.querySelectorAll('[data-role="timeline-range-start"]');
+        const now = new Date();
+        const start = calculateStartDateTime(24);
+        const startLabel = formatDateTime(start);
+        const endLabel = formatDateTime(now);
+        
+        startLabels.forEach(function(labelElement) {
+            labelElement.textContent = startLabel;
+            labelElement.setAttribute('title', 'Start: ' + startLabel);
         });
-
-        startHttpPolling();
-        return;
+        
+        const endLabels = document.querySelectorAll('.timeline-label-end');
+        endLabels.forEach(function(labelElement) {
+            labelElement.textContent = endLabel;
+            labelElement.setAttribute('title', 'End: ' + endLabel);
+        });
     }
+
+    rangeButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            const hours = Number(button.getAttribute('data-timeline-hours'));
+            if (hours !== 24 && hours !== 168 && hours !== 720) {
+                return;
+            }
+            if (hours === currentTimelineHours) {
+                return;
+            }
+            setSelectedRange(hours);
+            fetchSnapshotWithOptionalLoading(true);
+        });
+    });
 
     if (typeof EventSource === 'undefined') {
         startHttpPolling();
