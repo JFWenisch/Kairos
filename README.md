@@ -2,7 +2,7 @@
 
 
 [![GitHub Release](https://img.shields.io/github/v/release/wenisch-tech/Kairos?logo=github)](https://github.com/wenisch-tech/Kairos/releases)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE.md)
 [![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/Kairos/pkgs/container/kairos)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kairos)](https://artifacthub.io/packages/helm/jfwenisch/kairos)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/actions)
@@ -249,5 +249,5 @@ A health endpoint is also available at `/actuator/health`.
 ---
 
 ## License
-
-[GNU GPL v3.0](LICENSE.md)
+Licensed under 
+[AGPL v3.0](LICENSE.md) by Jean-Fabian Wenisch / wenisch.tech
