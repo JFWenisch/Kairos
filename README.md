@@ -47,6 +47,7 @@
 - **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
 - **Instant checks on startup** - monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** - 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
+- **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
 - **Manual instant checks** - admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
 - **Public "Check Now"** - optionally allow unauthenticated users to trigger an immediate check from the resource detail page
 - **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups
@@ -182,6 +183,24 @@ See [docs/configuration.md](docs/configuration.md) for advanced configuration in
 
 Database schema changes are applied automatically at startup via Flyway (`spring.flyway.enabled=true`).
 
+### Outage Configuration
+
+Outage thresholds are configured per resource type in the UI under **Admin -> Resource Types**:
+
+- **Outage threshold**: number of consecutive unsuccessful checks required to open an outage
+- **Recovery threshold**: number of consecutive successful checks required to close an outage
+
+Defaults for new resource type configs:
+
+- Outage threshold: `3`
+- Recovery threshold: `2`
+
+Behavior notes:
+
+- Kairos keeps only one active outage per resource.
+- The public outages page is available at `/outages`.
+- Resource pages and dashboard cards/rows show active outage indicators with live elapsed duration.
+
 ## Documentation
 
 - [docs/index.md](docs/index.md) - documentation index
@@ -190,6 +209,7 @@ Database schema changes are applied automatically at startup via Flyway (`spring
 - [docs/api.md](docs/api.md) - REST API endpoints, payloads and examples
 - [docs/authentication.md](docs/authentication.md) - resource check authentication and credential matching
 - [docs/configuration.md](docs/configuration.md) - runtime configuration, database setup and OIDC
+- [docs/configuration-scheduling.md](docs/configuration-scheduling.md) - intervals, parallelism, and outage threshold behavior
 - [docs/importexport.md](docs/importexport.md) - YAML import/export workflow, format and compatibility notes
 - [docs/docker-pullability.md](docs/docker-pullability.md) - socketless Docker/OCI pullability validation behavior
 - [docs/announcements.md](docs/announcements.md) - announcement features, permissions and lifecycle

@@ -122,11 +122,67 @@ function initializeResourceCardLinks() {
     });
 }
 
+function initializeOutageSinceCounters() {
+    const counters = document.querySelectorAll('[data-role="outage-since-counter"]');
+    if (counters.length === 0) {
+        return;
+    }
+
+    function formatElapsed(totalSeconds) {
+        const safeSeconds = Math.max(0, totalSeconds);
+        const days = Math.floor(safeSeconds / 86400);
+        const hours = Math.floor((safeSeconds % 86400) / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+
+        if (days > 0) {
+            return days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+        }
+        if (hours > 0) {
+            return hours + 'h ' + minutes + 'm ' + seconds + 's';
+        }
+        if (minutes > 0) {
+            return minutes + 'm ' + seconds + 's';
+        }
+        return seconds + 's';
+    }
+
+    function parseStart(raw) {
+        if (!raw) {
+            return null;
+        }
+        const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+        const parsed = new Date(normalized);
+        if (Number.isNaN(parsed.getTime())) {
+            return null;
+        }
+        return parsed;
+    }
+
+    function refresh() {
+        const now = Date.now();
+        counters.forEach(function(counter) {
+            const startRaw = counter.getAttribute('data-outage-start');
+            const startDate = parseStart(startRaw);
+            if (!startDate) {
+                counter.textContent = '-';
+                return;
+            }
+            const elapsedSeconds = Math.floor((now - startDate.getTime()) / 1000);
+            counter.textContent = formatElapsed(elapsedSeconds);
+        });
+    }
+
+    refresh();
+    window.setInterval(refresh, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
     initializeViewModeSwitcher();
     initializeResourceCardLinks();
+    initializeOutageSinceCounters();
     initializeTimelineLabels();
     initResourceStatusStream();
     refreshAllGroupCounters();

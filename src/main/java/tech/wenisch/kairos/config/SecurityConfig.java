@@ -69,7 +69,7 @@ public class SecurityConfig {
             ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/announcements", "/resources/**", "/login", "/css/**", "/js/**", "/img/**",
+                .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/login", "/error", "/css/**", "/js/**", "/img/**",
                         "/webjars/**", "/actuator/prometheus", "/actuator/health", "/h2-console/**",
                         "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api").permitAll()
                 .requestMatchers("/api/resources").permitAll()

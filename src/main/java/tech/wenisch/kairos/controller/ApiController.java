@@ -244,7 +244,7 @@ public class ApiController {
         // Create Docker image resources
         MonitoredResource dockerNginx = MonitoredResource.builder()
                 .name("Nginx Latest")
-                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
                 .target("docker.io/library/nginx:latest")
                 .skipTls(false)
                 .displayOrder(1)
@@ -255,7 +255,7 @@ public class ApiController {
 
         MonitoredResource dockerPostgres = MonitoredResource.builder()
                 .name("PostgreSQL 15")
-                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
                 .target("docker.io/library/postgres:15-alpine")
                 .skipTls(false)
                 .displayOrder(2)
@@ -266,7 +266,7 @@ public class ApiController {
 
         MonitoredResource dockerRedis = MonitoredResource.builder()
                 .name("Redis Latest")
-                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKERIMAGE)
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
                 .target("docker.io/library/redis:latest")
                 .skipTls(false)
                 .displayOrder(3)

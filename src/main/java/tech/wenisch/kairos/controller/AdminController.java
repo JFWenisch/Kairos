@@ -323,10 +323,14 @@ public class AdminController {
     public String updateResourceType(@RequestParam Long id,
                                      @RequestParam int checkIntervalMinutes,
                                      @RequestParam int parallelism,
+                                     @RequestParam(defaultValue = "3") int outageThreshold,
+                                     @RequestParam(defaultValue = "2") int recoveryThreshold,
                                      RedirectAttributes redirectAttributes) {
         resourceTypeConfigRepository.findById(id).ifPresent(config -> {
             config.setCheckIntervalMinutes(checkIntervalMinutes);
             config.setParallelism(parallelism);
+            config.setOutageThreshold(Math.max(1, outageThreshold));
+            config.setRecoveryThreshold(Math.max(1, recoveryThreshold));
             resourceTypeConfigRepository.save(config);
         });
         redirectAttributes.addFlashAttribute("successMessage", "Configuration updated");
