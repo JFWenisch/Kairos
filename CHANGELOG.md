@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.9 - 2026-03-29
+
+### [1.0.9](https://github.com/wenisch-tech/Kairos/compare/v1.0.8...v1.0.9) (2026-03-29)
+
+
+### Documentation
+
+* update artifacthub link in readme ([3006f03](https://github.com/wenisch-tech/Kairos/commit/3006f032344b5a0e35f974f150d39d934c8605cf))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.0.9
+
+
 ## v1.0.8 - 2026-03-22
 
 ### [1.0.8](https://github.com/wenisch-tech/Kairos/compare/v1.0.7...v1.0.8) (2026-03-22)
