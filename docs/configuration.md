@@ -9,6 +9,7 @@ For easier navigation, each major topic is documented on a dedicated page.
 - [Database](configuration-database.md)
 - [OIDC / OAuth2](configuration-oidc.md)
 - [Check Scheduling](configuration-scheduling.md)
+- [Outage Thresholds and Lifecycle](configuration-scheduling.md#outage-detection-and-recovery)
 - [Observability](configuration-observability.md)
 - [Runtime (Tomcat)](configuration-runtime.md)
 - [Security](configuration-security.md)

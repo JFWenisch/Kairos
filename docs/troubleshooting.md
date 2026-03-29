@@ -124,6 +124,26 @@ Typical fixes:
 
 ---
 
+### Resource page fails with outage-related error
+
+Symptoms:
+
+- Resource detail page returns server error when active outages exist
+- Logs include `NonUniqueResultException` or "Query did not return a unique result"
+
+Checks:
+
+1. Confirm whether multiple active outages exist for the same resource.
+2. Review outage table entries for duplicate active periods.
+
+Typical fixes:
+
+- Upgrade to a version that includes duplicate active outage normalization.
+- Ensure outage thresholds are configured sensibly in **Admin -> Resource Types**.
+- If needed, clean up legacy/invalid outage rows directly in the database backup copy before restart.
+
+---
+
 ### HTTP resource fails with TLS errors
 
 Symptoms:
