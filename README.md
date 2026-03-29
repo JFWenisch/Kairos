@@ -13,29 +13,18 @@
 
 ## Screenshots
 
-### Status Dashboard
-![Status Dashboard](docs/img/dashboard.png)
+![Status Dashboard – Card View](docs/img/dashboard-cards.png)
 
-### Resource Detail
-![Resource Detail](docs/img/resource-detail.png)
-
-### Admin - Manage Resources
-![Manage Resources](docs/img/admin-resources.png)
-
-### Admin - Resource Type Configuration
-![Resource Types](docs/img/admin-resource-types.png)
-
-### Admin - Announcements
-![Announcements](docs/img/admin-announcements.png)
-
-### Admin - API Keys
-![API Keys](docs/img/admin-api-keys.png)
-
-### Admin - Users
-![Users](docs/img/admin-users.png)
-
-### Admin - General Settings
-![Settings](docs/img/admin-settings.png)
+| Screenshot | Description |
+|---|---|
+| ![Status Dashboard](docs/img/dashboard.png) | **Status Dashboard (Timeline view)** — 24-hour timeline bars per resource, uptime percentages, and active outage indicators across multiple groups. |
+| ![Resource Detail](docs/img/resource-detail.png) | **Resource Detail** — Full check history table with status, response time, and error codes; manual "Check Now" button and outage history. |
+| ![Manage Resources](docs/img/admin-resources.png) | **Admin · Manage Resources** — Add, edit, and delete monitored resources; drag-and-drop reordering within and across groups. |
+| ![Resource Types](docs/img/admin-resource-types.png) | **Admin · Resource Type Configuration** — Configure check intervals, parallelism, outage and recovery thresholds per resource type (HTTP, Docker, Docker Repository). |
+| ![Announcements](docs/img/admin-announcements.png) | **Admin · Announcements** — Create and manage rich-text status announcements with severity levels and optional auto-expiry. |
+| ![API Keys](docs/img/admin-api-keys.png) | **Admin · API Keys** — Generate and revoke named API keys for machine-to-machine access to the REST API. |
+| ![Users](docs/img/admin-users.png) | **Admin · Users** — Manage local user accounts and passwords. |
+| ![Settings](docs/img/admin-settings.png) | **Admin · General Settings** — Application-wide settings including public submission mode and OIDC configuration. |
 
 ---
 
