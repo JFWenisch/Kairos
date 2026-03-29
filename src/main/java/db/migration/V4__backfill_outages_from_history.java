@@ -3,6 +3,7 @@ package db.migration;
 import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
 
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -19,6 +20,16 @@ public class V4__backfill_outages_from_history extends BaseJavaMigration {
 
     @Override
     public void migrate(Context context) throws Exception {
+        if (!tableExists(context, "monitored_resource")
+                || !tableExists(context, "check_result")
+                || !tableExists(context, "outage")) {
+            return;
+        }
+
+        boolean hasResourceTypeConfig = tableExists(context, "resource_type_config");
+        boolean hasOutageThreshold = hasResourceTypeConfig && columnExists(context, "resource_type_config", "outage_threshold");
+        boolean hasRecoveryThreshold = hasResourceTypeConfig && columnExists(context, "resource_type_config", "recovery_threshold");
+
         // Collect all resource IDs and their types
         List<Long> resourceIds = new ArrayList<>();
         List<String> resourceTypes = new ArrayList<>();
@@ -39,13 +50,15 @@ public class V4__backfill_outages_from_history extends BaseJavaMigration {
             int outageThreshold = 3;
             int recoveryThreshold = 2;
 
-            try (PreparedStatement ps = context.getConnection().prepareStatement(
-                    "SELECT outage_threshold, recovery_threshold FROM resource_type_config WHERE type_name = ?")) {
-                ps.setString(1, resourceType);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        outageThreshold = rs.getInt("outage_threshold");
-                        recoveryThreshold = rs.getInt("recovery_threshold");
+            if (hasResourceTypeConfig && hasOutageThreshold && hasRecoveryThreshold) {
+                try (PreparedStatement ps = context.getConnection().prepareStatement(
+                        "SELECT outage_threshold, recovery_threshold FROM resource_type_config WHERE type_name = ?")) {
+                    ps.setString(1, resourceType);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            outageThreshold = rs.getInt("outage_threshold");
+                            recoveryThreshold = rs.getInt("recovery_threshold");
+                        }
                     }
                 }
             }
@@ -134,6 +147,30 @@ public class V4__backfill_outages_from_history extends BaseJavaMigration {
                 }
             }
             // Any outage still open at the end remains active with no end_date
+        }
+    }
+
+    private boolean tableExists(Context context, String tableName) throws Exception {
+        DatabaseMetaData metaData = context.getConnection().getMetaData();
+        try (ResultSet upper = metaData.getTables(null, null, tableName.toUpperCase(), null)) {
+            if (upper.next()) {
+                return true;
+            }
+        }
+        try (ResultSet lower = metaData.getTables(null, null, tableName.toLowerCase(), null)) {
+            return lower.next();
+        }
+    }
+
+    private boolean columnExists(Context context, String tableName, String columnName) throws Exception {
+        DatabaseMetaData metaData = context.getConnection().getMetaData();
+        try (ResultSet upper = metaData.getColumns(null, null, tableName.toUpperCase(), columnName.toUpperCase())) {
+            if (upper.next()) {
+                return true;
+            }
+        }
+        try (ResultSet lower = metaData.getColumns(null, null, tableName.toLowerCase(), columnName.toLowerCase())) {
+            return lower.next();
         }
     }
 }
