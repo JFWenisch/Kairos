@@ -137,14 +137,19 @@ public class ResourceService {
     private static final int TIMELINE_BUCKETS = 90;
 
     public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource) {
+        return getTimelineBlocks(resource, 24);
+    }
+
+    public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = now.minusHours(24);
+        LocalDateTime start = now.minusHours(safeHours);
 
         List<CheckResult> results = checkResultRepository
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
 
-        long totalMinutes = 24 * 60;
-        long bucketMinutes = totalMinutes / TIMELINE_BUCKETS;
+        long totalMinutes = (long) safeHours * 60;
+        long bucketMinutes = Math.max(totalMinutes / TIMELINE_BUCKETS, 1);
 
         List<TimelineBlockDTO> blocks = new ArrayList<>(TIMELINE_BUCKETS);
         for (int i = 0; i < TIMELINE_BUCKETS; i++) {

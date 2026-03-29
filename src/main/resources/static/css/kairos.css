@@ -177,6 +177,21 @@
     gap: 0.4rem;
 }
 
+.timeline-range-group .btn {
+    min-width: 3.2rem;
+}
+
+.timeline-loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+}
+
+.timeline-loading-indicator[hidden] {
+    display: none !important;
+}
+
 .live-pill {
     display: inline-flex;
     align-items: center;

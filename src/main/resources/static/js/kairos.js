@@ -20,14 +20,105 @@ function initResourceStatusStream() {
         return;
     }
 
+    const rangeControls = document.querySelector('[data-role="timeline-range-controls"]');
+    const rangeButtons = rangeControls ? rangeControls.querySelectorAll('[data-timeline-hours]') : [];
+    const rangeLabel = document.querySelector('[data-role="timeline-range-label"]');
+    const rangeStartLabels = document.querySelectorAll('[data-role="timeline-range-start"]');
+    const loadingIndicator = document.querySelector('[data-role="timeline-loading-indicator"]');
+    const hasRangeSelector = rangeButtons.length > 0;
     const pollIntervalMs = 10000;
     let pollingStarted = false;
+    let currentTimelineHours = 24;
 
     function applySnapshot(updates) {
         if (!Array.isArray(updates)) {
             return;
         }
         updates.forEach(updateResourceRow);
+    }
+
+    function formatRangeLabel(hours) {
+        switch (hours) {
+            case 168:
+                return 'Last 7 days';
+            case 720:
+                return 'Last 30 days';
+            default:
+                return 'Last 24 hours';
+        }
+    }
+
+    function applyRangeLabel(hours) {
+        if (!rangeLabel) {
+            return;
+        }
+        rangeLabel.textContent = formatRangeLabel(hours);
+
+        const startLabel = hours === 168
+            ? '7 days ago'
+            : (hours === 720 ? '30 days ago' : '24 hours ago');
+        rangeStartLabels.forEach(function(labelElement) {
+            labelElement.textContent = startLabel;
+        });
+    }
+
+    function setTimelineLoading(loading) {
+        if (!loadingIndicator) {
+            return;
+        }
+
+        loadingIndicator.hidden = !loading;
+        rangeButtons.forEach(function(button) {
+            button.disabled = loading;
+        });
+    }
+
+    function setSelectedRange(hours) {
+        currentTimelineHours = hours;
+        rangeButtons.forEach(function(button) {
+            const buttonHours = Number(button.getAttribute('data-timeline-hours'));
+            const isActive = buttonHours === hours;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        applyRangeLabel(hours);
+    }
+
+    function buildSnapshotUrl() {
+        if (!hasRangeSelector) {
+            return '/api/resources/status-updates';
+        }
+        return '/api/resources/status-updates?hours=' + encodeURIComponent(String(currentTimelineHours));
+    }
+
+    function fetchSnapshot(options) {
+        const showLoading = options && options.showLoading === true;
+        if (showLoading) {
+            setTimelineLoading(true);
+        }
+
+        return fetch(buildSnapshotUrl(), {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            },
+            cache: 'no-store'
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Polling failed with status ' + response.status);
+                }
+                return response.json();
+            })
+            .then(applySnapshot)
+            .catch(function() {
+                // Retry on next interval.
+            })
+            .finally(function() {
+                if (showLoading) {
+                    setTimelineLoading(false);
+                }
+            });
     }
 
     function startHttpPolling() {
@@ -37,27 +128,42 @@ function initResourceStatusStream() {
         pollingStarted = true;
 
         const fetchSnapshot = function() {
-            fetch('/api/resources/status-updates', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                cache: 'no-store'
-            })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error('Polling failed with status ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(applySnapshot)
-                .catch(function() {
-                    // Retry on next interval.
-                });
+            fetchSnapshotWithOptionalLoading(false);
         };
 
         fetchSnapshot();
         window.setInterval(fetchSnapshot, pollIntervalMs);
+    }
+
+    function fetchSnapshotWithOptionalLoading(showLoading) {
+        fetchSnapshot({ showLoading: showLoading });
+    }
+
+    if (hasRangeSelector) {
+        const preselected = Array.prototype.find.call(rangeButtons, function(button) {
+            return button.classList.contains('active');
+        });
+        const selectedHours = preselected
+            ? Number(preselected.getAttribute('data-timeline-hours'))
+            : 24;
+        setSelectedRange(selectedHours === 168 || selectedHours === 720 ? selectedHours : 24);
+
+        rangeButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const hours = Number(button.getAttribute('data-timeline-hours'));
+                if (hours !== 24 && hours !== 168 && hours !== 720) {
+                    return;
+                }
+                if (hours === currentTimelineHours) {
+                    return;
+                }
+                setSelectedRange(hours);
+                fetchSnapshotWithOptionalLoading(true);
+            });
+        });
+
+        startHttpPolling();
+        return;
     }
 
     if (typeof EventSource === 'undefined') {

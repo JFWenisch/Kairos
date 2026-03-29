@@ -80,8 +80,17 @@ public class ApiController {
     }
 
     @GetMapping("/resources/status-updates")
-    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates() {
-        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot());
+    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates(
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours));
+    }
+
+    private int normalizeTimelineHours(int hours) {
+        return switch (hours) {
+            case 24, 168, 720 -> hours;
+            default -> 24;
+        };
     }
 
     /**

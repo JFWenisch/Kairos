@@ -46,21 +46,33 @@ public class ResourceStatusStreamService {
     }
 
     public List<ResourceStatusUpdateDTO> getSnapshot() {
-        return buildSnapshot();
+        return buildSnapshot(24);
+    }
+
+    public List<ResourceStatusUpdateDTO> getSnapshot(int hours) {
+        return buildSnapshot(hours);
     }
 
     private List<ResourceStatusUpdateDTO> buildSnapshot() {
+        return buildSnapshot(24);
+    }
+
+    private List<ResourceStatusUpdateDTO> buildSnapshot(int hours) {
         return resourceService.findAllActive().stream()
-                .map(this::buildUpdate)
+                .map(resource -> buildUpdate(resource, hours))
                 .toList();
     }
 
     private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource) {
+        return buildUpdate(resource, 24);
+    }
+
+    private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours) {
         return new ResourceStatusUpdateDTO(
                 resource.getId(),
                 resourceService.getCurrentStatus(resource),
-                resourceService.getTimelineBlocks(resource),
-                resourceService.getUptimePercentage(resource, 24)
+                resourceService.getTimelineBlocks(resource, hours),
+                resourceService.getUptimePercentage(resource, hours)
         );
     }
 
