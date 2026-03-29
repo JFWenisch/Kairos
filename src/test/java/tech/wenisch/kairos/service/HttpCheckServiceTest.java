@@ -31,6 +31,9 @@ class HttpCheckServiceTest {
     @Mock
     private ResourceStatusStreamService resourceStatusStreamService;
 
+        @Mock
+        private OutageService outageService;
+
     @InjectMocks
     private HttpCheckService httpCheckService;
 
@@ -49,6 +52,7 @@ class HttpCheckServiceTest {
 
         CheckResult result = httpCheckService.check(resource);
         assertThat(result.getStatus()).isEqualTo(CheckStatus.NOT_AVAILABLE);
+                verify(outageService).evaluate(resource);
         verify(resourceStatusStreamService).publishResourceUpdate(resource);
     }
 
