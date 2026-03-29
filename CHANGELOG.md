@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.2.0 - 2026-03-29
+
+## [1.2.0](https://github.com/wenisch-tech/Kairos/compare/v1.1.0...v1.2.0) (2026-03-29)
+
+
+### Features
+
+*  Added Outage Entity that indicated not being available for a certain time BREAKING CHANGE:  databasemigration required ([71f9dd2](https://github.com/wenisch-tech/Kairos/commit/71f9dd29f16723841ac4021345fe991f9e3fd028))
+* Add outage functiality ([46787ea](https://github.com/wenisch-tech/Kairos/commit/46787ea20fa9956bdcea4492bd334c16f7466bcb))
+* Added indicator to resources showing how long outage is active ([8e8cbe3](https://github.com/wenisch-tech/Kairos/commit/8e8cbe3b65656c77d76cf16fc1b99906d10e55a4))
+* added migration script to allow backfill of outages based on existing data ([b1f42cf](https://github.com/wenisch-tech/Kairos/commit/b1f42cfc402404eedc1fcf26e95abd08c912f49f))
+* added outage panel to resource page ([24d8a17](https://github.com/wenisch-tech/Kairos/commit/24d8a17dbec026a2f995185f9238b04cad791b20))
+* moved outage to dedicated page ([64802ae](https://github.com/wenisch-tech/Kairos/commit/64802aeffb10e4607907a1a5a4ab9654e777af8e))
+
+
+### Bug Fixes
+
+* implemented fallback option for handling outages ([29c585c](https://github.com/wenisch-tech/Kairos/commit/29c585cbeb000a90fcbd10ff73799c5fafcd828f))
+* update migration scripts ([ccf15c8](https://github.com/wenisch-tech/Kairos/commit/ccf15c871fbfaa5b39173036461cd41bf1a38771))
+* updated test structure to ignore flyaway migratio ([487acf5](https://github.com/wenisch-tech/Kairos/commit/487acf5ed4c10aa4f6a9d0ca74ad01386631c328))
+
+
+### Documentation
+
+* updated documentation regarding outage feature and configuration ([45a6207](https://github.com/wenisch-tech/Kairos/commit/45a6207c202817022c7f8e6ce34b2dcb3480a97c))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.2.0
+
+
 ## v1.0.9 - 2026-03-29
 
 ### [1.0.9](https://github.com/wenisch-tech/Kairos/compare/v1.0.8...v1.0.9) (2026-03-29)
