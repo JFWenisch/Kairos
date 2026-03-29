@@ -131,6 +131,12 @@
                                     <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                            th:text="${vm.resource.target}">target</small>
                                 </div>
+                                <div class="outage-inline-badge mt-1" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    Active outage since
+                                    <span data-role="outage-since-counter"
+                                          th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -173,6 +179,11 @@
                        class="text-decoration-none fw-semibold card-title mb-2"
                        th:text="${vm.resource.name}">Resource Name</a>
                     <small class="text-muted resource-target mb-3" th:text="${vm.resource.target}">target</small>
+                    <div class="outage-card-indicator mb-3" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Active outage since <span data-role="outage-since-counter"
+                                                  th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                    </div>
                     <div class="mt-auto">
                         <div class="resource-score text-center py-2">
                             <div class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</div>
@@ -222,6 +233,12 @@
                                             <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                                    th:text="${vm.resource.target}">target</small>
                                         </div>
+                                        <div class="outage-inline-badge mt-1" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                            Active outage since
+                                            <span data-role="outage-since-counter"
+                                                  th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -269,6 +286,11 @@
                                class="text-decoration-none fw-semibold card-title mb-2"
                                th:text="${vm.resource.name}">Resource Name</a>
                             <small class="text-muted resource-target mb-3" th:text="${vm.resource.target}">target</small>
+                            <div class="outage-card-indicator mb-3" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Active outage since <span data-role="outage-since-counter"
+                                                          th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                            </div>
                             <div class="mt-auto">
                                 <div class="resource-score text-center py-2">
                                     <div class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</div>

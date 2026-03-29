@@ -31,7 +31,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +50,7 @@ public class HomeController {
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
+    private static final DateTimeFormatter OUTAGE_START_DATA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     @GetMapping("/")
     public String index(Model model) {
@@ -56,6 +59,15 @@ public class HomeController {
         List<ResourceViewModel> allViewModels = resources.stream()
                 .map(this::toResourceViewModel)
                 .toList();
+
+        Map<Long, String> activeOutageSinceByResourceId = new HashMap<>();
+        for (MonitoredResource resource : resources) {
+            outageService.findActiveOutage(resource)
+                .ifPresent(outage -> activeOutageSinceByResourceId.put(
+                    resource.getId(),
+                    outage.getStartDate().format(OUTAGE_START_DATA_FORMATTER)
+                ));
+        }
 
         List<ResourceViewModel> ungroupedResources = new ArrayList<>();
         Map<Long, ResourceGroup> groupsById = new LinkedHashMap<>();
@@ -90,6 +102,7 @@ public class HomeController {
         model.addAttribute("allResources", allViewModels);
         model.addAttribute("ungroupedResources", ungroupedResources);
         model.addAttribute("groupedResources", groupedResources);
+        model.addAttribute("activeOutageSinceByResourceId", activeOutageSinceByResourceId);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
         model.addAttribute("resourceTypes", ResourceType.values());

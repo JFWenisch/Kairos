@@ -60,7 +60,9 @@
             <strong>Active Outage</strong> — This resource has been unavailable since
             <strong th:text="${#temporals.format(activeOutage.startDate, 'yyyy-MM-dd HH:mm:ss')}">-</strong>
             <span class="ms-1">(duration:</span>
-            <strong th:text="${activeOutageDuration}">0m</strong>
+            <strong data-role="outage-since-counter"
+                    th:attr="data-outage-start=${#temporals.format(activeOutage.startDate, 'yyyy-MM-dd''T''HH:mm:ss')}"
+                    th:text="${activeOutageDuration}">0m</strong>
             <span>)</span>.
         </div>
     </div>

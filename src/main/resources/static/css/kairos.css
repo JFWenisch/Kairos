@@ -409,6 +409,38 @@
     font-size: 1.18rem;
 }
 
+.outage-inline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    color: #ff9ea8;
+    background-color: rgba(220, 53, 69, 0.14);
+    width: fit-content;
+}
+
+.outage-card-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.74rem;
+    border: 1px solid rgba(220, 53, 69, 0.38);
+    background-color: rgba(220, 53, 69, 0.14);
+    color: #ffb6bd;
+    border-radius: 0.55rem;
+    padding: 0.32rem 0.5rem;
+}
+
+[data-bs-theme="light"] .outage-inline-badge,
+[data-bs-theme="light"] .outage-card-indicator {
+    color: #7f1824;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
 .landing-credit {
     position: absolute;
     right: 12px;
