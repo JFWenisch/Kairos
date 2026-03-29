@@ -13,11 +13,12 @@
 
 ## Screenshots
 
-![Status Dashboard – Card View](docs/img/dashboard-cards.png)
+![Status Dashboard – Card View](docs/img/kairos-hero.png)
 
 | Screenshot | Description |
 |---|---|
 | ![Status Dashboard](docs/img/dashboard.png) | **Status Dashboard (Timeline view)** — 24-hour timeline bars per resource, uptime percentages, and active outage indicators across multiple groups. |
+| ![Status Dashboard](docs/img/dashboard-cards.png) | **Status Dashboard (Card view)** — card based overview per resource, uptime percentages, and active outage indicators across multiple groups. |
 | ![Resource Detail](docs/img/resource-detail.png) | **Resource Detail** — Full check history table with status, response time, and error codes; manual "Check Now" button and outage history. |
 | ![Manage Resources](docs/img/admin-resources.png) | **Admin · Manage Resources** — Add, edit, and delete monitored resources; drag-and-drop reordering within and across groups. |
 | ![Resource Types](docs/img/admin-resource-types.png) | **Admin · Resource Type Configuration** — Configure check intervals, parallelism, outage and recovery thresholds per resource type (HTTP, Docker, Docker Repository). |
