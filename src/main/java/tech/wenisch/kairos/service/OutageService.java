@@ -15,6 +15,7 @@ import tech.wenisch.kairos.repository.OutageRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,7 +45,7 @@ public class OutageService {
         int outageThreshold = Math.max(1, config.getOutageThreshold());
         int recoveryThreshold = Math.max(1, config.getRecoveryThreshold());
 
-        Optional<Outage> activeOutage = outageRepository.findByResourceAndActiveTrue(resource);
+        Optional<Outage> activeOutage = resolveActiveOutage(resource);
 
         if (activeOutage.isEmpty()) {
             // No active outage – check whether to open one
@@ -88,7 +89,7 @@ public class OutageService {
     }
 
     public Optional<Outage> findActiveOutage(MonitoredResource resource) {
-        return outageRepository.findByResourceAndActiveTrue(resource);
+        return resolveActiveOutage(resource);
     }
 
     public List<Outage> findByResource(MonitoredResource resource) {
@@ -97,5 +98,44 @@ public class OutageService {
 
     public List<Outage> findAll() {
         return outageRepository.findAllByOrderByStartDateDesc();
+    }
+
+    private Optional<Outage> resolveActiveOutage(MonitoredResource resource) {
+        List<Outage> activeOutages = outageRepository.findByResourceAndActiveTrueOrderByStartDateDesc(resource);
+        if (activeOutages.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Outage primary = activeOutages.get(0);
+        if (activeOutages.size() > 1) {
+            List<Outage> duplicates = new ArrayList<>(activeOutages.subList(1, activeOutages.size()));
+            List<Outage> toDelete = new ArrayList<>();
+            List<Outage> toClose = new ArrayList<>();
+
+            for (Outage duplicate : duplicates) {
+                if (duplicate.getStartDate() != null && duplicate.getStartDate().equals(primary.getStartDate())) {
+                    toDelete.add(duplicate);
+                    continue;
+                }
+
+                duplicate.setActive(false);
+                if (duplicate.getEndDate() == null) {
+                    duplicate.setEndDate(primary.getStartDate());
+                }
+                toClose.add(duplicate);
+            }
+
+            if (!toDelete.isEmpty()) {
+                outageRepository.deleteAll(toDelete);
+            }
+            if (!toClose.isEmpty()) {
+                outageRepository.saveAll(toClose);
+            }
+
+            log.warn("Found {} active outages for resource '{}' (id={}). Kept newest id={}, deleted {} exact duplicates (same start), auto-closed {} older duplicates.",
+                    activeOutages.size(), resource.getName(), resource.getId(), primary.getId(), toDelete.size(), toClose.size());
+        }
+
+        return Optional.of(primary);
     }
 }
