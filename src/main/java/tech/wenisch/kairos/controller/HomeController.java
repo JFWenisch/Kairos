@@ -18,6 +18,8 @@ import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -189,6 +191,10 @@ public class HomeController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String message,
+            @RequestParam(name = "outagePage", defaultValue = "0") int outagePageNumber,
+            @RequestParam(name = "outageSize", defaultValue = "10") int outageSize,
+            @RequestParam(name = "outageStatus", defaultValue = "all") String outageStatus,
+            @RequestParam(name = "outageRange", defaultValue = "30d") String outageRange,
             Authentication authentication,
             Model model
         ) {
@@ -200,6 +206,12 @@ public class HomeController {
             int sanitizedPage = Math.max(0, page);
             int sanitizedSize = normalizePageSize(size);
             CheckStatus statusFilter = parseStatus(status);
+            int sanitizedOutageSize = normalizeOutagePageSize(outageSize);
+            int sanitizedOutagePageNumber = Math.max(0, outagePageNumber);
+            String normalizedOutageStatus = normalizeOutageStatus(outageStatus);
+            int outageRangeHours = parseRangeHours(outageRange);
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime outageRangeStart = now.minusHours(outageRangeHours);
 
             String currentStatus = resourceService.getCurrentStatus(resource);
             List<TimelineBlockDTO> timelineBlocks = resourceService.getTimelineBlocks(resource);
@@ -214,6 +226,33 @@ public class HomeController {
                 code,
                 message
             );
+
+                List<Outage> filteredOutages = outageService.findByResource(resource).stream()
+                    .filter(outage -> matchesStatus(outage, normalizedOutageStatus))
+                    .filter(outage -> overlaps(outage, outageRangeStart, now))
+                    .toList();
+
+                int outageTotal = filteredOutages.size();
+                int outageTotalPages = outageTotal == 0 ? 1 : (int) Math.ceil((double) outageTotal / sanitizedOutageSize);
+                int effectiveOutagePage = Math.min(sanitizedOutagePageNumber, Math.max(0, outageTotalPages - 1));
+                int outageFromIndex = Math.min(effectiveOutagePage * sanitizedOutageSize, outageTotal);
+                int outageToIndex = Math.min(outageFromIndex + sanitizedOutageSize, outageTotal);
+
+                List<Outage> outagePageContent = filteredOutages.subList(outageFromIndex, outageToIndex);
+                Page<Outage> resourceOutagePage = new PageImpl<>(
+                    outagePageContent,
+                    PageRequest.of(effectiveOutagePage, sanitizedOutageSize),
+                    outageTotal
+                );
+
+                Map<Long, String> resourceOutageDurations = outagePageContent.stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                        Outage::getId,
+                        outage -> formatDuration(
+                            outage.getStartDate(),
+                            outage.getEndDate() != null ? outage.getEndDate() : now
+                        )
+                    ));
 
             ResourceViewModel viewModel = ResourceViewModel.builder()
                     .resource(resource)
@@ -239,6 +278,15 @@ public class HomeController {
             model.addAttribute("historySize", sanitizedSize);
             model.addAttribute("historyFrom", historyPage.getTotalElements() == 0 ? 0 : (long) historyPage.getNumber() * historyPage.getSize() + 1);
             model.addAttribute("historyTo", historyPage.getTotalElements() == 0 ? 0 : Math.min((long) (historyPage.getNumber() + 1) * historyPage.getSize(), historyPage.getTotalElements()));
+
+            model.addAttribute("resourceOutages", outagePageContent);
+            model.addAttribute("resourceOutagePage", resourceOutagePage);
+            model.addAttribute("outageDurations", resourceOutageDurations);
+            model.addAttribute("outageFilterStatus", normalizedOutageStatus);
+            model.addAttribute("outageFilterRange", formatRangeKey(outageRangeHours));
+            model.addAttribute("outageFilterSize", sanitizedOutageSize);
+            model.addAttribute("outageFrom", outageTotal == 0 ? 0 : (long) resourceOutagePage.getNumber() * resourceOutagePage.getSize() + 1);
+            model.addAttribute("outageTo", outageTotal == 0 ? 0 : Math.min((long) (resourceOutagePage.getNumber() + 1) * resourceOutagePage.getSize(), resourceOutagePage.getTotalElements()));
             return "detail";
         }).orElse("redirect:/");
     }
@@ -253,6 +301,13 @@ public class HomeController {
         if (size <= 20) return 20;
         if (size <= 50) return 50;
         return 100;
+    }
+
+    private int normalizeOutagePageSize(int size) {
+        if (size <= 5) return 5;
+        if (size <= 10) return 10;
+        if (size <= 20) return 20;
+        return 50;
     }
 
     private String normalizeTextFilter(String value) {
