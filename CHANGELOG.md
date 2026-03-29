@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2.1 - 2026-03-29
+
+### [1.2.1](https://github.com/wenisch-tech/Kairos/compare/v1.2.0...v1.2.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* minr changes to screenshot update ([33dbf8e](https://github.com/wenisch-tech/Kairos/commit/33dbf8e8b735c92be13a6d3ea3391cc33aac4e40))
+
+
+### Documentation
+
+* Update UI screenshots with 17 resources across 4 groups and rework README layout ([89909d8](https://github.com/wenisch-tech/Kairos/commit/89909d88650827fc14dde3b0254fd187df63cfae))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.2.1
+
+
 ## v1.2.0 - 2026-03-29
 
 ## [1.2.0](https://github.com/wenisch-tech/Kairos/compare/v1.1.0...v1.2.0) (2026-03-29)
