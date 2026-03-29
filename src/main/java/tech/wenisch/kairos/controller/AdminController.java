@@ -7,7 +7,6 @@ import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApiKeyService;
 import tech.wenisch.kairos.service.CheckExecutorService;
-import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
@@ -47,7 +46,6 @@ public class AdminController {
     private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
-    private final OutageService outageService;
 
     @GetMapping
     public String admin() {
@@ -376,20 +374,6 @@ public class AdminController {
     public String users(Model model) {
         model.addAttribute("users", userService.findAll());
         return "admin/users";
-    }
-
-    @GetMapping("/outages")
-    public String outages(Model model) {
-        model.addAttribute("outages", outageService.findAll());
-        return "admin/outages";
-    }
-
-    @PostMapping("/outages/close/{id}")
-    public String closeOutage(@PathVariable Long outageRepository,
-                              RedirectAttributes redirectAttributes) {
-        // manual close is not in scope – redirect back
-        redirectAttributes.addFlashAttribute("errorMessage", "Manual outage closing is not supported.");
-        return "redirect:/admin/outages";
     }
 
     @GetMapping("/api-keys")

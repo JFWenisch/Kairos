@@ -6,6 +6,7 @@ import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
@@ -26,11 +27,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 @Controller
 @RequiredArgsConstructor
@@ -89,6 +93,32 @@ public class HomeController {
         model.addAttribute("resourceTypes", ResourceType.values());
         model.addAttribute("appVersion", applicationVersionService.getVersion());
         return "index";
+    }
+
+    @GetMapping("/outages")
+    public String outages(@RequestParam(defaultValue = "active") String status,
+                          @RequestParam(defaultValue = "24h") String range,
+                          Model model) {
+        int rangeHours = parseRangeHours(range);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime rangeStart = now.minusHours(rangeHours);
+
+        String normalizedStatus = normalizeOutageStatus(status);
+        List<OutageRowViewModel> rows = outageService.findAll().stream()
+                .filter(outage -> matchesStatus(outage, normalizedStatus))
+                .filter(outage -> overlaps(outage, rangeStart, now))
+                .map(outage -> toOutageRow(outage, rangeStart, now))
+                .toList();
+
+        List<OutageGanttTick> ticks = buildTicks(rangeStart, now, rangeHours);
+
+        model.addAttribute("rows", rows);
+        model.addAttribute("selectedStatus", normalizedStatus);
+        model.addAttribute("selectedRange", formatRangeKey(rangeHours));
+        model.addAttribute("rangeLabel", formatRangeLabel(rangeHours));
+        model.addAttribute("ticks", ticks);
+        model.addAttribute("now", now);
+        return "outages";
     }
 
     @PostMapping("/resources/submit")
@@ -151,8 +181,8 @@ public class HomeController {
         return "redirect:/resources/" + id;
     }
 
-        @GetMapping("/resources/{id}")
-        public String detail(
+    @GetMapping("/resources/{id}")
+    public String detail(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -192,11 +222,15 @@ public class HomeController {
                     .uptimePercentage(uptime24h)
                     .build();
 
+            var activeOutage = outageService.findActiveOutage(resource);
+
             model.addAttribute("vm", viewModel);
             model.addAttribute("uptime24h", uptime24h);
             model.addAttribute("uptime7d", uptime7d);
             model.addAttribute("uptime30d", uptime30d);
-            model.addAttribute("activeOutage", outageService.findActiveOutage(resource).orElse(null));
+            model.addAttribute("activeOutage", activeOutage.orElse(null));
+            activeOutage.ifPresent(outage ->
+                model.addAttribute("activeOutageDuration", formatDuration(outage.getStartDate(), LocalDateTime.now())));
             model.addAttribute("recentHistory", historyPage.getContent());
             model.addAttribute("historyPage", historyPage);
             model.addAttribute("historyStatus", statusFilter != null ? statusFilter.name() : "");
@@ -236,6 +270,109 @@ public class HomeController {
         }
     }
 
+    private String formatDuration(LocalDateTime start, LocalDateTime end) {
+        Duration duration = Duration.between(start, end);
+        long totalMinutes = Math.max(0, duration.toMinutes());
+        long days = totalMinutes / (24 * 60);
+        long hours = (totalMinutes % (24 * 60)) / 60;
+        long minutes = totalMinutes % 60;
+
+        if (days > 0) {
+            return String.format("%dd %dh %dm", days, hours, minutes);
+        }
+        if (hours > 0) {
+            return String.format("%dh %dm", hours, minutes);
+        }
+        return String.format("%dm", minutes);
+    }
+
+    private boolean matchesStatus(Outage outage, String status) {
+        return switch (status) {
+            case "resolved" -> !outage.isActive();
+            case "all" -> true;
+            default -> outage.isActive();
+        };
+    }
+
+    private boolean overlaps(Outage outage, LocalDateTime rangeStart, LocalDateTime now) {
+        LocalDateTime outageEnd = outage.getEndDate() != null ? outage.getEndDate() : now;
+        return !outage.getStartDate().isAfter(now) && !outageEnd.isBefore(rangeStart);
+    }
+
+    private OutageRowViewModel toOutageRow(Outage outage, LocalDateTime rangeStart, LocalDateTime now) {
+        LocalDateTime effectiveEnd = outage.getEndDate() != null ? outage.getEndDate() : now;
+        LocalDateTime clampedStart = outage.getStartDate().isBefore(rangeStart) ? rangeStart : outage.getStartDate();
+        LocalDateTime clampedEnd = effectiveEnd.isAfter(now) ? now : effectiveEnd;
+
+        long totalWindowSeconds = Math.max(1, Duration.between(rangeStart, now).getSeconds());
+        long startOffsetSeconds = Math.max(0, Duration.between(rangeStart, clampedStart).getSeconds());
+        long barSeconds = Math.max(1, Duration.between(clampedStart, clampedEnd).getSeconds());
+
+        double leftPercent = (startOffsetSeconds * 100.0) / totalWindowSeconds;
+        double widthPercent = Math.max(0.75, (barSeconds * 100.0) / totalWindowSeconds);
+
+        return new OutageRowViewModel(
+                outage,
+                formatDuration(outage.getStartDate(), effectiveEnd),
+                String.format(Locale.US, "%.2f%%", Math.min(100.0, leftPercent)),
+                String.format(Locale.US, "%.2f%%", Math.min(100.0, widthPercent))
+        );
+    }
+
+    private List<OutageGanttTick> buildTicks(LocalDateTime rangeStart, LocalDateTime now, int rangeHours) {
+        return IntStream.rangeClosed(0, 6)
+                .mapToObj(index -> {
+                    LocalDateTime point = rangeStart.plusSeconds(Duration.between(rangeStart, now).getSeconds() * index / 6);
+                    String labelPattern = rangeHours <= 24 ? "HH:mm" : "MM-dd HH:mm";
+                    return new OutageGanttTick(
+                            String.format(Locale.US, "%.2f%%", (index * 100.0) / 6.0),
+                            point.format(java.time.format.DateTimeFormatter.ofPattern(labelPattern))
+                    );
+                })
+                .toList();
+    }
+
+    private int parseRangeHours(String range) {
+        if ("7d".equalsIgnoreCase(range)) {
+            return 24 * 7;
+        }
+        if ("30d".equalsIgnoreCase(range)) {
+            return 24 * 30;
+        }
+        return 24;
+    }
+
+    private String formatRangeKey(int hours) {
+        if (hours == 24 * 7) {
+            return "7d";
+        }
+        if (hours == 24 * 30) {
+            return "30d";
+        }
+        return "24h";
+    }
+
+    private String formatRangeLabel(int hours) {
+        if (hours == 24 * 7) {
+            return "last 7 days";
+        }
+        if (hours == 24 * 30) {
+            return "last 30 days";
+        }
+        return "last 24 hours";
+    }
+
+    private String normalizeOutageStatus(String status) {
+        if (status == null) {
+            return "active";
+        }
+        String normalized = status.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "all", "resolved", "active" -> normalized;
+            default -> "active";
+        };
+    }
+
     private boolean isPublicAddAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
     }
@@ -256,4 +393,18 @@ public class HomeController {
                 .uptimePercentage(uptime)
                 .build();
     }
+
+            private record OutageRowViewModel(
+                Outage outage,
+                String duration,
+                String leftPercent,
+                String widthPercent
+            ) {
+            }
+
+            private record OutageGanttTick(
+                String leftPercent,
+                String label
+            ) {
+            }
 }

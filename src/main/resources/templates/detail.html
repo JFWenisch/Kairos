@@ -58,7 +58,10 @@
         <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
         <div>
             <strong>Active Outage</strong> — This resource has been unavailable since
-            <strong th:text="${#temporals.format(activeOutage.startDate, 'yyyy-MM-dd HH:mm:ss')}">-</strong>.
+            <strong th:text="${#temporals.format(activeOutage.startDate, 'yyyy-MM-dd HH:mm:ss')}">-</strong>
+            <span class="ms-1">(duration:</span>
+            <strong th:text="${activeOutageDuration}">0m</strong>
+            <span>)</span>.
         </div>
     </div>
 
