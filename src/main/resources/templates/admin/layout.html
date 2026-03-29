@@ -64,6 +64,11 @@
                        class="nav-link px-2 py-2 rounded mb-1">
                         <i class="bi bi-grid-3x3-gap me-2"></i>Resource Types
                     </a>
+                    <a th:href="@{/admin/outages}"
+                       th:classappend="${#httpServletRequest.requestURI.contains('/outages')} ? 'active' : ''"
+                       class="nav-link px-2 py-2 rounded mb-1">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Outages
+                    </a>
                     <a th:href="@{/admin/users}"
                        th:classappend="${#httpServletRequest.requestURI.contains('/users')} ? 'active' : ''"
                        class="nav-link px-2 py-2 rounded mb-1">

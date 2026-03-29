@@ -13,6 +13,7 @@ import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ public class HomeController {
     private final AnnouncementService announcementService;
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
+    private final OutageService outageService;
 
     @GetMapping("/")
     public String index(Model model) {
@@ -194,6 +196,7 @@ public class HomeController {
             model.addAttribute("uptime24h", uptime24h);
             model.addAttribute("uptime7d", uptime7d);
             model.addAttribute("uptime30d", uptime30d);
+            model.addAttribute("activeOutage", outageService.findActiveOutage(resource).orElse(null));
             model.addAttribute("recentHistory", historyPage.getContent());
             model.addAttribute("historyPage", historyPage);
             model.addAttribute("historyStatus", statusFilter != null ? statusFilter.name() : "");

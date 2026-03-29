@@ -53,6 +53,15 @@
         </div>
     </div>
 
+    <!-- Active Outage Banner -->
+    <div th:if="${activeOutage != null}" class="alert alert-danger d-flex align-items-center gap-3 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
+        <div>
+            <strong>Active Outage</strong> — This resource has been unavailable since
+            <strong th:text="${#temporals.format(activeOutage.startDate, 'yyyy-MM-dd HH:mm:ss')}">-</strong>.
+        </div>
+    </div>
+
     <!-- Availability Stats -->
     <div class="row mb-4">
         <div class="col-md-4">

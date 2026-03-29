@@ -52,6 +52,7 @@ public class DockerCheckService {
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final OutageService outageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = createDefaultHttpClient();
@@ -93,6 +94,7 @@ public class DockerCheckService {
                     .message("Manifest and " + blobDigests.size() + " blobs downloadable")
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
 
@@ -106,6 +108,7 @@ public class DockerCheckService {
                     .errorCode("DOCKER_ERROR")
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         }
