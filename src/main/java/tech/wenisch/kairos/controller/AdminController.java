@@ -239,9 +239,7 @@ public class AdminController {
                 .group(resolveGroup(groupId))
                 .build();
         MonitoredResource saved = resourceService.save(resource);
-        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-            checkExecutorService.runImmediateCheck(saved);
-        }
+        checkExecutorService.runImmediateCheck(saved);
         redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
         return "redirect:/admin/resources";
     }
@@ -296,9 +294,7 @@ public class AdminController {
             resource.setGroup(resolveGroup(groupId));
             resource.setDisplayOrder(displayOrder);
             MonitoredResource saved = resourceService.save(resource);
-            if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-                checkExecutorService.runImmediateCheck(saved);
-            }
+            checkExecutorService.runImmediateCheck(saved);
             redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
         }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Resource not found."));
         return "redirect:/admin/resources";

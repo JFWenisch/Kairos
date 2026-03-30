@@ -119,7 +119,10 @@ public class ResourceService {
         LocalDateTime since = LocalDateTime.now().minusHours(hours);
         List<CheckResult> results = checkResultRepository
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, since);
+        return computeUptimePercentage(results);
+    }
 
+    private double computeUptimePercentage(List<CheckResult> results) {
         if (results.isEmpty()) return 0.0;
 
         long available = results.stream()
@@ -136,18 +139,41 @@ public class ResourceService {
     /** Number of color-coded blocks displayed in the 24-hour timeline visualization (one block ≈ 16 min). */
     private static final int TIMELINE_BUCKETS = 90;
 
+    /**
+     * Combined result of a single history query, carrying both the timeline blocks and the
+     * uptime percentage so callers avoid issuing the same database query twice.
+     */
+    public record TimelineData(List<TimelineBlockDTO> timelineBlocks, double uptimePercentage) {}
+
     public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource) {
         return getTimelineBlocks(resource, 24);
     }
 
     public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource, int hours) {
         int safeHours = Math.max(hours, 1);
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = now.minusHours(safeHours);
-
+        LocalDateTime start = LocalDateTime.now().minusHours(safeHours);
         List<CheckResult> results = checkResultRepository
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
+        return buildTimelineBlocks(results, start, safeHours);
+    }
 
+    /**
+     * Fetches check results for the given time window exactly once and returns both
+     * the timeline blocks and the uptime percentage, eliminating the duplicate query
+     * that was present when {@link #getTimelineBlocks} and {@link #getUptimePercentage}
+     * were called independently.
+     */
+    public TimelineData getTimelineData(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
+        LocalDateTime start = LocalDateTime.now().minusHours(safeHours);
+        List<CheckResult> results = checkResultRepository
+                .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
+        return new TimelineData(
+                buildTimelineBlocks(results, start, safeHours),
+                computeUptimePercentage(results));
+    }
+
+    private List<TimelineBlockDTO> buildTimelineBlocks(List<CheckResult> results, LocalDateTime start, int safeHours) {
         long totalMinutes = (long) safeHours * 60;
         long bucketMinutes = Math.max(totalMinutes / TIMELINE_BUCKETS, 1);
 

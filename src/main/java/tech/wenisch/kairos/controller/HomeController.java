@@ -135,9 +135,7 @@ public class HomeController {
                 .active(true)
                 .build();
         MonitoredResource saved = resourceService.save(resource);
-        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-            checkExecutorService.runImmediateCheck(saved);
-        }
+        checkExecutorService.runImmediateCheck(saved);
         redirectAttributes.addFlashAttribute("successMessage", "Resource submitted successfully.");
         return "redirect:/";
     }
