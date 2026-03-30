@@ -27,6 +27,10 @@ public class MonitoredResource {
     @JsonAlias("skipTls")
     private boolean skipTls;
 
+    @Column(name = "recursive_enabled", nullable = false)
+    @Builder.Default
+    private boolean recursive = false;
+
     @Builder.Default
     private boolean active = true;
 

@@ -44,7 +44,10 @@ public class AuthService {
         List<ResourceTypeAuth> auths = authRepository.findByResourceTypeConfig_TypeName(typeName);
         return auths.stream()
                 .filter(auth -> matchesPattern(target, auth.getUrlPattern()))
-                .findFirst();
+            .max((left, right) -> Integer.compare(
+                patternSpecificity(left.getUrlPattern()),
+                patternSpecificity(right.getUrlPattern())
+            ));
     }
 
     /**
@@ -64,5 +67,12 @@ public class AuthService {
             log.warn("Invalid auth URL pattern '{}': {}", pattern, e.getMessage());
             return false;
         }
+    }
+
+    private int patternSpecificity(String pattern) {
+        if (pattern == null || pattern.isBlank()) {
+            return -1;
+        }
+        return pattern.replace("*", "").length();
     }
 }

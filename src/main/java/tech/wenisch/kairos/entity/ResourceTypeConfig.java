@@ -29,6 +29,12 @@ public class ResourceTypeConfig {
 
     private boolean allowPublicCheckNow;
 
+    @Builder.Default
+    private int outageThreshold = 3;
+
+    @Builder.Default
+    private int recoveryThreshold = 2;
+
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResourceTypeAuth> authentications = new ArrayList<>();
