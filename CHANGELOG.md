@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.1 - 2026-03-30
+
+### [1.4.1](https://github.com/wenisch-tech/Kairos/compare/v1.4.0...v1.4.1) (2026-03-30)
+
+
+### Bug Fixes
+
+* improved loading behaviour ([725fcb0](https://github.com/wenisch-tech/Kairos/commit/725fcb0e545b5a5a17d2069e82ca5545d1c586e4))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.1
+
+
 ## v1.4.0 - 2026-03-30
 
 ## [1.4.0](https://github.com/wenisch-tech/Kairos/compare/v1.3.0...v1.4.0) (2026-03-30)
