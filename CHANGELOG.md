@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.6 - 2026-03-30
+
+### [1.4.6](https://github.com/wenisch-tech/Kairos/compare/v1.4.5...v1.4.6) (2026-03-30)
+
+
+### Bug Fixes
+
+* upgrade spring to 6.2.17 ([3210884](https://github.com/wenisch-tech/Kairos/commit/3210884264021e28e84792c3c9c4b6da1f58c399))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.6
+
+
 ## v1.4.5 - 2026-03-30
 
 ### [1.4.5](https://github.com/wenisch-tech/Kairos/compare/v1.4.4...v1.4.5) (2026-03-30)
