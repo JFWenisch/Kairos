@@ -46,6 +46,12 @@ function initializeTimelineLabels() {
     });
 }
 
+function waitForNextRenderStep(delayMs) {
+    return new Promise(function(resolve) {
+        window.setTimeout(resolve, delayMs);
+    });
+}
+
 function initializeViewModeSwitcher() {
     const switcher = document.querySelector('[data-role="view-mode-switcher"]');
     if (!switcher) {
@@ -209,20 +215,79 @@ function initResourceStatusStream() {
     const cardsLoadingIndicator = document.querySelector('[data-role="cards-loading-indicator"]');
     const hasRangeSelector = rangeButtons.length > 0;
     const pollIntervalMs = 10000;
+    const progressiveRenderDelayMs = 85;
     let pollingStarted = false;
     let currentTimelineHours = 24;
+    let activeSnapshotRenderId = 0;
+
+    markResourceContainersLoading();
 
     function isCardsViewActive() {
         const visibleCardsContainer = document.querySelector('[data-view="cards"]:not([style*="display: none"])');
         return !!visibleCardsContainer;
     }
 
+    function markResourceContainersLoading() {
+        document.querySelectorAll('.resource-row[data-resource-id], .resource-detail[data-resource-id], [data-view="cards"] [data-resource-id]')
+            .forEach(function(container) {
+                container.classList.add('resource-loading');
+                setRowChecking(container, true);
+            });
+    }
+
+    function clearResourceLoadingStates() {
+        document.querySelectorAll('.resource-loading').forEach(function(container) {
+            container.classList.remove('resource-loading');
+            setRowChecking(container, false);
+        });
+    }
+
+    function hasLoadingResourceContainers() {
+        return document.querySelector('.resource-loading') !== null;
+    }
+
+    function renderSnapshotSequentially(updates, renderId) {
+        return updates.reduce(function(chain, update) {
+            return chain.then(function() {
+                if (renderId !== activeSnapshotRenderId) {
+                    return;
+                }
+
+                updateResourceRow(update);
+
+                return waitForNextRenderStep(progressiveRenderDelayMs);
+            });
+        }, Promise.resolve()).then(function() {
+            if (renderId !== activeSnapshotRenderId) {
+                return;
+            }
+
+            clearResourceLoadingStates();
+        });
+    }
+
     function applySnapshot(updates) {
         if (!Array.isArray(updates)) {
-            return;
+            return Promise.resolve();
         }
-        updates.forEach(updateResourceRow);
-        updateSnapshotCounts(updates);
+
+        if (updates.length === 0) {
+            clearResourceLoadingStates();
+            updateSnapshotCounts(updates);
+            return Promise.resolve();
+        }
+
+        if (!hasLoadingResourceContainers()) {
+            updates.forEach(updateResourceRow);
+            updateSnapshotCounts(updates);
+            return Promise.resolve();
+        }
+
+        activeSnapshotRenderId += 1;
+        return renderSnapshotSequentially(updates, activeSnapshotRenderId)
+            .then(function() {
+                updateSnapshotCounts(updates);
+            });
     }
 
     function formatRangeLabel(hours) {
@@ -438,6 +503,7 @@ function updateResourceRow(update) {
         updateTimeline(container, update.timelineBlocks);
         updateUptime(container, update.uptimePercentage);
         updateOutageBadge(container, update.activeOutageSince || null);
+        container.classList.remove('resource-loading');
     });
 
     refreshAllGroupCounters();

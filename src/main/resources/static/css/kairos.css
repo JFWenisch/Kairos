@@ -696,6 +696,37 @@
     --bs-gutter-x: 1rem;
 }
 
+.resource-row[data-resource-id],
+.resource-detail[data-resource-id],
+[data-view="cards"] [data-resource-id] {
+    transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.resource-loading-indicator {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--landing-muted);
+}
+
+.resource-loading .resource-loading-indicator {
+    display: inline-flex;
+}
+
+.resource-loading .resource-uptime,
+.resource-loading [data-role="card-status"] {
+    opacity: 0.45;
+}
+
+.resource-loading .resource-card {
+    transform: translateY(0);
+}
+
+.resource-loading .timeline-container {
+    opacity: 1;
+}
+
 .resource-card {
     transition: all 0.2s ease-in-out;
     border-color: var(--landing-border-soft) !important;

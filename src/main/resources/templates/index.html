@@ -141,6 +141,10 @@
                                     <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                            th:text="${resource.target}">target</small>
                                 </div>
+                                <div class="resource-loading-indicator mt-1" data-role="resource-loading-indicator">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Loading status...
+                                </div>
                                 <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                     Active outage since
@@ -181,6 +185,10 @@
                             <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                         </div>
                         <small class="resource-card-state" data-role="card-status">unknown</small>
+                    </div>
+                    <div class="resource-loading-indicator mb-2" data-role="resource-loading-indicator">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Loading status...
                     </div>
                     <a th:href="@{/resources/{id}(id=${resource.id})}"
                        class="text-decoration-none fw-semibold card-title mb-2"
@@ -236,6 +244,10 @@
                                             <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                                    th:text="${resource.target}">target</small>
                                         </div>
+                                        <div class="resource-loading-indicator mt-1" data-role="resource-loading-indicator">
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            Loading status...
+                                        </div>
                                         <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
                                             <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                             Active outage since
@@ -281,6 +293,10 @@
                                     <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                                 </div>
                                 <small class="resource-card-state" data-role="card-status">unknown</small>
+                            </div>
+                            <div class="resource-loading-indicator mb-2" data-role="resource-loading-indicator">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                Loading status...
                             </div>
                             <a th:href="@{/resources/{id}(id=${resource.id})}"
                                class="text-decoration-none fw-semibold card-title mb-2"
@@ -358,7 +374,6 @@
 <script th:src="@{/js/kairos.js}"></script>
 <script>
 (function () {
-    var MIN_MS = 3000;
     function hideSplash() {
         var el = document.getElementById('splash-screen');
         if (!el) return;
@@ -366,11 +381,12 @@
         el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
     }
     var elapsed = Date.now() - (window._splashStart || Date.now());
-    var delay = Math.max(0, MIN_MS - elapsed);
+    var delay = Math.max(0, 3000 - elapsed);
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             var e2 = Date.now() - (window._splashStart || Date.now());
-            setTimeout(hideSplash, Math.max(0, MIN_MS - e2));
+            setTimeout(hideSplash, Math.max(0, 3000 - e2));
         });
     } else {
         setTimeout(hideSplash, delay);
