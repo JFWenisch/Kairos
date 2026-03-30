@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.8 - 2026-03-30
+
+### [1.4.8](https://github.com/wenisch-tech/Kairos/compare/v1.4.7...v1.4.8) (2026-03-30)
+
+
+### Documentation
+
+* Add outages page screenshots to README ([11e09cc](https://github.com/wenisch-tech/Kairos/commit/11e09cc6934e870562bd4f585c2481647b757261))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.8
+
+
 ## v1.4.7 - 2026-03-30
 
 ### [1.4.7](https://github.com/wenisch-tech/Kairos/compare/v1.4.6...v1.4.7) (2026-03-30)
