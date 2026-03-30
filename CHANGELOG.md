@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.2 - 2026-03-30
+
+### [1.4.2](https://github.com/wenisch-tech/Kairos/compare/v1.4.1...v1.4.2) (2026-03-30)
+
+
+### Bug Fixes
+
+* per-resource status endpoint inaccessible to non-admin users causing 30-40s load delay ([b0c3c1d](https://github.com/wenisch-tech/Kairos/commit/b0c3c1d5742813d11693657cbf09a2ee1ea7f7a2))
+* per-resource status endpoint security, duplicate DB query, and immediate check on save ([114b1ee](https://github.com/wenisch-tech/Kairos/commit/114b1ee16ad7d4b58784620c424307c4cb255c48))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.2
+
+
 ## v1.4.1 - 2026-03-30
 
 ### [1.4.1](https://github.com/wenisch-tech/Kairos/compare/v1.4.0...v1.4.1) (2026-03-30)
