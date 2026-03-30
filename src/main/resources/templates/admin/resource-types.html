@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
     <title>Resource Types - Kairos Admin</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
@@ -58,17 +59,29 @@
                     <form th:action="@{/admin/resource-types/update}" method="post">
                         <input type="hidden" name="id" th:value="${config.id}">
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Check Interval (minutes)</label>
                                 <input type="number" class="form-control" name="checkIntervalMinutes"
                                        th:value="${config.checkIntervalMinutes}" min="1" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="form-label">Parallelism (threads)</label>
                                 <input type="number" class="form-control" name="parallelism"
                                        th:value="${config.parallelism}" min="1" max="20" required>
                             </div>
-                            <div class="col-md-4 d-flex align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label" title="Number of consecutive failed checks before an outage is opened">Outage Threshold</label>
+                                <input type="number" class="form-control" name="outageThreshold"
+                                       th:value="${config.outageThreshold}" min="1" required>
+                                <div class="form-text">Failed checks to open outage</div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" title="Number of consecutive successful checks before an active outage is closed">Recovery Threshold</label>
+                                <input type="number" class="form-control" name="recoveryThreshold"
+                                       th:value="${config.recoveryThreshold}" min="1" required>
+                                <div class="form-text">Successful checks to close outage</div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-save me-1"></i>Update
                                 </button>

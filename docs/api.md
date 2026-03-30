@@ -142,16 +142,18 @@ Add a new resource to monitor.
   "name": "My Service",
   "resourceType": "HTTP",
   "target": "https://example.com",
-  "skipTLS": false
+  "skipTLS": false,
+  "recursive": false
 }
 ```
 
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
-| `target` | string | Full URL or Docker image reference | Yes |
+| `resourceType` | string | `HTTP`, `DOCKER`, or `DOCKERREPOSITORY` | Yes |
+| `target` | string | Full URL, Docker image reference, or Docker repository prefix (for example `ghcr.io/jfwenisch`) | Yes |
 | `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections (HTTP checks and Docker registry checks) | No |
+| `recursive` | boolean | `true` or `false`; used by `DOCKERREPOSITORY` to include nested repository paths | No |
 
 **Response** `200 OK` — the created resource object
 
@@ -160,7 +162,7 @@ Add a new resource to monitor.
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/resources \
   -H "Content-Type: application/json" \
-  -d '{"name":"Example","resourceType":"HTTP","target":"https://example.com","skipTLS":true}'
+  -d '{"name":"Example","resourceType":"DOCKERREPOSITORY","target":"ghcr.io/jfwenisch","skipTLS":false,"recursive":true}'
 ```
 
 ---
@@ -324,13 +326,19 @@ curl -b cookies.txt -X DELETE http://localhost:8080/api/announcements/1
 
 ## Resource types
 
-### `URL`
+### `HTTP`
 
 Performs an HTTP GET to the `target` URL with a 15-second timeout. A `2xx` response is considered **AVAILABLE**; any other status code or connection error is **NOT_AVAILABLE**.
 
 ### `DOCKER`
 
-Attempts to pull the Docker image specified in `target` (e.g. `nginx:alpine`, `ghcr.io/myorg/myimage:1.0`). A successful pull is **AVAILABLE**; any pull error is **NOT_AVAILABLE**. The image is removed from the local daemon immediately after the check to avoid disk usage.
+Validates Docker/OCI pullability via registry API calls (manifest + blob probes). A successful probe is **AVAILABLE**; any registry/auth/pullability error is **NOT_AVAILABLE**.
+
+### `DOCKERREPOSITORY`
+
+Treats `target` as a repository prefix (for example `ghcr.io/jfwenisch`) and synchronizes discovered images into generated `DOCKER` resources within an auto-created resource group. `recursive=true` includes nested repositories; `recursive=false` includes only direct children.
+
+`DOCKERREPOSITORY` itself has no direct status/check history; generated `DOCKER` resources carry the check results.
 
 ---
 
@@ -354,7 +362,7 @@ Returns all **active** monitored resources.
   {
     "id": 1,
     "name": "GitHub",
-    "resourceType": "URL",
+    "resourceType": "HTTP",
     "target": "https://github.com",
     "active": true,
     "createdAt": "2024-01-15T10:00:00"
@@ -407,16 +415,20 @@ Add a new resource to monitor.
 ```json
 {
   "name": "My Service",
-  "resourceType": "URL",
-  "target": "https://example.com"
+  "resourceType": "HTTP",
+  "target": "https://example.com",
+  "skipTLS": false,
+  "recursive": false
 }
 ```
 
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `URL` or `DOCKER` | Yes |
-| `target` | string | Full URL or Docker image reference | Yes |
+| `resourceType` | string | `HTTP`, `DOCKER`, or `DOCKERREPOSITORY` | Yes |
+| `target` | string | Full URL, Docker image reference, or Docker repository prefix | Yes |
+| `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections | No |
+| `recursive` | boolean | `true` or `false`; used by `DOCKERREPOSITORY` | No |
 
 **Response** `200 OK` — the created resource object
 
@@ -424,8 +436,10 @@ Add a new resource to monitor.
 {
   "id": 3,
   "name": "My Service",
-  "resourceType": "URL",
+  "resourceType": "HTTP",
   "target": "https://example.com",
+  "skipTLS": false,
+  "recursive": false,
   "active": true,
   "createdAt": "2024-01-15T11:00:00"
 }
@@ -436,14 +450,14 @@ Add a new resource to monitor.
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/resources \
   -H "Content-Type: application/json" \
-  -d '{"name":"Example","resourceType":"URL","target":"https://example.com"}'
+  -d '{"name":"Example","resourceType":"DOCKERREPOSITORY","target":"ghcr.io/jfwenisch","recursive":true}'
 ```
 
 ---
 
 ### `DELETE /api/resources/{id}`
 
-Soft-deletes (deactivates) a resource by ID.
+Permanently deletes a resource and its check history.
 
 **Response** `200 OK`
 
@@ -497,13 +511,17 @@ Returns the full check history for a resource, sorted by most recent first.
 
 ## Resource types
 
-### `URL`
+### `HTTP`
 
 Performs an HTTP GET to the `target` URL with a 15-second timeout. A `2xx` response is considered **AVAILABLE**; any other status code or connection error is **NOT_AVAILABLE**.
 
 ### `DOCKER`
 
-Attempts to pull the Docker image specified in `target` (e.g. `nginx:alpine`, `ghcr.io/myorg/myimage:1.0`). A successful pull is **AVAILABLE**; any pull error is **NOT_AVAILABLE**. The image is removed from the local daemon immediately after the check to avoid disk usage.
+Validates Docker/OCI pullability via registry API calls (manifest + blob probes). A successful probe is **AVAILABLE**; any registry/auth/pullability error is **NOT_AVAILABLE**.
+
+### `DOCKERREPOSITORY`
+
+Synchronizes discovered repositories under the configured prefix into generated `DOCKER` resources. `recursive=true` includes nested repository paths.
 
 ---
 

@@ -10,6 +10,6 @@ import java.util.List;
 public class ResourceViewModel {
     private MonitoredResource resource;
     private double uptimePercentage;
-    private List<String> timelineBlocks;
+    private List<TimelineBlockDTO> timelineBlocks;
     private String currentStatus;
 }

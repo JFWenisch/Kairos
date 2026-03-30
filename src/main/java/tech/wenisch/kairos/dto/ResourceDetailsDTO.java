@@ -16,6 +16,7 @@ public record ResourceDetailsDTO(
         int displayOrder,
         @JsonProperty("skipTLS")
         boolean skipTls,
+        boolean recursive,
         boolean active,
         LocalDateTime createdAt,
         String currentStatus,

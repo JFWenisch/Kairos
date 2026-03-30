@@ -23,8 +23,8 @@ public class OpenApiConfig {
      *
      * <p>Two authentication schemes are declared:
      * <ul>
-     *   <li><b>cookieAuth</b> – session cookie obtained via {@code POST /login} (form login)</li>
-        *   <li><b>apiKeyAuth</b> – bearer JWT token created in the Admin Panel</li>
+     *   <li><b>cookieAuth</b> â€“ session cookie obtained via {@code POST /login} (form login)</li>
+        *   <li><b>apiKeyAuth</b> â€“ bearer JWT token created in the Admin Panel</li>
      * </ul>
      *
      * @return a fully populated {@link OpenAPI} instance
@@ -45,15 +45,15 @@ public class OpenApiConfig {
                                 Read-only endpoints (`GET /api/resources`, `GET /api/resources/{id}`, `GET /api/announcements`, `GET /api/announcements/{id}`) are public.
 
                                 Obtain a session by `POST`-ing credentials to `/login`,
-                                or use an API key JWT created in **Admin → API Keys** as `Authorization: Bearer <token>`.
+                                or use an API key JWT created in **Admin -> API Keys** as `Authorization: Bearer <token>`.
                                 """)
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Jean-Fabian Wenisch")
-                                .url("https://github.com/JFWenisch/Kairos"))
+                                .url("https://github.com/wenisch-tech/Kairos"))
                         .license(new License()
                                 .name("GNU GPL v3.0")
-                                .url("https://github.com/JFWenisch/Kairos/blob/main/LICENSE.md")))
+                                .url("https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md")))
                 .components(new Components()
                         .addSecuritySchemes(cookieScheme, new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
@@ -64,7 +64,7 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Bearer JWT API key token created in Admin → API Keys")))
+                                .description("Bearer JWT API key token created in Admin -> API Keys")))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(cookieScheme)
                         .addList(apiKeyScheme));
