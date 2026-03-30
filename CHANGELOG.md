@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.5 - 2026-03-30
+
+### [1.4.5](https://github.com/wenisch-tech/Kairos/compare/v1.4.4...v1.4.5) (2026-03-30)
+
+
+### Build Systems
+
+* **deps-dev:** bump org.jacoco:jacoco-maven-plugin ([513bd2e](https://github.com/wenisch-tech/Kairos/commit/513bd2e7c3f7ffeb4326ab9b541517bcb8688ef0))
+* **deps-dev:** bump org.jacoco:jacoco-maven-plugin from 0.8.12 to 0.8.14 ([226cc32](https://github.com/wenisch-tech/Kairos/commit/226cc32a1f7ef6511b82f85a7a18078c5d1d5d29))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.5
+
+
 ## v1.4.4 - 2026-03-30
 
 ### [1.4.4](https://github.com/wenisch-tech/Kairos/compare/v1.4.3...v1.4.4) (2026-03-30)

@@ -13,7 +13,7 @@
 
     <groupId>tech.wenisch</groupId>
     <artifactId>kairos</artifactId>
-    <version>1.4.4</version>
+    <version>1.4.5</version>
     <packaging>jar</packaging>
     <name>kairos</name>
     <description>Uptime monitoring application</description>
