@@ -91,12 +91,13 @@ public class ResourceStatusStreamService {
         return buildUpdate(resource, hours, null);
         }
 
-        private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours, String activeOutageSince) {
+    private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours, String activeOutageSince) {
+        ResourceService.TimelineData timelineData = resourceService.getTimelineData(resource, hours);
         return new ResourceStatusUpdateDTO(
             resource.getId(),
             resourceService.getCurrentStatus(resource),
-            resourceService.getTimelineBlocks(resource, hours),
-            resourceService.getUptimePercentage(resource, hours),
+            timelineData.timelineBlocks(),
+            timelineData.uptimePercentage(),
             activeOutageSince
         );
     }

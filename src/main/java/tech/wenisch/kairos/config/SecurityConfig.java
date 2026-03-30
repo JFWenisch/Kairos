@@ -74,6 +74,7 @@ public class SecurityConfig {
                         "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api").permitAll()
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/resources/*/status-update").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/resources/*/history").authenticated()
