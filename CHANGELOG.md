@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.3.0 - 2026-03-30
+
+## [1.3.0](https://github.com/wenisch-tech/Kairos/compare/v1.2.1...v1.3.0) (2026-03-30)
+
+
+### Features
+
+* Added Splashscreen that is displayed for 3 seconds and improved startup speed significantly BREAKING CHANGE: Refactored API and related DTO to support clientside updates without requiring full resource load ([6b9377c](https://github.com/wenisch-tech/Kairos/commit/6b9377cb89413f0904be3646a6dc9481a7ce230d))
+
+
+### Bug Fixes
+
+* update loading of resources from controller ([948773c](https://github.com/wenisch-tech/Kairos/commit/948773cca2bc31c5b1265022c0ceb2d7beeec6f0))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.3.0
+
+
 ## v1.2.1 - 2026-03-29
 
 ### [1.2.1](https://github.com/wenisch-tech/Kairos/compare/v1.2.0...v1.2.1) (2026-03-29)
