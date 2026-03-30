@@ -99,6 +99,29 @@ jobs:
       image: ${{ needs.versioning.outputs.image }}
     secrets: inherit
 
+  native:
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        github.event_name == 'workflow_dispatch'
+      )
+    needs:
+      - versioning
+      - test
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/_native.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+      image: ${{ needs.versioning.outputs.image }}
+    secrets: inherit
+
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
     needs:

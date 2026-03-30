@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1.7
+
+# ─── Stage 1: Compile native executable with GraalVM ─────────────────────────
+FROM ghcr.io/graalvm/native-image-community:17-ol9 AS builder
+WORKDIR /build
+
+# Install Apache Maven (microdnf repo on Oracle Linux 9)
+RUN microdnf install -y maven && microdnf clean all
+
+ARG BUILD_VERSION=dev
+
+# Download project dependencies first so they are cached in a separate layer
+# (rebuilt only when pom.xml changes, not on every source change)
+COPY pom.xml .
+RUN mvn -B -Pnative dependency:go-offline -q 2>/dev/null || true
+
+COPY src ./src
+
+RUN mvn -B -DskipTests versions:set -DnewVersion="${BUILD_VERSION}" -DgenerateBackupPoms=false \
+    && mvn -B -Pnative -DskipTests package
+
+# ─── Stage 2: Minimal glibc-compatible runtime image ─────────────────────────
+# The native binary is dynamically linked against glibc (default on Oracle Linux 9);
+# cgr.dev/chainguard/glibc-dynamic provides the necessary libraries in a minimal,
+# security-hardened image with no shell or package manager.
+FROM cgr.dev/chainguard/glibc-dynamic:latest
+WORKDIR /app
+
+ARG BUILD_DATE
+ARG BUILD_VERSION
+ARG BUILD_REVISION
+
+LABEL org.opencontainers.image.title="Kairos (Native)" \
+      org.opencontainers.image.description="Self-hosted uptime and availability monitoring application (GraalVM Native Image)" \
+      org.opencontainers.image.url="https://github.com/wenisch-tech/Kairos" \
+      org.opencontainers.image.source="https://github.com/wenisch-tech/Kairos" \
+      org.opencontainers.image.documentation="https://github.com/wenisch-tech/Kairos/tree/main/docs" \
+      org.opencontainers.image.authors="JFWenisch" \
+      org.opencontainers.image.licenses="GPL-3.0" \
+      org.opencontainers.image.vendor="JFWenisch" \
+      org.opencontainers.image.version="${BUILD_VERSION}" \
+      org.opencontainers.image.revision="${BUILD_REVISION}" \
+      org.opencontainers.image.created="${BUILD_DATE}"
+
+COPY --from=builder /build/target/kairos /app/kairos
+
+EXPOSE 8080
+ENTRYPOINT ["/app/kairos"]

@@ -1,0 +1,278 @@
+name: Native
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+    outputs:
+      digest:
+        description: Pushed native image digest
+        value: ${{ jobs.native.outputs.digest }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Builds a GraalVM native image, validates its endpoints, runs a JVM-vs-native
+# benchmark comparison, and (on main) pushes it to GHCR with a -native suffix.
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.sign.outputs.digest }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Build JVM JAR for the comparison image ─────────────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Set Maven version
+        run: mvn -B versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+
+      - name: Build JVM JAR
+        run: mvn -B -DskipTests package
+
+      - name: Generate build metadata
+        id: build_meta
+        run: echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Build JVM Docker image (for comparison) ────────────────────────────
+      - name: Build JVM Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ inputs.image }}:${{ inputs.version }}-jvm-cmp
+          build-args: |
+            BUILD_DATE=${{ steps.build_meta.outputs.date }}
+            BUILD_VERSION=${{ inputs.version }}
+            BUILD_REVISION=${{ github.sha }}
+
+      # ── Build GraalVM native Docker image ──────────────────────────────────
+      # The Dockerfile.native is a self-contained multi-stage build:
+      # Stage 1 compiles the native binary using GraalVM inside Docker.
+      # Stage 2 copies the binary into a minimal Chainguard glibc-dynamic image.
+      - name: Build native Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.native
+          push: false
+          load: true
+          tags: ${{ inputs.image }}:${{ inputs.version }}-native
+          build-args: |
+            BUILD_DATE=${{ steps.build_meta.outputs.date }}
+            BUILD_VERSION=${{ inputs.version }}
+            BUILD_REVISION=${{ github.sha }}
+
+      # ── Validate native container endpoints ────────────────────────────────
+      - name: Make scripts executable
+        run: chmod +x scripts/check-container-endpoints.sh scripts/benchmark-comparison.sh
+
+      - name: Validate native container endpoints and latency
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/check-container-endpoints.sh \
+            "${{ inputs.image }}:${{ inputs.version }}-native" \
+            18081 \
+            native-endpoint-latency.md \
+            "Native Container Endpoint Check"
+
+      - name: Upload native endpoint check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-endpoint-check-${{ github.run_id }}
+          path: native-endpoint-latency.md
+
+      - name: Add native endpoint check to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('native-endpoint-latency.md', 'utf8');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      # ── Benchmark comparison: JVM vs native ────────────────────────────────
+      - name: Run JVM vs native benchmark comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/benchmark-comparison.sh \
+            "${{ inputs.image }}:${{ inputs.version }}-jvm-cmp" \
+            "${{ inputs.image }}:${{ inputs.version }}-native" \
+            benchmark-comparison.md
+
+      - name: Upload benchmark comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-comparison-${{ github.run_id }}
+          path: benchmark-comparison.md
+
+      - name: Add benchmark comparison to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.existsSync('benchmark-comparison.md')
+              ? fs.readFileSync('benchmark-comparison.md', 'utf8')
+              : '_Benchmark comparison report not available._';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      # ── Security scan ──────────────────────────────────────────────────────
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+
+      - name: Run Trivy scan on native image
+        shell: bash
+        run: |
+          set +e
+          image="${{ inputs.image }}:${{ inputs.version }}-native"
+          status=1
+          for attempt in 1 2 3; do
+            trivy image \
+              --format table \
+              --output trivy-native-report.txt \
+              --scanners vuln \
+              --vuln-type os,library \
+              --severity CRITICAL,HIGH,MEDIUM \
+              "$image"
+            status=$?
+            [ "$status" -eq 0 ] && break
+            sleep 10
+          done
+          if [ ! -s trivy-native-report.txt ]; then
+            {
+              echo "Trivy scan could not complete after retries."
+              echo "Image: $image"
+              echo "Exit status: $status"
+            } > trivy-native-report.txt
+          fi
+          exit 0
+
+      - name: Upload Trivy native report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-native-report-${{ github.run_id }}
+          path: trivy-native-report.txt
+
+      - name: Add Trivy native report to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = fs.readFileSync('trivy-native-report.txt', 'utf8');
+            const maxLen = 60000;
+            if (report.length > maxLen) {
+              report = report.slice(0, maxLen) + '\n... output truncated ...';
+            }
+            const body = [
+              '## Trivy vulnerability report (native image)',
+              '',
+              `Image: ${{ inputs.image }}:${{ inputs.version }}-native`,
+              '',
+              '```text',
+              report,
+              '```'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+      # ── Push native image to GHCR (main branch only) ───────────────────────
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # GITHUBTOKEN is the repository's custom secret name, consistent with _docker.yml
+          password: ${{ secrets.GITHUBTOKEN }}
+
+      - name: Push native image tags to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}"
+          version="${{ inputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
+
+          docker tag "$image:$version-native" "$image:native-latest"
+          docker tag "$image:$version-native" "$image:native-sha-$short_sha"
+
+          docker push "$image:$version-native"
+          docker push "$image:native-latest"
+          docker push "$image:native-sha-$short_sha"
+
+      - name: Install Cosign
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign native Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: sign
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}"
+          version="${{ inputs.version }}"
+          short_sha="${GITHUB_SHA::7}"
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$image:$version-native" | cut -d@ -f2)
+          for tag in "$image:$version-native" "$image:native-latest" "$image:native-sha-$short_sha"; do
+            cosign sign --yes "$tag"
+          done
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Attest native build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ inputs.image }}
+          subject-digest: ${{ steps.sign.outputs.digest }}
