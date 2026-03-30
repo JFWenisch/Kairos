@@ -1,0 +1,52 @@
+site_name: Kairos Documentation
+site_description: Documentation for Kairos uptime monitoring
+site_url: https://wenisch-tech.github.io/Kairos/
+repo_url: https://github.com/wenisch-tech/Kairos
+repo_name: wenisch-tech/Kairos
+docs_dir: docs
+site_dir: site
+theme:
+  name: material
+  language: en
+  palette:
+    scheme: slate
+    primary: black
+    accent: cyan
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+extra_css:
+  - assets/stylesheets/extra.css
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Configuration:
+      - Overview: configuration.md
+      - Core Runtime:
+          - Database: configuration-database.md
+          - Runtime (Tomcat): configuration-runtime.md
+          - Security: configuration-security.md
+      - Platform Integrations:
+          - OIDC / OAuth2: configuration-oidc.md
+          - Authentication: authentication.md
+          - REST API: api.md
+      - Monitoring and Operations:
+          - Check Scheduling: configuration-scheduling.md
+          - Observability: configuration-observability.md
+          - Docker Pullability: docker-pullability.md
+          - Import / Export: importexport.md
+          - Announcements: announcements.md
+  - Troubleshooting: troubleshooting.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+plugins:
+  - search

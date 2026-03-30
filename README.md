@@ -1,64 +1,57 @@
-# Kairos — Uptime Monitor
+# Kairos - Uptime Monitor
 
 
-[![GitHub Release](https://img.shields.io/github/v/release/JFWenisch/Kairos?logo=github)](https://github.com/JFWenisch/Kairos/releases)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md)
-[![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/JFWenisch/Kairos/pkgs/container/kairos)
+[![GitHub Release](https://img.shields.io/github/v/release/wenisch-tech/Kairos?logo=github)](https://github.com/wenisch-tech/Kairos/releases)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE.md)
+[![Container](https://img.shields.io/badge/container-ghcr.io-blue?logo=github)](https://github.com/wenisch-tech/Kairos/pkgs/container/kairos)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kairos)](https://artifacthub.io/packages/helm/jfwenisch/kairos)
-[![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/JFWenisch/Kairos/actions)
+[![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/actions)
 
-**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
+**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, can discover Docker images from repository prefixes, stores a full check history, and presents the results on a clean status dashboard - with Prometheus metrics included.
 
 ---
 
 ## Screenshots
 
-### Status Dashboard
-![Status Dashboard](docs/img/dashboard.png)
+![Status Dashboard – Card View](docs/img/kairos-hero.png)
 
-### Resource Detail
-![Resource Detail](docs/img/resource-detail.png)
-
-### Admin — Manage Resources
-![Manage Resources](docs/img/admin-resources.png)
-
-### Admin — Resource Type Configuration
-![Resource Types](docs/img/admin-resource-types.png)
-
-### Admin — Announcements
-![Announcements](docs/img/admin-announcements.png)
-
-### Admin — API Keys
-![API Keys](docs/img/admin-api-keys.png)
-
-### Admin — Users
-![Users](docs/img/admin-users.png)
-
-### Admin — General Settings
-![Settings](docs/img/admin-settings.png)
+| Screenshot | Description |
+|---|---|
+| ![Status Dashboard](docs/img/dashboard.png) | **Status Dashboard (Timeline view)** — 24-hour timeline bars per resource, uptime percentages, and active outage indicators across multiple groups. |
+| ![Status Dashboard](docs/img/dashboard-cards.png) | **Status Dashboard (Card view)** — card based overview per resource, uptime percentages, and active outage indicators across multiple groups. |
+| ![Resource Detail](docs/img/resource-detail.png) | **Resource Detail** — Full check history table with status, response time, and error codes; manual "Check Now" button and outage history. |
+| ![Manage Resources](docs/img/admin-resources.png) | **Admin · Manage Resources** — Add, edit, and delete monitored resources; drag-and-drop reordering within and across groups. |
+| ![Resource Types](docs/img/admin-resource-types.png) | **Admin · Resource Type Configuration** — Configure check intervals, parallelism, outage and recovery thresholds per resource type (HTTP, Docker, Docker Repository). |
+| ![Announcements](docs/img/admin-announcements.png) | **Admin · Announcements** — Create and manage rich-text status announcements with severity levels and optional auto-expiry. |
+| ![API Keys](docs/img/admin-api-keys.png) | **Admin · API Keys** — Generate and revoke named API keys for machine-to-machine access to the REST API. |
+| ![Users](docs/img/admin-users.png) | **Admin · Users** — Manage local user accounts and passwords. |
+| ![Settings](docs/img/admin-settings.png) | **Admin · General Settings** — Application-wide settings including public submission mode and OIDC configuration. |
 
 ---
 
 ## Features
 
-- **HTTP monitoring** — HTTP GET checks with configurable interval and parallelism
-- **Docker image monitoring** — validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
-- **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic …` header, Docker checks use credentials for registry API/token requests
-- **Instant checks on startup** — monitoring begins immediately when the application starts; no waiting for the first interval tick
-- **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
-- **Manual instant checks** — admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
-- **Public "Check Now"** — optionally allow unauthenticated users to trigger an immediate check from the resource detail page
-- **Resource groups** — organise resources into named groups; drag-and-drop reordering within and across groups
-- **Admin panel** — manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
-- **API keys** — generate and revoke named API keys for machine-to-machine access to the REST API
-- **YAML import / export** — export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
-- **Announcement system** — publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
-- **Public announcements** — active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
-- **Public submission mode** — optionally allow unauthenticated users to add resources via the REST API
-- **OIDC / OAuth2 login** — plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
-- **Prometheus metrics** — `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
-- **H2 (default) or PostgreSQL** — switch databases with a single property change
-- **Dark-mode UI** — Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
+- **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
+- **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
+- **Dockerrepository discovery** - provide a repository prefix (for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
+- **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
+- **Instant checks on startup** - monitoring begins immediately when the application starts; no waiting for the first interval tick
+- **Status dashboard** - 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
+- **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
+- **Manual instant checks** - admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
+- **Public "Check Now"** - optionally allow unauthenticated users to trigger an immediate check from the resource detail page
+- **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups
+- **Admin panel** - manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
+- **API keys** - generate and revoke named API keys for machine-to-machine access to the REST API
+- **YAML import / export** - export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
+- **Announcement system** - publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
+- **Public announcements** - active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
+- **Public submission mode** - optionally allow unauthenticated users to add resources via the REST API
+- **OIDC / OAuth2 login** - plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
+- **Prometheus metrics** - `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
+- **H2 (default) or PostgreSQL** - switch databases with a single property change
+- **Automatic schema migrations** - Flyway runs database migrations automatically on startup (existing databases are baselined)
+- **Dark-mode UI** - Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
 
 ---
 
@@ -67,13 +60,13 @@
 ### Prerequisites
 
 - Java 17+
-- Maven 3.8+ (or use the included `./mvnw`)
+- Maven 3.8+ 
 - Network access to target Docker/OCI registries if you want Docker image checks
 
 ### Run from source
 
 ```bash
-git clone https://github.com/JFWenisch/Kairos.git
+git clone https://github.com/wenisch-tech/Kairos.git
 cd Kairos
 ./mvnw spring-boot:run
 ```
@@ -86,7 +79,7 @@ Open **http://localhost:8080** in your browser.
 |-------|----------|
 | `admin@kairos.local` | `admin` |
 
-> ⚠️ Change the default password immediately after first login via **Admin → Users**.
+> Warning: Change the default password immediately after first login via **Admin -> Users**.
 
 ### Run with Docker
 
@@ -95,7 +88,7 @@ docker run -d \
   --name kairos \
   -p 8080:8080 \
   -v kairos-data:/app/data \
-  ghcr.io/jfwendisch/kairos:latest
+  ghcr.io/wenisch-tech/kairos:latest
 ```
 
 ### Build a JAR
@@ -117,6 +110,14 @@ Kairos includes a production-ready Helm chart for Kubernetes deployments.
 #### Install
 
 ```bash
+helm repo add wenisch-tech https://charts.wenisch.tech
+helm repo update
+helm install my-kairos wenisch-tech/kairos --version 1.0.4 -n kairos --create-namespace
+```
+or install from repository
+```bash
+git clone https://github.com/wenisch-tech/Kairos.git
+
 helm install kairos ./charts/kairos -n kairos --create-namespace
 ```
 
@@ -168,16 +169,41 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 | `OIDC_CLIENT_SECRET` | `OIDC_CLIENT_SECRET` | *(empty)* | OIDC client secret |
 | `OIDC_ISSUER_URI` | `OIDC_ISSUER_URI` | *(empty)* | OIDC issuer URI (e.g. `https://keycloak.example.com/realms/myrealm`) |
 
-See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Docker socket access, and OIDC.
+See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Flyway migrations, registry checks, and OIDC.
+
+Database schema changes are applied automatically at startup via Flyway (`spring.flyway.enabled=true`).
+
+### Outage Configuration
+
+Outage thresholds are configured per resource type in the UI under **Admin -> Resource Types**:
+
+- **Outage threshold**: number of consecutive unsuccessful checks required to open an outage
+- **Recovery threshold**: number of consecutive successful checks required to close an outage
+
+Defaults for new resource type configs:
+
+- Outage threshold: `3`
+- Recovery threshold: `2`
+
+Behavior notes:
+
+- Kairos keeps only one active outage per resource.
+- The public outages page is available at `/outages`.
+- Resource pages and dashboard cards/rows show active outage indicators with live elapsed duration.
 
 ## Documentation
 
-- [docs/api.md](docs/api.md) — REST API endpoints, payloads and examples
-- [docs/authentication.md](docs/authentication.md) — resource check authentication and credential matching
-- [docs/configuration.md](docs/configuration.md) — runtime configuration, database setup and OIDC
-- [docs/importexport.md](docs/importexport.md) — YAML import/export workflow, format and compatibility notes
-- [docs/docker-pullability.md](docs/docker-pullability.md) — socketless Docker/OCI pullability validation behavior
-- [docs/announcements.md](docs/announcements.md) — announcement features, permissions and lifecycle
+- [docs/index.md](docs/index.md) - documentation index
+- GitHub Pages docs site (auto-published from `docs/`): https://wenisch-tech.github.io/Kairos/
+- [docs/quickstart.md](docs/quickstart.md) - quick setup paths (source, Docker, Helm)
+- [docs/api.md](docs/api.md) - REST API endpoints, payloads and examples
+- [docs/authentication.md](docs/authentication.md) - resource check authentication and credential matching
+- [docs/configuration.md](docs/configuration.md) - runtime configuration, database setup and OIDC
+- [docs/configuration-scheduling.md](docs/configuration-scheduling.md) - intervals, parallelism, and outage threshold behavior
+- [docs/importexport.md](docs/importexport.md) - YAML import/export workflow, format and compatibility notes
+- [docs/docker-pullability.md](docs/docker-pullability.md) - socketless Docker/OCI pullability validation behavior
+- [docs/announcements.md](docs/announcements.md) - announcement features, permissions and lifecycle
+- [docs/troubleshooting.md](docs/troubleshooting.md) - common issues, diagnosis steps and fixes
 
 See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.
 
@@ -185,7 +211,7 @@ See [docs/importexport.md](docs/importexport.md) for details about the admin res
 
 ## REST API
 
-The REST API is available at `/api`. An **interactive Swagger UI** (auto-generated from the OpenAPI spec) is served at **[/api](http://localhost:8080/api)** — no separate tooling needed.
+The REST API is available at `/api`. An **interactive Swagger UI** (auto-generated from the OpenAPI spec) is served at **[/api](http://localhost:8080/api)** - no separate tooling needed.
 
 The raw OpenAPI JSON spec is at `/v3/api-docs`.
 
@@ -226,12 +252,12 @@ A health endpoint is also available at `/actuator/health`.
 # Run tests
 ./mvnw test
 
-# Run with H2 console enabled (default — open http://localhost:8080/h2-console)
+# Run with H2 console enabled (default - open http://localhost:8080/h2-console)
 ./mvnw spring-boot:run
 ```
 
 ---
 
 ## License
-
-[GNU GPL v3.0](LICENSE.md)
+Licensed under 
+[AGPL v3.0](LICENSE.md) by Jean-Fabian Wenisch / wenisch.tech

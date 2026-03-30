@@ -9,6 +9,7 @@ import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,7 @@ public class ApiController {
 
     private final ResourceService resourceService;
     private final ResourceGroupService resourceGroupService;
+    private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
     private final ResourceStatusStreamService resourceStatusStreamService;
 
@@ -78,8 +80,27 @@ public class ApiController {
     }
 
     @GetMapping("/resources/status-updates")
-    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates() {
-        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot());
+    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates(
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours));
+    }
+
+    @GetMapping("/resources/{id}/status-update")
+    public ResponseEntity<ResourceStatusUpdateDTO> getResourceStatusUpdateByResourceId(
+            @PathVariable Long id,
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    private int normalizeTimelineHours(int hours) {
+        return switch (hours) {
+            case 24, 168, 720 -> hours;
+            default -> 24;
+        };
     }
 
     /**
@@ -115,6 +136,7 @@ public class ApiController {
                             resource.getGroup() != null ? resource.getGroup().getName() : null,
                             resource.getDisplayOrder(),
                             resource.isSkipTls(),
+                            resource.isRecursive(),
                             resource.isActive(),
                             resource.getCreatedAt(),
                             resourceService.getCurrentStatus(resource),
@@ -157,11 +179,123 @@ public class ApiController {
                 .resourceType(dto.getResourceType())
                 .target(dto.getTarget())
                 .skipTls(dto.isSkipTls())
+                .recursive(dto.isRecursive())
                 .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
                 .group(group)
                 .active(true)
                 .build();
-        return ResponseEntity.ok(resourceService.save(resource));
+        MonitoredResource saved = resourceService.save(resource);
+        if (saved.getResourceType() == tech.wenisch.kairos.entity.ResourceType.DOCKERREPOSITORY) {
+            checkExecutorService.runImmediateCheck(saved);
+        }
+        return ResponseEntity.ok(saved);
+    }
+
+    /**
+     * Creates template/sample resources for testing purposes.
+     *
+     * <p>Creates a set of diverse sample resources (HTTP endpoints, Docker images)
+     * organized into groups to demonstrate Kairos functionality. Useful for testing
+     * and demos. Requires {@code ADMIN} role.
+     *
+     * @return a JSON map with status and count of created resources
+     */
+    @Operation(summary = "Create template resources",
+               description = "Creates a set of sample resources for testing (HTTP services, Docker images, groups). Requires ADMIN role.",
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Template resources created successfully"),
+        @ApiResponse(responseCode = "403", description = "Caller does not hold the ADMIN role", content = @Content)
+    })
+    @PostMapping("/resources/templates")
+    public ResponseEntity<Map<String, Object>> createTemplateResources() {
+        // Create groups
+        ResourceGroup webServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Web Services").displayOrder(1).build()
+        );
+        ResourceGroup dockerServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Docker Images").displayOrder(2).build()
+        );
+
+        // Create HTTP resources
+        MonitoredResource httpGoogle = MonitoredResource.builder()
+                .name("Google DNS")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://dns.google")
+                .skipTls(false)
+                .displayOrder(1)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpGoogle);
+
+        MonitoredResource httpGithub = MonitoredResource.builder()
+                .name("GitHub Status")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://status.github.com")
+                .skipTls(false)
+                .displayOrder(2)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpGithub);
+
+        MonitoredResource httpExample = MonitoredResource.builder()
+                .name("Example.com")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://example.com")
+                .skipTls(false)
+                .displayOrder(3)
+                .group(webServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(httpExample);
+
+        // Create Docker image resources
+        MonitoredResource dockerNginx = MonitoredResource.builder()
+                .name("Nginx Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/nginx:latest")
+                .skipTls(false)
+                .displayOrder(1)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerNginx);
+
+        MonitoredResource dockerPostgres = MonitoredResource.builder()
+                .name("PostgreSQL 15")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/postgres:15-alpine")
+                .skipTls(false)
+                .displayOrder(2)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerPostgres);
+
+        MonitoredResource dockerRedis = MonitoredResource.builder()
+                .name("Redis Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/redis:latest")
+                .skipTls(false)
+                .displayOrder(3)
+                .group(dockerServicesGroup)
+                .active(true)
+                .build();
+        resourceService.save(dockerRedis);
+
+        // Trigger immediate checks
+        checkExecutorService.runImmediateCheck(dockerNginx);
+        checkExecutorService.runImmediateCheck(dockerPostgres);
+        checkExecutorService.runImmediateCheck(dockerRedis);
+
+        return ResponseEntity.ok(Map.of(
+            "status", "success",
+            "message", "Template resources created",
+            "groupsCreated", 2,
+            "resourcesCreated", 6
+        ));
     }
 
     /**

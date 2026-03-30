@@ -33,13 +33,21 @@ resources:
     resourceType: HTTP
     target: https://example.com/health
     skipTLS: false
+    recursive: false
     active: true
     createdAt: 2026-03-11T12:00:00
   - name: Nginx Image
     resourceType: DOCKER
     target: nginx:latest
+    recursive: false
     active: true
     createdAt: 2026-03-11T12:10:00
+  - name: GHCR Namespace
+    resourceType: DOCKERREPOSITORY
+    target: ghcr.io/jfwenisch
+    recursive: true
+    active: true
+    createdAt: 2026-03-11T12:15:00
 ```
 
 ## Compatibility Strategy
@@ -79,6 +87,7 @@ Preferred fields in exported YAML:
 - `resourceType`
 - `target`
 - `skipTLS`
+- `recursive`
 - `active`
 - `createdAt`
 

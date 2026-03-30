@@ -159,20 +159,20 @@ jobs:
             **Verify image signature:**
             ```bash
             cosign verify ${{ inputs.image }}@${{ inputs.digest }} \
-              --certificate-identity-regexp="https://github.com/JFWenisch/Kairos" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/Kairos" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```
 
             **Verify build provenance:**
             ```bash
             gh attestation verify oci://${{ inputs.image }}@${{ inputs.digest }} \
-              --repo JFWenisch/Kairos
+              --repo wenisch-tech/Kairos
             ```
 
             **Verify Helm chart signature:**
             ```bash
             cosign verify-blob kairos-${{ inputs.version }}.tgz \
               --bundle kairos-${{ inputs.version }}.tgz.cosign.bundle \
-              --certificate-identity-regexp="https://github.com/JFWenisch/Kairos" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/Kairos" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```

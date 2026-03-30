@@ -65,5 +65,14 @@ public class DataInitializer implements ApplicationRunner {
                     .build());
             log.info("Created default ResourceTypeConfig for DOCKER");
         }
+        if (resourceTypeConfigRepository.findByTypeName("DOCKERREPOSITORY").isEmpty()) {
+            resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
+                    .typeName("DOCKERREPOSITORY")
+                    .checkIntervalMinutes(60)
+                    .parallelism(1)
+                    .allowPublicAdd(false)
+                    .build());
+            log.info("Created default ResourceTypeConfig for DOCKERREPOSITORY");
+        }
     }
 }

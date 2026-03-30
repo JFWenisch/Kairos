@@ -33,6 +33,7 @@ public class HttpCheckService {
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final OutageService outageService;
 
     private final HttpClient httpClient = createDefaultHttpClient();
     private final HttpClient insecureHttpClient = createInsecureHttpClient();
@@ -77,6 +78,7 @@ public class HttpCheckService {
                         .build();
             }
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         } catch (Exception e) {
@@ -89,6 +91,7 @@ public class HttpCheckService {
                     .errorCode("CONNECTION_ERROR")
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         }

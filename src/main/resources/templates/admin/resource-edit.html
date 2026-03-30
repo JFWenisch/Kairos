@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Edit Resource - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div class="d-flex flex-column">
+                <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
+                <a th:href="@{/admin/settings}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-sliders me-2"></i>General Settings</a>
+                <a th:href="@{/admin/resources}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-hdd-network me-2"></i>Manage Resources</a>
+                <a th:href="@{/admin/resource-types}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>Resource Types</a>
+                <a th:href="@{/admin/users}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-people me-2"></i>Users</a>
+                <a th:href="@{/admin/announcements}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-megaphone me-2"></i>Announcements</a>
+                <a th:href="@{/admin/api-keys}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-key me-2"></i>API Keys</a>
+            </div>
+        </div>
+
+        <div class="col-md-10 py-4 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Resource</h2>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/resources}">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="@{/admin/resources/edit/{id}(id=${resource.id})}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required maxlength="255" th:value="${resource.name}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="resourceType" required>
+                                <option th:each="type : ${resourceTypes}"
+                                        th:value="${type}"
+                                        th:selected="${resource.resourceType == type}"
+                                        th:text="${type}">TYPE</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Target</label>
+                            <input type="text" class="form-control" name="target" required maxlength="1000" th:value="${resource.target}">
+                            <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Group</label>
+                            <select class="form-select" name="groupId">
+                                <option value="">Ungrouped</option>
+                                <option th:each="group : ${resourceGroups}"
+                                        th:value="${group.id}"
+                                        th:selected="${resource.group != null and resource.group.id == group.id}"
+                                        th:text="${group.name}">Group</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Order</label>
+                            <input type="number" class="form-control" name="displayOrder" step="1" th:value="${resource.displayOrder}">
+                            <div class="form-text">Lower numbers are shown first.</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="skipTLS" name="skipTLS" value="true"
+                                   th:checked="${resource.skipTls}">
+                            <label class="form-check-label" for="skipTLS">
+                                Ignore TLS certificate and hostname errors
+                            </label>
+                            <div class="form-text">Used for HTTPS connections (HTTP checks and Docker registry checks).</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="recursive" name="recursive" value="true"
+                                   th:checked="${resource.recursive}">
+                            <label class="form-check-label" for="recursive">
+                                Recursive (Dockerrepository only)
+                            </label>
+                            <div class="form-text">When enabled, includes nested repositories below the given prefix.</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Save Changes
+                            </button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/resources}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>
