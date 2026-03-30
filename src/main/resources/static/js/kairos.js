@@ -215,7 +215,8 @@ function initResourceStatusStream() {
     const cardsLoadingIndicator = document.querySelector('[data-role="cards-loading-indicator"]');
     const hasRangeSelector = rangeButtons.length > 0;
     const pollIntervalMs = 10000;
-    const progressiveRenderDelayMs = 85;
+    const progressiveRenderDelayMs = 15;
+    const snapshotParallelism = 4;
     let pollingStarted = false;
     let currentTimelineHours = 24;
     let activeSnapshotRenderId = 0;
@@ -347,34 +348,111 @@ function initResourceStatusStream() {
         applyRangeLabel(hours);
     }
 
-    function buildSnapshotUrl() {
-        if (!hasRangeSelector) {
-            return '/api/resources/status-updates';
-        }
-        return '/api/resources/status-updates?hours=' + encodeURIComponent(String(currentTimelineHours));
+    function collectUniqueResourceIds() {
+        const ids = new Set();
+        document.querySelectorAll('[data-resource-id]').forEach(function(container) {
+            const rawId = container.getAttribute('data-resource-id');
+            if (!rawId) {
+                return;
+            }
+            ids.add(rawId);
+        });
+        return Array.from(ids);
+    }
+
+    function buildResourceSnapshotUrl(resourceId) {
+        return '/api/resources/' + encodeURIComponent(String(resourceId))
+            + '/status-update?hours=' + encodeURIComponent(String(currentTimelineHours));
     }
 
     function fetchSnapshot(options) {
         const showLoading = options && options.showLoading === true;
         const shouldShowLoading = showLoading || isCardsViewActive();
+        const isInitialRender = hasLoadingResourceContainers();
+        const shouldMarkResourcesLoading = isInitialRender || showLoading;
+        const requestRenderId = activeSnapshotRenderId + 1;
+        const resourceIds = collectUniqueResourceIds();
+
+        activeSnapshotRenderId = requestRenderId;
+        if (shouldMarkResourcesLoading) {
+            markResourceContainersLoading();
+        }
+
         if (shouldShowLoading) {
             setTimelineLoading(true);
         }
 
-        return fetch(buildSnapshotUrl(), {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            },
-            cache: 'no-store'
-        })
-            .then(function(response) {
-                if (!response.ok) {
-                    throw new Error('Polling failed with status ' + response.status);
+        if (resourceIds.length === 0) {
+            clearResourceLoadingStates();
+            updateSnapshotCounts([]);
+            return Promise.resolve().finally(function() {
+                if (shouldShowLoading) {
+                    setTimelineLoading(false);
                 }
-                return response.json();
+            });
+        }
+
+        const updates = [];
+        let nextResourceIndex = 0;
+
+        function fetchResourceUpdate(resourceId) {
+            return fetch(buildResourceSnapshotUrl(resourceId), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                cache: 'no-store'
             })
-            .then(applySnapshot)
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Polling failed with status ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(update) {
+                    if (requestRenderId !== activeSnapshotRenderId || !update) {
+                        return;
+                    }
+                    updates.push(update);
+                    updateResourceRow(update);
+                    if (isInitialRender) {
+                        return waitForNextRenderStep(progressiveRenderDelayMs);
+                    }
+                })
+                .catch(function() {
+                    // Continue with remaining resources.
+                });
+        }
+
+        function worker() {
+            if (requestRenderId !== activeSnapshotRenderId) {
+                return Promise.resolve();
+            }
+
+            if (nextResourceIndex >= resourceIds.length) {
+                return Promise.resolve();
+            }
+
+            const resourceId = resourceIds[nextResourceIndex];
+            nextResourceIndex += 1;
+
+            return fetchResourceUpdate(resourceId).then(worker);
+        }
+
+        const workers = [];
+        const workerCount = Math.min(snapshotParallelism, resourceIds.length);
+        for (let i = 0; i < workerCount; i += 1) {
+            workers.push(worker());
+        }
+
+        return Promise.all(workers)
+            .then(function() {
+                if (requestRenderId !== activeSnapshotRenderId) {
+                    return;
+                }
+                clearResourceLoadingStates();
+                updateSnapshotCounts(updates);
+            })
             .catch(function() {
                 // Retry on next interval.
             })
@@ -452,9 +530,9 @@ function initResourceStatusStream() {
 
     const eventSource = new EventSource('/api/resources/stream');
 
-    eventSource.addEventListener('snapshot', function(event) {
-        applySnapshot(parseUpdatePayload(event.data));
-    });
+    eventSource.onopen = function() {
+        fetchSnapshotWithOptionalLoading(false);
+    };
 
     eventSource.addEventListener('resource-update', function(event) {
         const update = parseUpdatePayload(event.data);
@@ -476,6 +554,9 @@ function initResourceStatusStream() {
         eventSource.close();
         startHttpPolling();
     };
+
+    // Do not wait for the initial SSE snapshot before painting timelines.
+    fetchSnapshotWithOptionalLoading(true);
 }
 
 function parseUpdatePayload(raw) {

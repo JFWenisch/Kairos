@@ -33,7 +33,7 @@ public class ResourceStatusStreamService {
         emitter.onTimeout(() -> emitters.remove(emitter));
         emitter.onError(ex -> emitters.remove(emitter));
 
-        sendEvent(emitter, "snapshot", buildSnapshot());
+        sendEvent(emitter, "connected", Map.of("status", "ok"));
         return emitter;
     }
 
@@ -60,6 +60,16 @@ public class ResourceStatusStreamService {
 
     public List<ResourceStatusUpdateDTO> getSnapshot(int hours) {
         return buildSnapshot(hours);
+    }
+
+    public Optional<ResourceStatusUpdateDTO> getSnapshotForResource(Long resourceId, int hours) {
+        return resourceService.findById(resourceId)
+            .map(resource -> {
+                String activeOutageSince = outageService.findActiveOutage(resource)
+                    .map(o -> o.getStartDate().format(OUTAGE_FORMATTER))
+                    .orElse(null);
+                return buildUpdate(resource, hours, activeOutageSince);
+            });
     }
 
     private List<ResourceStatusUpdateDTO> buildSnapshot() {
