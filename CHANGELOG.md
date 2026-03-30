@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.0 - 2026-03-30
+
+## [1.4.0](https://github.com/wenisch-tech/Kairos/compare/v1.3.0...v1.4.0) (2026-03-30)
+
+
+### Features
+
+* Improved Loading display. Not all elements are marked as loaded at once but progressively resources are displayed once data is loaded ([dbe3d7e](https://github.com/wenisch-tech/Kairos/commit/dbe3d7e06f7d0e093a7e9b0bdc39cfe6636d1b7e))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.0
+
+
 ## v1.3.0 - 2026-03-30
 
 ## [1.3.0](https://github.com/wenisch-tech/Kairos/compare/v1.2.1...v1.3.0) (2026-03-30)
