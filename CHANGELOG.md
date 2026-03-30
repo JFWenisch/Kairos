@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.4 - 2026-03-30
+
+### [1.4.4](https://github.com/wenisch-tech/Kairos/compare/v1.4.3...v1.4.4) (2026-03-30)
+
+
+### Build Systems
+
+* **deps:** bump org.webjars.npm:bootstrap-icons from 1.11.3 to 1.13.1 ([b73b5f5](https://github.com/wenisch-tech/Kairos/commit/b73b5f5983500e275d9bde9486fe58e3c0e05e15))
+* **deps:** bump org.webjars.npm:bootstrap-icons from 1.11.3 to 1.13.1 ([5735d03](https://github.com/wenisch-tech/Kairos/commit/5735d03cb3c5f39be13b588bc1a28610341e97dd))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.4
+
+
 ## v1.4.2 - 2026-03-30
 
 ### [1.4.2](https://github.com/wenisch-tech/Kairos/compare/v1.4.1...v1.4.2) (2026-03-30)
