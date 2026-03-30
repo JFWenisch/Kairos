@@ -15,9 +15,12 @@ import tech.wenisch.kairos.repository.OutageRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,6 +90,23 @@ public class OutageService {
             }
         }
     }
+
+
+        private static final DateTimeFormatter ACTIVE_OUTAGE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        /**
+         * Returns a map of resourceId → ISO outage start datetime for all currently active outages,
+         * loaded in a single batch query (no N+1).
+         */
+        public Map<Long, String> findAllActiveSinceByResourceId() {
+        return outageRepository.findAllActiveWithResource().stream()
+            .collect(Collectors.toMap(
+                outage -> outage.getResource().getId(),
+                outage -> outage.getStartDate().format(ACTIVE_OUTAGE_FORMATTER),
+                (a, b) -> a   // keep first (most recent) when duplicates exist per resource
+            ));
+        }
 
     public Optional<Outage> findActiveOutage(MonitoredResource resource) {
         return resolveActiveOutage(resource);

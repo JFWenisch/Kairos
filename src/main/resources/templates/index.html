@@ -6,12 +6,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
-    <title>Kairos - Uptime Monitor</title>
+    <title>Kairos - Availability Monitor</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <script>window._splashStart = Date.now();</script>
 </head>
 <body class="landing-modern">
+
+<div id="splash-screen" role="status" aria-label="Loading Kairos">
+    <div class="splash-icon-wrap">
+        <img th:src="@{/img/kairos.png}" alt="Kairos">
+    </div>
+    <p class="splash-app-name">Kairos</p>
+    <p class="splash-subtitle">Availability Monitoring</p>
+    <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
+</div>
 <nav th:replace="~{layout :: navbar}"></nav>
 
 <div class="container-fluid py-4 dashboard-shell">
@@ -26,7 +36,7 @@
 
     <div class="dashboard-hero mb-4">
         <div>
-            <p class="dashboard-kicker mb-2">KAIROS MONITORING</p>
+            <p class="dashboard-kicker mb-2">KAIROS AVAILABILITY MONITORING</p>
             <h1 class="h3 mb-2"><i class="bi bi-activity me-2"></i>Status Dashboard</h1>
             <p class="text-muted mb-0">Live status, refreshed automatically as checks run.</p>
         </div>
@@ -64,22 +74,22 @@
         </div>
     </div>
 
-    <div class="status-snapshot mb-4" th:unless="${#lists.isEmpty(allResources)}">
+    <div class="status-snapshot mb-4" th:if="${totalResourceCount > 0}">
         <div class="snapshot-item">
             <small>Total</small>
-            <strong th:text="${#lists.size(allResources)}">0</strong>
+            <strong th:text="${totalResourceCount}" data-role="snapshot-total">0</strong>
         </div>
         <div class="snapshot-item snapshot-ok">
             <small>Available</small>
-            <strong th:text="${#lists.size(allResources.?[currentStatus == 'available'])}">0</strong>
+            <strong data-role="snapshot-available">—</strong>
         </div>
         <div class="snapshot-item snapshot-down">
             <small>Down</small>
-            <strong th:text="${#lists.size(allResources.?[currentStatus == 'not-available'])}">0</strong>
+            <strong data-role="snapshot-down">—</strong>
         </div>
         <div class="snapshot-item snapshot-unknown">
             <small>Unknown</small>
-            <strong th:text="${#lists.size(allResources.?[currentStatus == 'unknown'])}">0</strong>
+            <strong data-role="snapshot-unknown">—</strong>
         </div>
     </div>
 
@@ -116,26 +126,25 @@
 
     <div class="card resource-panel mb-4" th:unless="${#lists.isEmpty(ungroupedResources)}" data-view="timeline">
         <div class="card-body p-0">
-            <div th:each="vm : ${ungroupedResources}" class="resource-row p-3"
-                 th:attr="data-resource-id=${vm.resource.id},data-group-id='ungrouped'">
+            <div th:each="resource : ${ungroupedResources}" class="resource-row p-3"
+                 th:attr="data-resource-id=${resource.id},data-group-id='ungrouped'">
                 <div class="row align-items-center">
                     <div class="col-md-3">
                         <div class="d-flex align-items-center">
-                            <span data-role="status-dot" th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                            <span data-role="status-dot" class="status-dot me-2 status-unknown"></span>
                             <div>
-                                <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                                <a th:href="@{/resources/{id}(id=${resource.id})}"
                                    class="text-decoration-none fw-semibold"
-                                   th:text="${vm.resource.name}">Resource Name</a>
+                                   th:text="${resource.name}">Resource Name</a>
                                 <div class="resource-subline">
-                                    <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
+                                    <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                                     <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
-                                           th:text="${vm.resource.target}">target</small>
+                                           th:text="${resource.target}">target</small>
                                 </div>
-                                <div class="outage-inline-badge mt-1" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                                <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                     Active outage since
-                                    <span data-role="outage-since-counter"
-                                          th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                                    <span data-role="outage-since-counter" data-outage-start="">0s</span>
                                 </div>
                             </div>
                         </div>
@@ -143,9 +152,7 @@
                     <div class="col-md-7">
                         <div class="timeline-wrapper">
                             <div class="timeline-container">
-                                <span th:each="block : ${vm.timelineBlocks}"
-                                      th:class="'timeline-block ' + ${block.status}"
-                                      th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                <span class="timeline-block-skeleton"></span>
                             </div>
                             <div class="timeline-labels d-flex justify-content-between align-items-center">
                                 <small class="text-muted timeline-label-start" data-role="timeline-range-start" data-hours="24">--:--</small>
@@ -154,7 +161,7 @@
                         </div>
                     </div>
                     <div class="col-md-2 text-end resource-score">
-                        <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                        <span class="fw-bold resource-uptime">—</span>
                         <br>
                         <small class="text-muted">availability</small>
                     </div>
@@ -164,29 +171,28 @@
     </div>
 
     <div class="row resource-cards-grid resource-cards-grid-ungrouped mb-4 g-4" th:unless="${#lists.isEmpty(ungroupedResources)}" data-view="cards" style="display: none;">
-        <div th:each="vm : ${ungroupedResources}" class="col-sm-6 col-lg-4 col-xl-3"
-             th:attr="data-resource-id=${vm.resource.id},data-group-id='ungrouped'">
-              <div th:class="'card resource-card h-100 border-0 shadow-sm status-' + ${vm.currentStatus}"
-                  th:attr="data-resource-url=@{/resources/{id}(id=${vm.resource.id})}">
+        <div th:each="resource : ${ungroupedResources}" class="col-sm-6 col-lg-4 col-xl-3"
+             th:attr="data-resource-id=${resource.id},data-group-id='ungrouped'">
+              <div class="card resource-card h-100 border-0 shadow-sm status-unknown"
+                  th:attr="data-resource-url=@{/resources/{id}(id=${resource.id})}">
                 <div class="card-body d-flex flex-column">
                     <div class="resource-card-top mb-2">
                         <div class="resource-title-line">
-                            <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
+                            <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                         </div>
-                        <small class="resource-card-state" th:text="${vm.currentStatus}">available</small>
+                        <small class="resource-card-state" data-role="card-status">unknown</small>
                     </div>
-                    <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                    <a th:href="@{/resources/{id}(id=${resource.id})}"
                        class="text-decoration-none fw-semibold card-title mb-2"
-                       th:text="${vm.resource.name}">Resource Name</a>
-                    <small class="text-muted resource-target mb-3" th:text="${vm.resource.target}">target</small>
-                    <div class="outage-card-indicator mb-3" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                       th:text="${resource.name}">Resource Name</a>
+                    <small class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
+                    <div class="outage-card-indicator mb-3" hidden data-role="outage-badge">
                         <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        Active outage since <span data-role="outage-since-counter"
-                                                  th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                        Active outage since <span data-role="outage-since-counter" data-outage-start="">0s</span>
                     </div>
                     <div class="mt-auto">
                         <div class="resource-score text-center py-2">
-                            <div class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</div>
+                            <div class="fw-bold resource-uptime">—</div>
                             <small class="text-muted">availability</small>
                         </div>
                     </div>
@@ -196,48 +202,44 @@
     </div>
 
     <div class="accordion grouped-resource-accordion" id="groupedResourceAccordion" th:unless="${#lists.isEmpty(groupedResources)}" data-view="timeline">
-        <div class="accordion-item mb-3" th:each="groupVm : ${groupedResources}"
-             th:attr="data-group-id=${groupVm.group.id}">
-            <h2 class="accordion-header" th:id="'group-heading-' + ${groupVm.group.id}">
+        <div class="accordion-item mb-3" th:each="groupShell : ${groupedResources}"
+             th:attr="data-group-id=${groupShell.group.id}">
+            <h2 class="accordion-header" th:id="'group-heading-' + ${groupShell.group.id}">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                        th:attr="data-bs-target='#group-collapse-' + ${groupVm.group.id},aria-controls='group-collapse-' + ${groupVm.group.id}">
+                        th:attr="data-bs-target='#group-collapse-' + ${groupShell.group.id},aria-controls='group-collapse-' + ${groupShell.group.id}">
                   <span class="group-header-content">
-                    <span class="fw-semibold me-3" th:text="${groupVm.group.name}">Group Name</span>
+                    <span class="fw-semibold me-3" th:text="${groupShell.group.name}">Group Name</span>
                     <span class="group-status-summary ms-auto">
-                        <span class="badge text-bg-success me-1" th:attr="data-group-counter='available',data-group-id=${groupVm.group.id}"
-                            th:text="${groupVm.availableCount}">0</span>
-                        <span class="badge text-bg-danger me-1" th:attr="data-group-counter='not-available',data-group-id=${groupVm.group.id}"
-                            th:text="${groupVm.downCount}">0</span>
-                        <span class="badge text-bg-secondary" th:attr="data-group-counter='unknown',data-group-id=${groupVm.group.id}"
-                            th:text="${groupVm.unknownCount}">0</span>
+                        <span class="badge text-bg-success me-1" th:attr="data-group-counter='available',data-group-id=${groupShell.group.id}">0</span>
+                        <span class="badge text-bg-danger me-1" th:attr="data-group-counter='not-available',data-group-id=${groupShell.group.id}">0</span>
+                        <span class="badge text-bg-secondary" th:attr="data-group-counter='unknown',data-group-id=${groupShell.group.id}">0</span>
                     </span>
                   </span>
                 </button>
             </h2>
             <div class="accordion-collapse collapse show"
-                 th:id="'group-collapse-' + ${groupVm.group.id}"
-                 th:attr="aria-labelledby='group-heading-' + ${groupVm.group.id}">
+                 th:id="'group-collapse-' + ${groupShell.group.id}"
+                 th:attr="aria-labelledby='group-heading-' + ${groupShell.group.id}">
                 <div class="accordion-body p-0">
-                    <div class="resource-row p-3" th:each="vm : ${groupVm.resources}"
-                         th:attr="data-resource-id=${vm.resource.id},data-group-id=${groupVm.group.id}">
+                    <div class="resource-row p-3" th:each="resource : ${groupShell.resources}"
+                         th:attr="data-resource-id=${resource.id},data-group-id=${groupShell.group.id}">
                         <div class="row align-items-center">
                             <div class="col-md-3">
                                 <div class="d-flex align-items-center">
-                                    <span data-role="status-dot" th:class="'status-dot me-2 status-' + ${vm.currentStatus}"></span>
+                                    <span data-role="status-dot" class="status-dot me-2 status-unknown"></span>
                                     <div>
-                                        <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                                        <a th:href="@{/resources/{id}(id=${resource.id})}"
                                            class="text-decoration-none fw-semibold"
-                                           th:text="${vm.resource.name}">Resource Name</a>
+                                           th:text="${resource.name}">Resource Name</a>
                                         <div class="resource-subline">
-                                            <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
+                                            <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                                             <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
-                                                   th:text="${vm.resource.target}">target</small>
+                                                   th:text="${resource.target}">target</small>
                                         </div>
-                                        <div class="outage-inline-badge mt-1" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                                        <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
                                             <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                             Active outage since
-                                            <span data-role="outage-since-counter"
-                                                  th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                                            <span data-role="outage-since-counter" data-outage-start="">0s</span>
                                         </div>
                                     </div>
                                 </div>
@@ -245,9 +247,7 @@
                             <div class="col-md-7">
                                 <div class="timeline-wrapper">
                                     <div class="timeline-container">
-                                        <span th:each="block : ${vm.timelineBlocks}"
-                                              th:class="'timeline-block ' + ${block.status}"
-                                              th:title="${block.status + ' Â· ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                                        <span class="timeline-block-skeleton"></span>
                                     </div>
                                     <div class="timeline-labels d-flex justify-content-between align-items-center">
                                         <small class="text-muted timeline-label-start" data-role="timeline-range-start" data-hours="24">--:--</small>
@@ -256,7 +256,7 @@
                                 </div>
                             </div>
                             <div class="col-md-2 text-end resource-score">
-                                <span class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</span>
+                                <span class="fw-bold resource-uptime">—</span>
                                 <br>
                                 <small class="text-muted">availability</small>
                             </div>
@@ -268,32 +268,31 @@
     </div>
 
     <div th:unless="${#lists.isEmpty(groupedResources)}" data-view="cards" style="display: none;">
-        <div th:each="groupVm : ${groupedResources}" class="mb-4">
-            <h5 class="mb-3" th:text="${groupVm.group.name}">Group Name</h5>
+        <div th:each="groupShell : ${groupedResources}" class="mb-4">
+            <h5 class="mb-3" th:text="${groupShell.group.name}">Group Name</h5>
             <div class="row resource-cards-grid resource-cards-grid-grouped g-3">
-                <div th:each="vm : ${groupVm.resources}" class="col-sm-6 col-lg-4 col-xl-3"
-                     th:attr="data-resource-id=${vm.resource.id},data-group-id=${groupVm.group.id}">
-                    <div th:class="'card resource-card h-100 border-0 shadow-sm status-' + ${vm.currentStatus}"
-                        th:attr="data-resource-url=@{/resources/{id}(id=${vm.resource.id})}">
+                <div th:each="resource : ${groupShell.resources}" class="col-sm-6 col-lg-4 col-xl-3"
+                     th:attr="data-resource-id=${resource.id},data-group-id=${groupShell.group.id}">
+                    <div class="card resource-card h-100 border-0 shadow-sm status-unknown"
+                        th:attr="data-resource-url=@{/resources/{id}(id=${resource.id})}">
                         <div class="card-body d-flex flex-column">
                             <div class="resource-card-top mb-2">
                                 <div class="resource-title-line">
-                                    <small class="resource-type" th:text="${vm.resource.resourceType}">TYPE</small>
+                                    <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
                                 </div>
-                                <small class="resource-card-state" th:text="${vm.currentStatus}">available</small>
+                                <small class="resource-card-state" data-role="card-status">unknown</small>
                             </div>
-                            <a th:href="@{/resources/{id}(id=${vm.resource.id})}"
+                            <a th:href="@{/resources/{id}(id=${resource.id})}"
                                class="text-decoration-none fw-semibold card-title mb-2"
-                               th:text="${vm.resource.name}">Resource Name</a>
-                            <small class="text-muted resource-target mb-3" th:text="${vm.resource.target}">target</small>
-                            <div class="outage-card-indicator mb-3" th:if="${activeOutageSinceByResourceId[vm.resource.id] != null}">
+                               th:text="${resource.name}">Resource Name</a>
+                            <small class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
+                            <div class="outage-card-indicator mb-3" hidden data-role="outage-badge">
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                Active outage since <span data-role="outage-since-counter"
-                                                          th:attr="data-outage-start=${activeOutageSinceByResourceId[vm.resource.id]}">0s</span>
+                                Active outage since <span data-role="outage-since-counter" data-outage-start="">0s</span>
                             </div>
                             <div class="mt-auto">
                                 <div class="resource-score text-center py-2">
-                                    <div class="fw-bold resource-uptime" th:text="${#numbers.formatDecimal(vm.uptimePercentage, 1, 1)} + '%'">99.9%</div>
+                                    <div class="fw-bold resource-uptime">—</div>
                                     <small class="text-muted">availability</small>
                                 </div>
                             </div>
@@ -357,5 +356,26 @@
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/kairos.js}"></script>
+<script>
+(function () {
+    var MIN_MS = 3000;
+    function hideSplash() {
+        var el = document.getElementById('splash-screen');
+        if (!el) return;
+        el.classList.add('splash-hidden');
+        el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
+    }
+    var elapsed = Date.now() - (window._splashStart || Date.now());
+    var delay = Math.max(0, MIN_MS - elapsed);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            var e2 = Date.now() - (window._splashStart || Date.now());
+            setTimeout(hideSplash, Math.max(0, MIN_MS - e2));
+        });
+    } else {
+        setTimeout(hideSplash, delay);
+    }
+}());
+</script>
 </body>
 </html>

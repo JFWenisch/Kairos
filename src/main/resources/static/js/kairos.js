@@ -53,12 +53,18 @@ function initializeViewModeSwitcher() {
     }
 
     const buttons = switcher.querySelectorAll('button[data-view-mode]');
-    const savedViewMode = localStorage.getItem('viewMode') || 'timeline';
+    const savedViewMode = localStorage.getItem('viewMode');
+
+    function normalizeViewMode(mode) {
+        return mode === 'cards' ? 'cards' : 'timeline';
+    }
 
     function setViewMode(mode) {
+        const normalizedMode = normalizeViewMode(mode);
+
         // Update button states
         buttons.forEach(function(btn) {
-            const isActive = btn.getAttribute('data-view-mode') === mode;
+            const isActive = btn.getAttribute('data-view-mode') === normalizedMode;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
@@ -66,7 +72,7 @@ function initializeViewModeSwitcher() {
         // Update visibility of resource containers
         document.querySelectorAll('[data-view]').forEach(function(container) {
             const view = container.getAttribute('data-view');
-            if (view === mode) {
+            if (view === normalizedMode) {
                 container.style.display = '';
             } else {
                 container.style.display = 'none';
@@ -74,11 +80,11 @@ function initializeViewModeSwitcher() {
         });
 
         // Save preference
-        localStorage.setItem('viewMode', mode);
+        localStorage.setItem('viewMode', normalizedMode);
     }
 
     // Set initial view mode
-    setViewMode(savedViewMode);
+    setViewMode(normalizeViewMode(savedViewMode));
 
     // Add click listeners to buttons
     buttons.forEach(function(button) {
@@ -216,6 +222,7 @@ function initResourceStatusStream() {
             return;
         }
         updates.forEach(updateResourceRow);
+        updateSnapshotCounts(updates);
     }
 
     function formatRangeLabel(hours) {
@@ -427,8 +434,10 @@ function updateResourceRow(update) {
     containers.forEach(function(container) {
         setRowChecking(container, false);
         updateStatusDot(container, update.currentStatus);
+        updateCardStatus(container, update.currentStatus);
         updateTimeline(container, update.timelineBlocks);
         updateUptime(container, update.uptimePercentage);
+        updateOutageBadge(container, update.activeOutageSince || null);
     });
 
     refreshAllGroupCounters();
@@ -451,7 +460,8 @@ function setResourceChecking(resourceId, checking) {
 
 function findResourceContainers(resourceId) {
     const selector = '.resource-row[data-resource-id="' + resourceId + '"]'
-        + ', .resource-detail[data-resource-id="' + resourceId + '"]';
+        + ', .resource-detail[data-resource-id="' + resourceId + '"]'
+        + ', [data-resource-id="' + resourceId + '"]';
     return document.querySelectorAll(selector);
 }
 
@@ -534,6 +544,56 @@ function formatTimelineTimestamp(timestamp) {
         + ' ' + String(parsed.getHours()).padStart(2, '0')
         + ':' + String(parsed.getMinutes()).padStart(2, '0')
         + ':' + String(parsed.getSeconds()).padStart(2, '0');
+}
+
+function updateCardStatus(row, status) {
+    var card = row.querySelector('.resource-card');
+    if (!card) {
+        return;
+    }
+    var normalized = normalizeStatus(status);
+    card.classList.remove('status-available', 'status-not-available', 'status-unknown');
+    card.classList.add('status-' + normalized);
+    var stateLabel = row.querySelector('[data-role="card-status"]');
+    if (stateLabel) {
+        stateLabel.textContent = normalized;
+    }
+}
+
+function updateOutageBadge(row, activeOutageSince) {
+    var badge = row.querySelector('[data-role="outage-badge"]');
+    if (!badge) {
+        return;
+    }
+    if (activeOutageSince) {
+        var counter = badge.querySelector('[data-role="outage-since-counter"]');
+        if (counter) {
+            counter.setAttribute('data-outage-start', activeOutageSince);
+        }
+        badge.removeAttribute('hidden');
+    } else {
+        badge.setAttribute('hidden', '');
+    }
+}
+
+function updateSnapshotCounts(updates) {
+    if (!Array.isArray(updates)) {
+        return;
+    }
+    var available = 0, down = 0, unknown = 0;
+    updates.forEach(function(u) {
+        var s = normalizeStatus(u && u.currentStatus);
+        if (s === 'available') { available++; }
+        else if (s === 'not-available') { down++; }
+        else { unknown++; }
+    });
+    var el;
+    el = document.querySelector('[data-role="snapshot-available"]');
+    if (el) { el.textContent = String(available); }
+    el = document.querySelector('[data-role="snapshot-down"]');
+    if (el) { el.textContent = String(down); }
+    el = document.querySelector('[data-role="snapshot-unknown"]');
+    if (el) { el.textContent = String(unknown); }
 }
 
 function updateUptime(row, uptimePercentage) {

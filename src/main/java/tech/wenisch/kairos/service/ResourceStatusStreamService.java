@@ -7,8 +7,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.MonitoredResource;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
@@ -17,7 +19,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ResourceStatusStreamService {
 
     private final ResourceService resourceService;
+    private final OutageService outageService;
     private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    private static final DateTimeFormatter OUTAGE_FORMATTER =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public SseEmitter subscribe() {
         SseEmitter emitter = new SseEmitter(0L);
@@ -32,7 +38,10 @@ public class ResourceStatusStreamService {
     }
 
     public void publishResourceUpdate(MonitoredResource resource) {
-        ResourceStatusUpdateDTO update = buildUpdate(resource);
+        String activeOutageSince = outageService.findActiveOutage(resource)
+            .map(o -> o.getStartDate().format(OUTAGE_FORMATTER))
+            .orElse(null);
+        ResourceStatusUpdateDTO update = buildUpdate(resource, 24, activeOutageSince);
         for (SseEmitter emitter : emitters) {
             sendEvent(emitter, "resource-update", update);
         }
@@ -58,21 +67,27 @@ public class ResourceStatusStreamService {
     }
 
     private List<ResourceStatusUpdateDTO> buildSnapshot(int hours) {
+        Map<Long, String> outageMap = outageService.findAllActiveSinceByResourceId();
         return resourceService.findAllActive().stream()
-                .map(resource -> buildUpdate(resource, hours))
-                .toList();
+            .map(resource -> buildUpdate(resource, hours, outageMap.get(resource.getId())))
+            .toList();
     }
 
     private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource) {
-        return buildUpdate(resource, 24);
+        return buildUpdate(resource, 24, null);
     }
 
     private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours) {
+        return buildUpdate(resource, hours, null);
+        }
+
+        private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours, String activeOutageSince) {
         return new ResourceStatusUpdateDTO(
-                resource.getId(),
-                resourceService.getCurrentStatus(resource),
-                resourceService.getTimelineBlocks(resource, hours),
-                resourceService.getUptimePercentage(resource, hours)
+            resource.getId(),
+            resourceService.getCurrentStatus(resource),
+            resourceService.getTimelineBlocks(resource, hours),
+            resourceService.getUptimePercentage(resource, hours),
+            activeOutageSince
         );
     }
 

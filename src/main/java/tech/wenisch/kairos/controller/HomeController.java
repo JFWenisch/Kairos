@@ -1,7 +1,7 @@
 package tech.wenisch.kairos.controller;
 
+import tech.wenisch.kairos.dto.DashboardGroupShell;
 import tech.wenisch.kairos.dto.ResourceViewModel;
-import tech.wenisch.kairos.dto.ResourceGroupViewModel;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
@@ -31,9 +31,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -50,59 +48,32 @@ public class HomeController {
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
-    private static final DateTimeFormatter OUTAGE_START_DATA_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     @GetMapping("/")
     public String index(Model model) {
         List<MonitoredResource> resources = resourceService.findAllActive();
 
-        List<ResourceViewModel> allViewModels = resources.stream()
-                .map(this::toResourceViewModel)
-                .toList();
-
-        Map<Long, String> activeOutageSinceByResourceId = new HashMap<>();
-        for (MonitoredResource resource : resources) {
-            outageService.findActiveOutage(resource)
-                .ifPresent(outage -> activeOutageSinceByResourceId.put(
-                    resource.getId(),
-                    outage.getStartDate().format(OUTAGE_START_DATA_FORMATTER)
-                ));
-        }
-
-        List<ResourceViewModel> ungroupedResources = new ArrayList<>();
+        List<MonitoredResource> ungroupedResources = new ArrayList<>();
         Map<Long, ResourceGroup> groupsById = new LinkedHashMap<>();
-        Map<Long, List<ResourceViewModel>> groupedResourceMap = new LinkedHashMap<>();
+        Map<Long, List<MonitoredResource>> groupedResourceMap = new LinkedHashMap<>();
 
-        for (ResourceViewModel viewModel : allViewModels) {
-            ResourceGroup group = viewModel.getResource().getGroup();
+        for (MonitoredResource resource : resources) {
+            ResourceGroup group = resource.getGroup();
             if (group == null) {
-                ungroupedResources.add(viewModel);
-                continue;
+                ungroupedResources.add(resource);
+            } else {
+                groupsById.putIfAbsent(group.getId(), group);
+                groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(resource);
             }
-            groupsById.putIfAbsent(group.getId(), group);
-            groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(viewModel);
         }
 
-        List<ResourceGroupViewModel> groupedResources = groupedResourceMap.entrySet().stream()
-                .map(entry -> {
-                    List<ResourceViewModel> groupItems = entry.getValue();
-                    long availableCount = groupItems.stream().filter(vm -> "available".equals(vm.getCurrentStatus())).count();
-                    long downCount = groupItems.stream().filter(vm -> "not-available".equals(vm.getCurrentStatus())).count();
-                    long unknownCount = groupItems.stream().filter(vm -> "unknown".equals(vm.getCurrentStatus())).count();
-                    return ResourceGroupViewModel.builder()
-                            .group(groupsById.get(entry.getKey()))
-                            .resources(groupItems)
-                            .availableCount(availableCount)
-                            .downCount(downCount)
-                            .unknownCount(unknownCount)
-                            .build();
-                })
+        List<DashboardGroupShell> groupedResources = groupedResourceMap.entrySet().stream()
+                .map(entry -> new DashboardGroupShell(groupsById.get(entry.getKey()), entry.getValue()))
                 .toList();
 
-        model.addAttribute("allResources", allViewModels);
+        model.addAttribute("totalResourceCount", resources.size());
         model.addAttribute("ungroupedResources", ungroupedResources);
         model.addAttribute("groupedResources", groupedResources);
-        model.addAttribute("activeOutageSinceByResourceId", activeOutageSinceByResourceId);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
         model.addAttribute("resourceTypes", ResourceType.values());
@@ -210,7 +181,7 @@ public class HomeController {
             @RequestParam(name = "outageRange", defaultValue = "30d") String outageRange,
             Authentication authentication,
             Model model
-        ) {
+    ) {
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         model.addAttribute("allowCheckNow", isAdmin || isPublicCheckNowAllowed());
@@ -232,39 +203,39 @@ public class HomeController {
             double uptime7d = resourceService.getUptimePercentage(resource, 168);
             double uptime30d = resourceService.getUptimePercentage(resource, 720);
             Page<CheckResult> historyPage = resourceService.getHistoryPage(
-                id,
-                sanitizedPage,
-                sanitizedSize,
-                statusFilter,
-                code,
-                message
+                    id,
+                    sanitizedPage,
+                    sanitizedSize,
+                    statusFilter,
+                    code,
+                    message
             );
 
-                List<Outage> filteredOutages = outageService.findByResource(resource).stream()
+            List<Outage> filteredOutages = outageService.findByResource(resource).stream()
                     .filter(outage -> matchesStatus(outage, normalizedOutageStatus))
                     .filter(outage -> overlaps(outage, outageRangeStart, now))
                     .toList();
 
-                int outageTotal = filteredOutages.size();
-                int outageTotalPages = outageTotal == 0 ? 1 : (int) Math.ceil((double) outageTotal / sanitizedOutageSize);
-                int effectiveOutagePage = Math.min(sanitizedOutagePageNumber, Math.max(0, outageTotalPages - 1));
-                int outageFromIndex = Math.min(effectiveOutagePage * sanitizedOutageSize, outageTotal);
-                int outageToIndex = Math.min(outageFromIndex + sanitizedOutageSize, outageTotal);
+            int outageTotal = filteredOutages.size();
+            int outageTotalPages = outageTotal == 0 ? 1 : (int) Math.ceil((double) outageTotal / sanitizedOutageSize);
+            int effectiveOutagePage = Math.min(sanitizedOutagePageNumber, Math.max(0, outageTotalPages - 1));
+            int outageFromIndex = Math.min(effectiveOutagePage * sanitizedOutageSize, outageTotal);
+            int outageToIndex = Math.min(outageFromIndex + sanitizedOutageSize, outageTotal);
 
-                List<Outage> outagePageContent = filteredOutages.subList(outageFromIndex, outageToIndex);
-                Page<Outage> resourceOutagePage = new PageImpl<>(
+            List<Outage> outagePageContent = filteredOutages.subList(outageFromIndex, outageToIndex);
+            Page<Outage> resourceOutagePage = new PageImpl<>(
                     outagePageContent,
                     PageRequest.of(effectiveOutagePage, sanitizedOutageSize),
                     outageTotal
-                );
+            );
 
-                Map<Long, String> resourceOutageDurations = outagePageContent.stream()
+            Map<Long, String> resourceOutageDurations = outagePageContent.stream()
                     .collect(java.util.stream.Collectors.toMap(
-                        Outage::getId,
-                        outage -> formatDuration(
-                            outage.getStartDate(),
-                            outage.getEndDate() != null ? outage.getEndDate() : now
-                        )
+                            Outage::getId,
+                            outage -> formatDuration(
+                                    outage.getStartDate(),
+                                    outage.getEndDate() != null ? outage.getEndDate() : now
+                            )
                     ));
 
             ResourceViewModel viewModel = ResourceViewModel.builder()
@@ -282,7 +253,7 @@ public class HomeController {
             model.addAttribute("uptime30d", uptime30d);
             model.addAttribute("activeOutage", activeOutage.orElse(null));
             activeOutage.ifPresent(outage ->
-                model.addAttribute("activeOutageDuration", formatDuration(outage.getStartDate(), LocalDateTime.now())));
+                    model.addAttribute("activeOutageDuration", formatDuration(outage.getStartDate(), LocalDateTime.now())));
             model.addAttribute("recentHistory", historyPage.getContent());
             model.addAttribute("historyPage", historyPage);
             model.addAttribute("historyStatus", statusFilter != null ? statusFilter.name() : "");
@@ -449,30 +420,17 @@ public class HomeController {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
     }
 
-    private ResourceViewModel toResourceViewModel(MonitoredResource resource) {
-        String currentStatus = resourceService.getCurrentStatus(resource);
-        List<TimelineBlockDTO> timelineBlocks = resourceService.getTimelineBlocks(resource);
-        double uptime = resourceService.getUptimePercentage(resource, 24);
-
-        return ResourceViewModel.builder()
-                .resource(resource)
-                .currentStatus(currentStatus)
-                .timelineBlocks(timelineBlocks)
-                .uptimePercentage(uptime)
-                .build();
+    private record OutageRowViewModel(
+            Outage outage,
+            String duration,
+            String leftPercent,
+            String widthPercent
+    ) {
     }
 
-            private record OutageRowViewModel(
-                Outage outage,
-                String duration,
-                String leftPercent,
-                String widthPercent
-            ) {
-            }
-
-            private record OutageGanttTick(
-                String leftPercent,
-                String label
-            ) {
-            }
+    private record OutageGanttTick(
+            String leftPercent,
+            String label
+    ) {
+    }
 }

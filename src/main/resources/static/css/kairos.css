@@ -27,6 +27,36 @@
 .timeline-block.available { background-color: #198754; }
 .timeline-block.not-available { background-color: #dc3545; }
 .timeline-block.unknown { background-color: #6c757d; }
+
+.timeline-block-skeleton {
+    display: block;
+    flex: 1 1 0;
+    height: 30px;
+    border-radius: 2px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 0%,
+        rgba(255, 255, 255, 0.10) 40%,
+        rgba(255, 255, 255, 0.04) 80%
+    );
+    background-size: 600px 100%;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+[data-bs-theme="light"] .timeline-block-skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.04) 0%,
+        rgba(0, 0, 0, 0.10) 40%,
+        rgba(0, 0, 0, 0.04) 80%
+    );
+    background-size: 600px 100%;
+}
+
+@keyframes skeleton-shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+}
 .timeline-container {
     display: flex;
     gap: 2px;
@@ -1123,4 +1153,109 @@
     .error-meta-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* ── Splash / Loading Screen ──────────────────────────────────────────── */
+#splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(ellipse 1000px 380px at 15% -8%, rgba(13, 202, 240, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 700px 280px at 88% 6%,  rgba(25, 135, 84, 0.15) 0%, transparent 60%),
+        #0c1117;
+    transition: opacity 0.55s ease;
+}
+
+body:has(#splash-screen:not(.splash-hidden)) {
+    overflow: hidden;
+}
+
+#splash-screen.splash-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash-icon-wrap {
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 0 0 5px rgba(13, 202, 240, 0.22),
+        0 0 52px rgba(13, 202, 240, 0.28),
+        0 12px 32px rgba(0, 0, 0, 0.45);
+    animation: splash-icon-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+    margin-bottom: 1.75rem;
+}
+
+.splash-icon-wrap img {
+    width: 86px;
+    height: 86px;
+    object-fit: contain;
+}
+
+.splash-app-name {
+    font-family: "Space Grotesk", "Segoe UI", "Helvetica Neue", sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #f2f6fb;
+    line-height: 1;
+    margin: 0 0 0.5rem 0;
+    animation: splash-fade-up 0.6s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-subtitle {
+    font-family: "Space Grotesk", "Segoe UI", sans-serif;
+    font-size: 0.73rem;
+    letter-spacing: 0.22em;
+    color: rgba(13, 202, 240, 0.85);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin: 0 0 2.75rem 0;
+    animation: splash-fade-up 0.6s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-bar-track {
+    width: 190px;
+    height: 3px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.07);
+    position: relative;
+    overflow: hidden;
+    animation: splash-fade-up 0.5s 0.35s ease both;
+}
+
+.splash-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 55%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, transparent, #0dcaf0 50%, #198754);
+    animation: splash-bar-move 1.35s 0.5s ease-in-out infinite;
+}
+
+@keyframes splash-icon-in {
+    from { opacity: 0; transform: scale(0.72) translateY(18px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+@keyframes splash-fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes splash-bar-move {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(280%);  }
 }
