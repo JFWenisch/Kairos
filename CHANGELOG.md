@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.4.7 - 2026-03-30
+
+### [1.4.7](https://github.com/wenisch-tech/Kairos/compare/v1.4.6...v1.4.7) (2026-03-30)
+
+
+### Build Systems
+
+* **deps:** bump org.webjars:bootstrap from 5.3.2 to 5.3.8 ([ab983a1](https://github.com/wenisch-tech/Kairos/commit/ab983a1b592ee0b1900862ac9cb06d91deae5e05))
+* **deps:** bump org.webjars:bootstrap from 5.3.2 to 5.3.8 ([d241d69](https://github.com/wenisch-tech/Kairos/commit/d241d693f6a956ff9e7f0c11623089134ca367b3))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.4.7
+
+
 ## v1.4.6 - 2026-03-30
 
 ### [1.4.6](https://github.com/wenisch-tech/Kairos/compare/v1.4.5...v1.4.6) (2026-03-30)
