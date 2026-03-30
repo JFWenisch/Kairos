@@ -26,6 +26,8 @@
 | ![API Keys](docs/img/admin-api-keys.png) | **Admin · API Keys** — Generate and revoke named API keys for machine-to-machine access to the REST API. |
 | ![Users](docs/img/admin-users.png) | **Admin · Users** — Manage local user accounts and passwords. |
 | ![Settings](docs/img/admin-settings.png) | **Admin · General Settings** — Application-wide settings including public submission mode and OIDC configuration. |
+| ![Outages Timeline](docs/img/outages-timeline.png) | **Outages · Calendar (Timeline view)** — Gantt-style outage calendar showing per-resource outage bars across a 7-day window with time-axis ticks and active outage highlight. |
+| ![Outages List](docs/img/outages-list.png) | **Outages · List** — Tabular outage log with resource name, type, active/resolved status badge, start time, end time, and duration; supports filtering by status and time range. |
 
 ---
 
