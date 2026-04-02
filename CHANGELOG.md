@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.5.4 - 2026-04-02
+
+### [1.5.4](https://github.com/wenisch-tech/Kairos/compare/v1.5.3...v1.5.4) (2026-04-02)
+
+
+### Bug Fixes
+
+* fixed closing brackets in detail view so tables respect content-width ([cd5c285](https://github.com/wenisch-tech/Kairos/commit/cd5c28540271eb7d8073d84ba1cade40cbc1c07a))
+* minor changes to light-ui view switching background to light-grey and card-header to light-grey ([fe255dd](https://github.com/wenisch-tech/Kairos/commit/fe255dda5f1e46192c0a7434a991d0ae38eba11d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.4
+
+
 ## v1.5.3 - 2026-04-02
 
 ### [1.5.3](https://github.com/wenisch-tech/Kairos/compare/v1.5.2...v1.5.3) (2026-04-02)
