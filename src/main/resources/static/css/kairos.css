@@ -331,6 +331,7 @@
     --landing-border-soft: rgba(27, 43, 59, 0.12);
     --landing-muted: rgba(27, 43, 59, 0.72);
     --landing-text: #1b2b3b;
+    background-color: #f0f2f5;
 }
 
 .dashboard-shell {
@@ -669,6 +670,7 @@
     --detail-border: rgba(27, 43, 59, 0.16);
     --detail-border-soft: rgba(27, 43, 59, 0.12);
     --detail-muted: rgba(27, 43, 59, 0.72);
+    background-color: #f0f2f5;
 }
 
 .detail-modern .text-muted {
@@ -733,6 +735,10 @@
 .detail-card-header {
     border-bottom: 1px solid var(--detail-border-soft);
     background: transparent;
+}
+
+[data-bs-theme="light"] .detail-card-header {
+    background-color: rgba(27, 43, 59, 0.05);
 }
 
 .detail-history-table thead th {
@@ -1014,6 +1020,7 @@
     --outage-border: rgba(27, 43, 59, 0.16);
     --outage-border-soft: rgba(27, 43, 59, 0.12);
     --outage-muted: rgba(27, 43, 59, 0.72);
+    background-color: #f0f2f5;
 }
 
 .outages-modern .text-muted {
@@ -1059,6 +1066,11 @@
 .outage-table-card .card-header {
     border-bottom: 1px solid var(--outage-border-soft);
     background: transparent;
+}
+
+[data-bs-theme="light"] .outage-calendar-card .card-header,
+[data-bs-theme="light"] .outage-table-card .card-header {
+    background-color: rgba(27, 43, 59, 0.05);
 }
 
 .outage-calendar {
