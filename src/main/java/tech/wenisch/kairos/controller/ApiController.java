@@ -1,6 +1,7 @@
 package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.AnnouncementDTO;
+import tech.wenisch.kairos.dto.LatencySampleDTO;
 import tech.wenisch.kairos.dto.ResourceDTO;
 import tech.wenisch.kairos.dto.ResourceDetailsDTO;
 import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
@@ -93,6 +94,16 @@ public class ApiController {
         int normalizedHours = normalizeTimelineHours(hours);
         return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/resources/{id}/latency-samples")
+    public ResponseEntity<List<LatencySampleDTO>> getResourceLatencySamples(
+            @PathVariable Long id,
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        return resourceService.findById(id)
+                .map(resource -> ResponseEntity.ok(resourceService.getLatencySamples(resource, normalizedHours)))
                 .orElse(ResponseEntity.notFound().build());
     }
 

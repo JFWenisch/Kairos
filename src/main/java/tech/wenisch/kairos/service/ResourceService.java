@@ -5,6 +5,7 @@ import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.dto.LatencySampleDTO;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -139,6 +142,44 @@ public class ResourceService {
     /** Number of color-coded blocks displayed in the 24-hour timeline visualization (one block ≈ 16 min). */
     private static final int TIMELINE_BUCKETS = 90;
 
+    private static final DateTimeFormatter LATENCY_SAMPLE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    /** Maximum number of raw check results returned by the latency-samples endpoint. */
+    private static final int LATENCY_SAMPLE_MAX = 500;
+
+    /**
+     * Returns up to {@value #LATENCY_SAMPLE_MAX} chronological latency samples for the given
+     * resource and time window. Results are evenly downsampled when the raw count exceeds the cap.
+     */
+    public List<LatencySampleDTO> getLatencySamples(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
+        LocalDateTime since = LocalDateTime.now().minusHours(safeHours);
+        List<CheckResult> all = checkResultRepository
+                .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, since);
+        List<CheckResult> withLatency = all.stream()
+                .filter(r -> r.getLatencyMs() != null)
+                .collect(Collectors.toList());
+        List<CheckResult> sampled;
+        if (withLatency.size() <= LATENCY_SAMPLE_MAX) {
+            sampled = withLatency;
+        } else {
+            sampled = new ArrayList<>(LATENCY_SAMPLE_MAX);
+            double step = (double) withLatency.size() / LATENCY_SAMPLE_MAX;
+            for (int i = 0; i < LATENCY_SAMPLE_MAX; i++) {
+                sampled.add(withLatency.get((int) (i * step)));
+            }
+        }
+        return sampled.stream()
+                .map(r -> new LatencySampleDTO(
+                        r.getLatencyMs(),
+                        r.getDnsResolutionMs(),
+                        r.getConnectMs(),
+                        r.getTlsHandshakeMs(),
+                        r.getCheckedAt().format(LATENCY_SAMPLE_FORMATTER)))
+                .collect(Collectors.toList());
+    }
+
     /**
      * Combined result of a single history query, carrying both the timeline blocks and the
      * uptime percentage so callers avoid issuing the same database query twice.
@@ -191,7 +232,14 @@ public class ResourceService {
 
             String status = lastInBucket == null ? "unknown" : mapStatus(lastInBucket.getStatus());
             LocalDateTime timestamp = lastInBucket == null ? bucketEnd : lastInBucket.getCheckedAt();
-            blocks.add(new TimelineBlockDTO(status, timestamp));
+            blocks.add(new TimelineBlockDTO(
+                    status,
+                    timestamp,
+                    lastInBucket == null ? null : lastInBucket.getLatencyMs(),
+                    lastInBucket == null ? null : lastInBucket.getDnsResolutionMs(),
+                    lastInBucket == null ? null : lastInBucket.getConnectMs(),
+                    lastInBucket == null ? null : lastInBucket.getTlsHandshakeMs()
+            ));
         }
         return blocks;
     }

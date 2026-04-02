@@ -1,0 +1,4 @@
+ALTER TABLE check_result ADD COLUMN IF NOT EXISTS latency_ms BIGINT;
+ALTER TABLE check_result ADD COLUMN IF NOT EXISTS dns_resolution_ms BIGINT;
+ALTER TABLE check_result ADD COLUMN IF NOT EXISTS connect_ms BIGINT;
+ALTER TABLE check_result ADD COLUMN IF NOT EXISTS tls_handshake_ms BIGINT;

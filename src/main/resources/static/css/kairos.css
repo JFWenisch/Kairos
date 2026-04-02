@@ -72,6 +72,142 @@
     width: 100%;
 }
 
+.latency-panel {
+    border: 1px solid var(--detail-border-soft, var(--landing-border-soft));
+    border-radius: 0.75rem;
+    padding: 0.65rem 0.75rem 0.55rem;
+    background: transparent;
+}
+
+.latency-panel-header {
+    margin-bottom: 0.35rem;
+    gap: 0.5rem;
+}
+
+.latency-zoom-controls .btn {
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.latency-chart-scroll-wrapper {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
+    border-radius: 0.5rem;
+    scrollbar-width: thin;
+}
+
+.latency-chart-scroll-wrapper:active {
+    cursor: grabbing;
+}
+
+.latency-chart {
+    min-width: 100%;
+    height: 88px;
+    display: block;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background:
+        repeating-linear-gradient(
+            to top,
+            rgba(255, 255, 255, 0.04) 0,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 1px,
+            transparent 22px
+        );
+}
+
+[data-bs-theme="light"] .latency-chart {
+    background:
+        repeating-linear-gradient(
+            to top,
+            rgba(27, 43, 59, 0.07) 0,
+            rgba(27, 43, 59, 0.07) 1px,
+            transparent 1px,
+            transparent 22px
+        );
+}
+
+.latency-time-axis {
+    position: relative;
+    min-width: 100%;
+    height: 1.3rem;
+    border-top: 1px solid rgba(108, 117, 125, 0.15);
+}
+
+.latency-time-axis > span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    color: var(--bs-secondary-color, #6c757d);
+    white-space: nowrap;
+    top: 0.15rem;
+}
+
+.latency-time-axis > span.axis-label-first {
+    transform: translateX(0);
+}
+
+.latency-time-axis > span.axis-label-last {
+    transform: translateX(-100%);
+}
+
+.latency-chart-area {
+    fill: url(#latencyAreaGradient);
+}
+
+.latency-chart-line {
+    fill: none;
+    stroke: #0dcaf0;
+    stroke-width: 2.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgba(13, 202, 240, 0.18));
+}
+
+.latency-dot {
+    fill: #0dcaf0;
+    stroke: rgba(13, 202, 240, 0);
+    stroke-width: 10;
+    transition: stroke 0.1s ease, stroke-width 0.1s ease;
+    cursor: default;
+}
+
+.latency-dot:hover {
+    stroke: rgba(13, 202, 240, 0.35);
+    stroke-width: 12;
+}
+
+.latency-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(25, 30, 36, 0.92);
+    color: #e9ecef;
+    border-radius: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    transform: translate(-50%, calc(-100% - 8px));
+    z-index: 20;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.latency-tooltip-value {
+    font-weight: 600;
+}
+
+.latency-tooltip-time {
+    opacity: 0.72;
+}
+
+.latency-scale {
+    margin-top: 0.4rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+}
+
 .timeline-labels {
     font-size: 0.75rem;
     color: var(--landing-muted);
