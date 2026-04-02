@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.3 - 2026-04-02
+
+### [1.5.3](https://github.com/wenisch-tech/Kairos/compare/v1.5.2...v1.5.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* updated migration to ensure checksum ([31036eb](https://github.com/wenisch-tech/Kairos/commit/31036eb77b3fb798745e85d4f36ee7089640f072))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.3
+
+
 ## v1.4.8 - 2026-03-30
 
 ### [1.4.8](https://github.com/wenisch-tech/Kairos/compare/v1.4.7...v1.4.8) (2026-03-30)
