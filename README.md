@@ -34,6 +34,7 @@
 ## Features
 
 - **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
+- **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
 - **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
 - **Dockerrepository discovery** - provide a repository prefix (for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
 - **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
@@ -224,6 +225,7 @@ The raw OpenAPI JSON spec is at `/v3/api-docs`.
 | `POST` | `/api/resources` | Admin | Add a new resource |
 | `DELETE` | `/api/resources/{id}` | Admin | Delete a resource |
 | `GET` | `/api/resources/{id}/history` | Authenticated | Full check history for a resource |
+| `GET` | `/api/resources/{id}/latency-samples` | Public | Per-check latency samples for a resource (`?hours=24\|168\|720`) |
 | `GET` | `/api/announcements` | Public | List all announcements |
 | `GET` | `/api/announcements/{id}` | Public | Get a single announcement |
 | `POST` | `/api/announcements` | Admin | Create an announcement |
