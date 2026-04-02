@@ -77,6 +77,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/resources").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/*/status-update").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/resources/*/latency-samples").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/resources/*/history").authenticated()
