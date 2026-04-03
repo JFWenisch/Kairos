@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.5 - 2026-04-03
+
+### [1.5.5](https://github.com/wenisch-tech/Kairos/compare/v1.5.4...v1.5.5) (2026-04-03)
+
+
+### Bug Fixes
+
+* fixed missing default value for autoscaling ([b9f74a6](https://github.com/wenisch-tech/Kairos/commit/b9f74a61d77f4fbecab6d8225cc7cd2005bf0ffa))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.5
+
+
 ## v1.5.4 - 2026-04-02
 
 ### [1.5.4](https://github.com/wenisch-tech/Kairos/compare/v1.5.3...v1.5.4) (2026-04-02)
