@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.8 - 2026-04-03
+
+### [1.5.8](https://github.com/wenisch-tech/Kairos/compare/v1.5.7...v1.5.8) (2026-04-03)
+
+
+### Bug Fixes
+
+* updated and enabled health endpoints ([f3b91db](https://github.com/wenisch-tech/Kairos/commit/f3b91dba4cdaecfc7583df57797a618c0bedf625))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.8
+
+
 ## v1.5.7 - 2026-04-03
 
 ### [1.5.7](https://github.com/wenisch-tech/Kairos/compare/v1.5.6...v1.5.7) (2026-04-03)
