@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.7 - 2026-04-03
+
+### [1.5.7](https://github.com/wenisch-tech/Kairos/compare/v1.5.6...v1.5.7) (2026-04-03)
+
+
+### Bug Fixes
+
+* update liveness probes checks ([c79d50d](https://github.com/wenisch-tech/Kairos/commit/c79d50da31e7ed3c3832d9b20b8a1378bbbe42c2))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.7
+
+
 ## v1.5.6 - 2026-04-03
 
 ### [1.5.6](https://github.com/wenisch-tech/Kairos/compare/v1.5.5...v1.5.6) (2026-04-03)
