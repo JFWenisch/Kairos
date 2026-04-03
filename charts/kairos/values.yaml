@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   registry: ghcr.io
-  repository: jfwendisch/kairos
+  repository: wenisch-tech/kairos
   tag: latest
   pullPolicy: IfNotPresent
 
