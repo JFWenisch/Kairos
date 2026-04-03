@@ -92,7 +92,7 @@ secrets: {}
 livenessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
+    path: /actuator/health/liveness
     port: http
   initialDelaySeconds: 30
   periodSeconds: 10
@@ -102,9 +102,9 @@ livenessProbe:
 readinessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
+    path: /actuator/health/readiness
     port: http
-  initialDelaySeconds: 10
+  initialDelaySeconds: 30
   periodSeconds: 5
   timeoutSeconds: 3
   failureThreshold: 3
