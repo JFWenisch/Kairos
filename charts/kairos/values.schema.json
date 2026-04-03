@@ -123,7 +123,10 @@
                             "type": "string"
                         },
                         "port": {
-                            "type": "integer"
+                            "type": [
+                                "integer",
+                                "string"
+                            ]
                         }
                     }
                 },
@@ -194,7 +197,10 @@
                             "type": "string"
                         },
                         "port": {
-                            "type": "integer"
+                            "type": [
+                                "integer",
+                                "string"
+                            ]
                         }
                     }
                 },
@@ -211,6 +217,37 @@
         },
         "replicaCount": {
             "type": "integer"
+        },
+        "startupProbe": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "failureThreshold": {
+                    "type": "integer"
+                },
+                "httpGet": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        },
+                        "port": {
+                            "type": [
+                                "integer",
+                                "string"
+                            ]
+                        }
+                    }
+                },
+                "periodSeconds": {
+                    "type": "integer"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                }
+            }
         },
         "resources": {
             "type": "object",
