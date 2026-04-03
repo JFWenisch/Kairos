@@ -15,6 +15,10 @@ podSecurityContext:
   runAsUser: 65532
   fsGroup: 65532
 
+
+autoscaling:
+  enabled: false
+
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
