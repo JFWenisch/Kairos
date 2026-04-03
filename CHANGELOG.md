@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.6 - 2026-04-03
+
+### [1.5.6](https://github.com/wenisch-tech/Kairos/compare/v1.5.5...v1.5.6) (2026-04-03)
+
+
+### Bug Fixes
+
+* update repository path in chart ([1952c5c](https://github.com/wenisch-tech/Kairos/commit/1952c5c2bcba541b1a9e6b5dcb69e3c87698066a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.6
+
+
 ## v1.5.5 - 2026-04-03
 
 ### [1.5.5](https://github.com/wenisch-tech/Kairos/compare/v1.5.4...v1.5.5) (2026-04-03)
