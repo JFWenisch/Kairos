@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.5.9 - 2026-04-03
+
+### [1.5.9](https://github.com/wenisch-tech/Kairos/compare/v1.5.8...v1.5.9) (2026-04-03)
+
+
+### Bug Fixes
+
+* updated default requests for helm chart ([64e6ade](https://github.com/wenisch-tech/Kairos/commit/64e6ade69bcd06f407803d80168ff2c82fd203e4))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.9
+
+
 ## v1.5.8 - 2026-04-03
 
 ### [1.5.8](https://github.com/wenisch-tech/Kairos/compare/v1.5.7...v1.5.8) (2026-04-03)
