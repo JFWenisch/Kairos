@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.6.0 - 2026-04-13
+
+## [1.6.0](https://github.com/wenisch-tech/Kairos/compare/v1.5.9...v1.6.0) (2026-04-13)
+
+
+### Features
+
+* Added configurable history retention for checks ([1b83003](https://github.com/wenisch-tech/Kairos/commit/1b83003a776d475581f09793335edcc189a5a1f2))
+* Added configurable history retention for checks ([6be929a](https://github.com/wenisch-tech/Kairos/commit/6be929abed2712e2a36f9c27b20caebbfb1bef24))
+
+
+### Bug Fixes
+
+* update tomcat to 11.0.21 ([48b4ca9](https://github.com/wenisch-tech/Kairos/commit/48b4ca9571cf54cede97b6796cf6b1bccfc77ffc))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.6.0
+
+
 ## v1.5.9 - 2026-04-03
 
 ### [1.5.9](https://github.com/wenisch-tech/Kairos/compare/v1.5.8...v1.5.9) (2026-04-03)
