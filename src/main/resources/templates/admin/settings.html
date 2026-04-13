@@ -72,6 +72,39 @@
                             </label>
                             <div class="form-text">When enabled, unauthenticated users can manually trigger a check on any resource detail page.</div>
                         </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-trash3 me-2"></i>Check History Retention</h6>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="checkHistoryRetentionEnabled"
+                                   name="checkHistoryRetentionEnabled" th:checked="${checkHistoryRetentionEnabled}">
+                            <label class="form-check-label" for="checkHistoryRetentionEnabled">
+                                Enable automatic check history cleanup
+                            </label>
+                            <div class="form-text">Deletes old check records in the background without blocking regular checks.</div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="checkHistoryRetentionIntervalMinutes" class="form-label">Run cleanup every (minutes)</label>
+                                <input type="number"
+                                       min="1"
+                                       class="form-control"
+                                       id="checkHistoryRetentionIntervalMinutes"
+                                       name="checkHistoryRetentionIntervalMinutes"
+                                       th:value="${checkHistoryRetentionIntervalMinutes}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="checkHistoryRetentionDays" class="form-label">Delete data older than (days)</label>
+                                <input type="number"
+                                       min="1"
+                                       class="form-control"
+                                       id="checkHistoryRetentionDays"
+                                       name="checkHistoryRetentionDays"
+                                       th:value="${checkHistoryRetentionDays}">
+                            </div>
+                        </div>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save me-1"></i>Save Settings
                         </button>

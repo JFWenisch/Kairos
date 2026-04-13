@@ -57,8 +57,20 @@ public class AdminController {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
         boolean allowPublicCheckNow = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+        boolean checkHistoryRetentionEnabled = configs.stream().anyMatch(ResourceTypeConfig::isCheckHistoryRetentionEnabled);
+        int checkHistoryRetentionIntervalMinutes = configs.stream()
+                .map(ResourceTypeConfig::getCheckHistoryRetentionIntervalMinutes)
+                .findFirst()
+                .orElse(60);
+        int checkHistoryRetentionDays = configs.stream()
+                .map(ResourceTypeConfig::getCheckHistoryRetentionDays)
+                .findFirst()
+                .orElse(31);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
+        model.addAttribute("checkHistoryRetentionEnabled", checkHistoryRetentionEnabled);
+        model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
+        model.addAttribute("checkHistoryRetentionDays", checkHistoryRetentionDays);
         model.addAttribute("configs", configs);
         return "admin/settings";
     }
@@ -66,11 +78,19 @@ public class AdminController {
     @PostMapping("/settings")
     public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAdd,
                                @RequestParam(defaultValue = "false") boolean allowPublicCheckNow,
+                               @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
+                               @RequestParam(defaultValue = "60") int checkHistoryRetentionIntervalMinutes,
+                               @RequestParam(defaultValue = "31") int checkHistoryRetentionDays,
                                RedirectAttributes redirectAttributes) {
+        int sanitizedRetentionIntervalMinutes = Math.max(1, checkHistoryRetentionIntervalMinutes);
+        int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
             config.setAllowPublicAdd(allowPublicAdd);
             config.setAllowPublicCheckNow(allowPublicCheckNow);
+            config.setCheckHistoryRetentionEnabled(checkHistoryRetentionEnabled);
+            config.setCheckHistoryRetentionIntervalMinutes(sanitizedRetentionIntervalMinutes);
+            config.setCheckHistoryRetentionDays(sanitizedRetentionDays);
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");
