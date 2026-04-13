@@ -30,6 +30,15 @@ public class ResourceTypeConfig {
     private boolean allowPublicCheckNow;
 
     @Builder.Default
+    private boolean checkHistoryRetentionEnabled = true;
+
+    @Builder.Default
+    private int checkHistoryRetentionIntervalMinutes = 60;
+
+    @Builder.Default
+    private int checkHistoryRetentionDays = 31;
+
+    @Builder.Default
     private int outageThreshold = 3;
 
     @Builder.Default
