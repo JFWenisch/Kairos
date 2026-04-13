@@ -310,6 +310,9 @@
 }
 
 .landing-modern {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     font-family: "Space Grotesk", "Segoe UI", "Helvetica Neue", sans-serif;
     --landing-surface: rgba(255, 255, 255, 0.04);
     --landing-surface-soft: rgba(255, 255, 255, 0.025);
@@ -336,8 +339,10 @@
 
 .dashboard-shell {
     max-width: 1360px;
-    position: relative;
-    padding-bottom: 2rem;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 1rem;
 }
 
 .dashboard-hero {
@@ -608,10 +613,16 @@
     background-color: rgba(220, 53, 69, 0.1);
 }
 
+.landing-footer-meta {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 0.5rem;
+}
+
 .landing-credit {
-    position: absolute;
-    right: 12px;
-    bottom: 5px;
+    grid-column: 3;
+    justify-self: end;
     text-align: right;
     white-space: nowrap;
     font-size: 0.74rem;
@@ -723,6 +734,42 @@
     color: var(--detail-muted);
     font-size: 0.9rem;
     font-weight: 600;
+}
+
+.landing-license-note {
+    grid-column: 2;
+    text-align: center;
+    font-size: 0.74rem;
+    color: rgba(170, 178, 188, 0.7);
+}
+
+.landing-license-note a {
+    color: rgba(194, 224, 255, 0.95);
+    text-decoration: none;
+}
+
+.landing-license-note a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .landing-footer-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .landing-credit {
+        grid-column: auto;
+        justify-self: auto;
+        text-align: center;
+    }
+
+    .landing-license-note {
+        margin-top: 0.75rem;
+        margin-bottom: 0.25rem !important;
+    }
 }
 
 .detail-card {
