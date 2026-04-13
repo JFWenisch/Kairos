@@ -103,7 +103,7 @@ public class HttpCheckService {
             log.warn("HTTP check failed for {}: {}", url, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
-                    .status(CheckStatus.NOT_AVAILABLE)
+                    .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
                     .message(e.getMessage())
                     .errorCode("CONNECTION_ERROR")
