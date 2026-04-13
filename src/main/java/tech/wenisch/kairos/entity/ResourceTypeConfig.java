@@ -25,6 +25,9 @@ public class ResourceTypeConfig {
 
     private int parallelism;
 
+    @Builder.Default
+    private boolean allowPublicAccess = true;
+
     private boolean allowPublicAdd;
 
     private boolean allowPublicCheckNow;

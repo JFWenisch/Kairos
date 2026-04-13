@@ -50,6 +50,7 @@
 - **Announcement system** - publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
 - **Public announcements** - active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
 - **Public submission mode** - optionally allow unauthenticated users to add resources via the REST API
+- **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
 - **OIDC / OAuth2 login** - plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** - `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
 - **H2 (default) or PostgreSQL** - switch databases with a single property change

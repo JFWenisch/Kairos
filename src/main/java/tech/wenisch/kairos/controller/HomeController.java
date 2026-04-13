@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -51,6 +52,10 @@ public class HomeController {
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
+        if (!isPublicAccessAllowed() && !isAuthenticated(authentication)) {
+            return "redirect:/login";
+        }
+
         List<MonitoredResource> resources = resourceService.findAllActive();
 
         List<MonitoredResource> ungroupedResources = new ArrayList<>();
@@ -416,6 +421,14 @@ public class HomeController {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
     }
 
+    private boolean isPublicAccessAllowed() {
+        List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        if (configs.isEmpty()) {
+            return true;
+        }
+        return configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
+    }
+
     private boolean isPublicCheckNowAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
     }
@@ -425,7 +438,13 @@ public class HomeController {
     }
 
     private boolean shouldShowResourceUrl(Authentication authentication) {
-        return isAlwaysDisplayUrlEnabled() || authentication != null;
+        return isAlwaysDisplayUrlEnabled() || isAuthenticated(authentication);
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
     }
 
     private record OutageRowViewModel(

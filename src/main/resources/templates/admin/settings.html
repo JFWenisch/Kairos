@@ -57,6 +57,14 @@
                 <div class="card-body">
                     <form th:action="@{/admin/settings}" method="post">
                         <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="allowPublicAccess"
+                                   name="allowPublicAccess" th:checked="${allowPublicAccess}">
+                            <label class="form-check-label" for="allowPublicAccess">
+                                Allow public access
+                            </label>
+                            <div class="form-text">When disabled, unauthenticated users are redirected to the login page and all pages require a signed-in user.</div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="allowPublicAdd"
                                    name="allowPublicAdd" th:checked="${allowPublicAdd}">
                             <label class="form-check-label" for="allowPublicAdd">

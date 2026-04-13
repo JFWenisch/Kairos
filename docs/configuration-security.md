@@ -24,6 +24,13 @@ If **Allow public resource submission** is enabled in **Admin -> General Setting
 
 Use this only in trusted environments.
 
+## Public Access Gate
+
+The **Allow public access** option in **Admin -> General Settings** controls whether unauthenticated visitors can open public pages.
+
+- Enabled (default): public pages and public endpoints remain reachable for unauthenticated users.
+- Disabled: unauthenticated users are redirected to `/login`, and pages are only accessible to logged-in users.
+
 ## Public "Check Now"
 
 If **Allow public "Check Now"** is enabled in **Admin -> General Settings**, unauthenticated users can trigger manual checks from resource detail pages.

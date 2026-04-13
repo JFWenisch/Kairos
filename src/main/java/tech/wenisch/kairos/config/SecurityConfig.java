@@ -1,11 +1,14 @@
 package tech.wenisch.kairos.config;
 
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,6 +27,8 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -65,20 +70,39 @@ public class SecurityConfig {
         };
     }
 
-    @Bean
+        @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
+            ResourceTypeConfigRepository resourceTypeConfigRepository,
             AuthenticationSuccessHandler formLoginSuccessHandler,
             ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/login", "/error", "/css/**", "/js/**", "/img/**",
-                        "/webjars/**", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
-                        "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api").permitAll()
-                .requestMatchers("/api/resources").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/resources/*").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/resources/*/status-update").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/resources/*/latency-samples").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*").permitAll()
+            .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
+            .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
+                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
+            .requestMatchers("/api/resources")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
+            .requestMatchers(HttpMethod.GET, "/api/resources/*")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
+            .requestMatchers(HttpMethod.GET, "/api/resources/*/status-update")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
+            .requestMatchers(HttpMethod.GET, "/api/resources/*/latency-samples")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
+            .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/resources/*/history").authenticated()
                 .requestMatchers("/api/resources/**").hasRole("ADMIN")
@@ -138,5 +162,19 @@ public class SecurityConfig {
         }
 
         return http.build();
+    }
+
+    private boolean isPublicAccessAllowed(ResourceTypeConfigRepository resourceTypeConfigRepository) {
+        List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        if (configs.isEmpty()) {
+            return true;
+        }
+        return configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
+    }
+
+    private boolean isAuthenticated(org.springframework.security.core.Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
     }
 }

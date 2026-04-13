@@ -55,6 +55,7 @@ public class AdminController {
     @GetMapping("/settings")
     public String settings(Model model) {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        boolean allowPublicAccess = configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
         boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
         boolean allowPublicCheckNow = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
         boolean alwaysDisplayUrl = configs.stream().anyMatch(ResourceTypeConfig::isAlwaysDisplayUrl);
@@ -68,6 +69,7 @@ public class AdminController {
                 .findFirst()
                 .orElse(31);
         boolean deleteOutagesOnResourceDelete = configs.stream().anyMatch(ResourceTypeConfig::isDeleteOutagesOnResourceDelete);
+        model.addAttribute("allowPublicAccess", allowPublicAccess);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
         model.addAttribute("alwaysDisplayUrl", alwaysDisplayUrl);
@@ -80,7 +82,8 @@ public class AdminController {
     }
 
     @PostMapping("/settings")
-    public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAdd,
+    public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAccess,
+                               @RequestParam(defaultValue = "false") boolean allowPublicAdd,
                                @RequestParam(defaultValue = "false") boolean allowPublicCheckNow,
                                @RequestParam(defaultValue = "false") boolean alwaysDisplayUrl,
                                @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
@@ -92,6 +95,7 @@ public class AdminController {
         int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
+            config.setAllowPublicAccess(allowPublicAccess);
             config.setAllowPublicAdd(allowPublicAdd);
             config.setAllowPublicCheckNow(allowPublicCheckNow);
             config.setAlwaysDisplayUrl(alwaysDisplayUrl);
