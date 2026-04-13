@@ -138,7 +138,7 @@
                                    th:text="${resource.name}">Resource Name</a>
                                 <div class="resource-subline">
                                     <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
-                                    <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
+                                     <small th:if="${showResourceUrl}" class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                            th:text="${resource.target}">target</small>
                                 </div>
                                 <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
@@ -190,7 +190,7 @@
                     <a th:href="@{/resources/{id}(id=${resource.id})}"
                        class="text-decoration-none fw-semibold card-title mb-2"
                        th:text="${resource.name}">Resource Name</a>
-                    <small class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
+                        <small th:if="${showResourceUrl}" class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
                     <div class="outage-card-indicator mb-3" hidden data-role="outage-badge">
                         <i class="bi bi-exclamation-triangle-fill me-1"></i>
                         Active outage since <span data-role="outage-since-counter" data-outage-start="">0s</span>
@@ -239,7 +239,7 @@
                                            th:text="${resource.name}">Resource Name</a>
                                         <div class="resource-subline">
                                             <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
-                                            <small class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
+                                              <small th:if="${showResourceUrl}" class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                                    th:text="${resource.target}">target</small>
                                         </div>
                                         <div class="outage-inline-badge mt-1" hidden data-role="outage-badge">
@@ -296,7 +296,7 @@
                             <a th:href="@{/resources/{id}(id=${resource.id})}"
                                class="text-decoration-none fw-semibold card-title mb-2"
                                th:text="${resource.name}">Resource Name</a>
-                            <small class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
+                                    <small th:if="${showResourceUrl}" class="text-muted resource-target mb-3" th:text="${resource.target}">target</small>
                             <div class="outage-card-indicator mb-3" hidden data-role="outage-badge">
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                 Active outage since <span data-role="outage-since-counter" data-outage-start="">0s</span>

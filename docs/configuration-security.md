@@ -24,6 +24,21 @@ If **Allow public resource submission** is enabled in **Admin -> General Setting
 
 Use this only in trusted environments.
 
+## Public "Check Now"
+
+If **Allow public "Check Now"** is enabled in **Admin -> General Settings**, unauthenticated users can trigger manual checks from resource detail pages.
+
+If disabled, manual checks are still available to authenticated admins.
+
+## URL Visibility on Dashboard and Detail Page
+
+The **Always display URL** option in **Admin -> General Settings** controls whether unauthenticated users can see full resource targets/URLs.
+
+- Enabled: URLs are shown on the dashboard (timeline and card view) and on resource detail pages.
+- Disabled: public users see only the resource name.
+
+Authenticated users (including admins) always see URLs, regardless of this setting.
+
 ## Default Credentials
 
 First startup creates:

@@ -124,6 +124,25 @@ Typical fixes:
 
 ---
 
+### Resource URL is not visible on dashboard/detail page
+
+Symptoms:
+
+- Public users only see resource names, not full target URLs
+
+Checks:
+
+1. Open **Admin -> General Settings**.
+2. Verify whether **Always display URL** is enabled.
+3. Verify whether you are authenticated.
+
+Expected behavior:
+
+- Authenticated users and admins always see URLs.
+- Public users only see URLs when **Always display URL** is enabled.
+
+---
+
 ### Resource page fails with outage-related error
 
 Symptoms:

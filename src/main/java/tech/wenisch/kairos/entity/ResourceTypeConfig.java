@@ -30,6 +30,9 @@ public class ResourceTypeConfig {
     private boolean allowPublicCheckNow;
 
     @Builder.Default
+    private boolean alwaysDisplayUrl = false;
+
+    @Builder.Default
     private boolean checkHistoryRetentionEnabled = true;
 
     @Builder.Default

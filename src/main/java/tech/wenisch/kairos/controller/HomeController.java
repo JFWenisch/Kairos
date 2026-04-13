@@ -50,7 +50,7 @@ public class HomeController {
     private final OutageService outageService;
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(Authentication authentication, Model model) {
         List<MonitoredResource> resources = resourceService.findAllActive();
 
         List<MonitoredResource> ungroupedResources = new ArrayList<>();
@@ -76,6 +76,7 @@ public class HomeController {
         model.addAttribute("groupedResources", groupedResources);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
+        model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
         model.addAttribute("resourceTypes", ResourceType.values());
         model.addAttribute("appVersion", applicationVersionService.getVersion());
         return "index";
@@ -183,6 +184,7 @@ public class HomeController {
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         model.addAttribute("allowCheckNow", isAdmin || isPublicCheckNowAllowed());
+        model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
 
         return resourceService.findById(id).map(resource -> {
             int sanitizedPage = Math.max(0, page);
@@ -416,6 +418,14 @@ public class HomeController {
 
     private boolean isPublicCheckNowAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+    }
+
+    private boolean isAlwaysDisplayUrlEnabled() {
+        return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAlwaysDisplayUrl);
+    }
+
+    private boolean shouldShowResourceUrl(Authentication authentication) {
+        return isAlwaysDisplayUrlEnabled() || authentication != null;
     }
 
     private record OutageRowViewModel(
