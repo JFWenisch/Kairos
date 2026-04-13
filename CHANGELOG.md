@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.8.1 - 2026-04-13
+
+### [1.8.1](https://github.com/wenisch-tech/Kairos/compare/v1.8.0...v1.8.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* fixed license information not being properly displayed in footer ([fb580d8](https://github.com/wenisch-tech/Kairos/commit/fb580d8a75a4c2a84eb95dd4ac7ec05351f005d5))
+* updated license information in openapidoc ([23b3c94](https://github.com/wenisch-tech/Kairos/commit/23b3c94bb635a5f8ce4bab41a7e9f406d7459513))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.8.1
+
+
 ## v1.7.1 - 2026-04-13
 
 ### [1.7.1](https://github.com/wenisch-tech/Kairos/compare/v1.7.0...v1.7.1) (2026-04-13)
