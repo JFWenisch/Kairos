@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.7.1 - 2026-04-13
+
+### [1.7.1](https://github.com/wenisch-tech/Kairos/compare/v1.7.0...v1.7.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* updated test konstruktur ([36e076b](https://github.com/wenisch-tech/Kairos/commit/36e076b46a26d7425987890b362e67d3e2189a76))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.7.1
+
+
 ## v1.6.0 - 2026-04-13
 
 ## [1.6.0](https://github.com/wenisch-tech/Kairos/compare/v1.5.9...v1.6.0) (2026-04-13)
