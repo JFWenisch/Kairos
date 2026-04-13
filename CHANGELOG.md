@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.8.2 - 2026-04-13
+
+### [1.8.2](https://github.com/wenisch-tech/Kairos/compare/v1.8.1...v1.8.2) (2026-04-13)
+
+
+### Bug Fixes
+
+* Updated Check classes so that in case of Application error (for example unavailable database connection) check is not stored as error. Added migration to cleanup old entries ([03e9fee](https://github.com/wenisch-tech/Kairos/commit/03e9feef8e180e9692bec945f64e8de2f85193cd))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.8.2
+
+
 ## v1.8.1 - 2026-04-13
 
 ### [1.8.1](https://github.com/wenisch-tech/Kairos/compare/v1.8.0...v1.8.1) (2026-04-13)
