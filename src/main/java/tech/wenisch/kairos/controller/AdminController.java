@@ -66,11 +66,13 @@ public class AdminController {
                 .map(ResourceTypeConfig::getCheckHistoryRetentionDays)
                 .findFirst()
                 .orElse(31);
+        boolean deleteOutagesOnResourceDelete = configs.stream().anyMatch(ResourceTypeConfig::isDeleteOutagesOnResourceDelete);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
         model.addAttribute("checkHistoryRetentionEnabled", checkHistoryRetentionEnabled);
         model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
         model.addAttribute("checkHistoryRetentionDays", checkHistoryRetentionDays);
+        model.addAttribute("deleteOutagesOnResourceDelete", deleteOutagesOnResourceDelete);
         model.addAttribute("configs", configs);
         return "admin/settings";
     }
@@ -81,6 +83,7 @@ public class AdminController {
                                @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
                                @RequestParam(defaultValue = "60") int checkHistoryRetentionIntervalMinutes,
                                @RequestParam(defaultValue = "31") int checkHistoryRetentionDays,
+                               @RequestParam(defaultValue = "false") boolean deleteOutagesOnResourceDelete,
                                RedirectAttributes redirectAttributes) {
         int sanitizedRetentionIntervalMinutes = Math.max(1, checkHistoryRetentionIntervalMinutes);
         int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
@@ -91,6 +94,7 @@ public class AdminController {
             config.setCheckHistoryRetentionEnabled(checkHistoryRetentionEnabled);
             config.setCheckHistoryRetentionIntervalMinutes(sanitizedRetentionIntervalMinutes);
             config.setCheckHistoryRetentionDays(sanitizedRetentionDays);
+            config.setDeleteOutagesOnResourceDelete(deleteOutagesOnResourceDelete);
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");

@@ -44,6 +44,9 @@ public class ResourceTypeConfig {
     @Builder.Default
     private int recoveryThreshold = 2;
 
+    @Builder.Default
+    private boolean deleteOutagesOnResourceDelete = true;
+
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResourceTypeAuth> authentications = new ArrayList<>();

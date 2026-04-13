@@ -105,6 +105,19 @@
                                        th:value="${checkHistoryRetentionDays}">
                             </div>
                         </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-hdd-network me-2"></i>Resource Management</h6>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="deleteOutagesOnResourceDelete"
+                                   name="deleteOutagesOnResourceDelete" th:checked="${deleteOutagesOnResourceDelete}">
+                            <label class="form-check-label" for="deleteOutagesOnResourceDelete">
+                                Delete outages when deleting a resource
+                            </label>
+                            <div class="form-text">When enabled, all outage records for a resource are deleted together with it. When disabled, outage history is kept but no longer linked to any resource.</div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save me-1"></i>Save Settings
                         </button>

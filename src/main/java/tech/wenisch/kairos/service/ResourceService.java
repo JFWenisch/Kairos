@@ -9,7 +9,9 @@ import tech.wenisch.kairos.dto.LatencySampleDTO;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.OutageRepository;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +30,9 @@ public class ResourceService {
 
     private final MonitoredResourceRepository resourceRepository;
     private final CheckResultRepository checkResultRepository;
+    private final OutageRepository outageRepository;
     private final ResourceGroupRepository resourceGroupRepository;
+    private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     public List<MonitoredResource> findAllActive() {
         return resourceRepository.findAllActiveForLanding();
@@ -51,24 +55,38 @@ public class ResourceService {
 
     @Transactional
     public void delete(Long id) {
+        boolean deleteOutages = resourceTypeConfigRepository.findAll().stream()
+                .anyMatch(c -> c.isDeleteOutagesOnResourceDelete());
         resourceRepository.findById(id).ifPresent(resource -> {
             if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-                deleteManagedDockerResources(resource);
+                deleteManagedDockerResources(resource, deleteOutages);
             }
 
+            deleteOrNullifyOutages(resource, deleteOutages);
             checkResultRepository.findByResourceOrderByCheckedAtDesc(resource)
                     .forEach(checkResultRepository::delete);
             resourceRepository.delete(resource);
         });
     }
 
-    private void deleteManagedDockerResources(MonitoredResource dockerRepositoryResource) {
+    private void deleteOrNullifyOutages(MonitoredResource resource, boolean deleteOutages) {
+        List<tech.wenisch.kairos.entity.Outage> outages = outageRepository.findByResourceOrderByStartDateDesc(resource);
+        if (deleteOutages) {
+            outageRepository.deleteAll(outages);
+        } else {
+            outages.forEach(o -> o.setResource(null));
+            outageRepository.saveAll(outages);
+        }
+    }
+
+    private void deleteManagedDockerResources(MonitoredResource dockerRepositoryResource, boolean deleteOutages) {
         String groupName = managedGroupName(dockerRepositoryResource);
         resourceGroupRepository.findByNameIgnoreCase(groupName).ifPresent(group -> {
             List<MonitoredResource> managedResources = resourceRepository
                     .findByGroup_IdAndResourceType(group.getId(), ResourceType.DOCKER);
 
             for (MonitoredResource managedResource : managedResources) {
+                deleteOrNullifyOutages(managedResource, deleteOutages);
                 checkResultRepository.findByResourceOrderByCheckedAtDesc(managedResource)
                         .forEach(checkResultRepository::delete);
                 resourceRepository.delete(managedResource);
