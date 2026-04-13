@@ -52,7 +52,7 @@ public class OpenApiConfig {
                                 .name("Jean-Fabian Wenisch")
                                 .url("https://github.com/wenisch-tech/Kairos"))
                         .license(new License()
-                                .name("GNU GPL v3.0")
+                                .name("GNU AGPL v3.0")
                                 .url("https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md")))
                 .components(new Components()
                         .addSecuritySchemes(cookieScheme, new SecurityScheme()
