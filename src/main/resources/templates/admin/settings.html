@@ -49,6 +49,10 @@
                 <span th:text="${successMessage}">Success</span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${errorMessage}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
 
             <h2 class="h4 mb-4"><i class="bi bi-sliders me-2"></i>General Settings</h2>
 
@@ -137,6 +141,42 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save me-1"></i>Save Settings
                         </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-globe me-2"></i>API CORS Allowed Origins</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Add origins (e.g. <code>https://example.com</code>) that are allowed to call the Kairos API from a browser. Requests from unlisted origins will be blocked by the browser's same-origin policy.</p>
+
+                    <div th:if="${not #lists.isEmpty(corsAllowedOrigins)}" class="mb-3">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Origin</th>
+                                    <th style="width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="corsOrigin : ${corsAllowedOrigins}">
+                                    <td><code th:text="${corsOrigin.origin}"></code></td>
+                                    <td class="text-center">
+                                        <form th:action="@{/admin/settings/cors/remove/{id}(id=${corsOrigin.id})}" method="post">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash3"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:if="${#lists.isEmpty(corsAllowedOrigins)}" class="alert alert-secondary mb-3">
+                        No CORS origins configured. Cross-origin API calls from browsers will be blocked.
+                    </div>
+
+                    <form th:action="@{/admin/settings/cors/add}" method="post" class="d-flex gap-2">
+                        <input type="text" name="origin" class="form-control" placeholder="https://example.com" required>
+                        <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-plus-lg me-1"></i>Add Origin</button>
                     </form>
                 </div>
             </div>

@@ -72,6 +72,48 @@ Authorization: ApiKey <api-key-jwt>
 
 ---
 
+## CORS (Cross-Origin Resource Sharing)
+
+When a browser application hosted on a **different origin** (domain, port, or scheme) calls the Kairos API, the browser enforces the [same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) and blocks the request unless the server responds with the appropriate CORS headers.
+
+> Note: CORS is a **browser-only restriction**. Server-to-server calls (e.g. `curl`, backend services) are never affected and always work without CORS configuration.
+
+### How to allow an origin
+
+1. Open **Admin → General Settings**.
+2. Scroll to the **API CORS Allowed Origins** card.
+3. Enter the full origin in the format `https://example.com` (scheme + host + optional port, **no trailing slash**).
+4. Click **Add Origin**.
+
+The change takes effect immediately — no restart is required. Each entry is stored in the database and applied per-request.
+
+### Origin format rules
+
+| ✅ Valid | ❌ Invalid |
+|---------|----------|
+| `https://example.com` | `example.com` (missing scheme) |
+| `https://app.example.com` | `https://example.com/` (trailing slash) |
+| `http://localhost:3000` | `https://example.com/app` (path included) |
+| `https://example.com:8443` | `*` (wildcards are not supported) |
+
+### Removing an origin
+
+Click the **trash icon** next to any origin in the **API CORS Allowed Origins** table. The origin is removed immediately.
+
+### Browser preflight requests
+
+Browsers send an `OPTIONS` preflight before mutating cross-origin requests. Kairos handles these automatically for all configured origins. There is no additional setup required.
+
+### CORS is scoped to `/api/*` only
+
+CORS headers are only added to requests matching the `/api/` path prefix. UI pages (`/`, `/admin/**`, etc.) are not affected.
+
+### No allowed origins configured
+
+If no origins are configured, the CORS headers are **not sent** for any cross-origin request. Browsers will block such requests. This is the secure default.
+
+---
+
 ## Resource Endpoints
 
 ### `GET /api/resources`

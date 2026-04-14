@@ -57,3 +57,26 @@ Change this password immediately after first login.
 ## Credential Storage Note
 
 Resource credentials are stored in the application database. Restrict DB access and use platform-level encryption controls where possible.
+
+---
+
+## API CORS Allowed Origins
+
+When calling the Kairos REST API from a browser application hosted on a different origin (domain, scheme, or port), browsers enforce the same-origin policy and block the request unless Kairos sends the appropriate CORS headers.
+
+### Configuration
+
+Allowed origins are managed in **Admin → General Settings → API CORS Allowed Origins**. No restart is needed after adding or removing an entry.
+
+- **Add**: enter a full origin (`https://example.com`) and click **Add Origin**.
+- **Remove**: click the trash icon next to any entry.
+
+### Rules
+
+- The value must start with `http://` or `https://`.
+- No trailing slash, no path component, no wildcards.
+- CORS headers are only injected for requests to `/api/*` paths.
+- If no origins are configured, no CORS headers are sent (secure default).
+- Server-to-server calls (`curl`, backend services) are never affected.
+
+See the [REST API reference](api.md#cors-cross-origin-resource-sharing) for detailed examples and format rules.

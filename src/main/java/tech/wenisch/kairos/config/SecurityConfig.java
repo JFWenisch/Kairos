@@ -1,8 +1,12 @@
 package tech.wenisch.kairos.config;
 
+import tech.wenisch.kairos.entity.CorsAllowedOrigin;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.UserService;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +33,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -73,6 +78,7 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
             ResourceTypeConfigRepository resourceTypeConfigRepository,
+            CorsAllowedOriginRepository corsAllowedOriginRepository,
             AuthenticationSuccessHandler formLoginSuccessHandler,
             ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
         http
@@ -118,6 +124,25 @@ public class SecurityConfig {
                 .logoutSuccessUrl("/")
                 .permitAll()
             )
+            .cors(cors -> cors.configurationSource(request -> {
+                String path = request.getRequestURI();
+                if (!path.startsWith("/api/")) {
+                    return null;
+                }
+                List<String> allowedOrigins = corsAllowedOriginRepository.findAll()
+                        .stream()
+                        .map(CorsAllowedOrigin::getOrigin)
+                        .collect(Collectors.toList());
+                if (allowedOrigins.isEmpty()) {
+                    return null;
+                }
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(allowedOrigins);
+                config.addAllowedMethod("*");
+                config.addAllowedHeader("*");
+                config.setMaxAge(3600L);
+                return config;
+            }))
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new XorCsrfTokenRequestAttributeHandler())

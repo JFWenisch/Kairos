@@ -2,6 +2,7 @@ package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
 import tech.wenisch.kairos.entity.*;
+import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
 import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
@@ -46,6 +47,7 @@ public class AdminController {
     private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
+    private final CorsAllowedOriginRepository corsAllowedOriginRepository;
 
     @GetMapping
     public String admin() {
@@ -77,6 +79,7 @@ public class AdminController {
         model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
         model.addAttribute("checkHistoryRetentionDays", checkHistoryRetentionDays);
         model.addAttribute("deleteOutagesOnResourceDelete", deleteOutagesOnResourceDelete);
+        model.addAttribute("corsAllowedOrigins", corsAllowedOriginRepository.findAll());
         model.addAttribute("configs", configs);
         return "admin/settings";
     }
@@ -106,6 +109,29 @@ public class AdminController {
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");
+        return "redirect:/admin/settings";
+    }
+
+    @PostMapping("/settings/cors/add")
+    public String addCorsOrigin(@RequestParam String origin, RedirectAttributes redirectAttributes) {
+        origin = origin.trim();
+        if (origin.isBlank() || (!origin.startsWith("http://") && !origin.startsWith("https://"))) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid origin. Use format: https://example.com");
+            return "redirect:/admin/settings";
+        }
+        if (corsAllowedOriginRepository.existsByOrigin(origin)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Origin already exists: " + origin);
+        } else {
+            corsAllowedOriginRepository.save(CorsAllowedOrigin.builder().origin(origin).build());
+            redirectAttributes.addFlashAttribute("successMessage", "CORS origin added: " + origin);
+        }
+        return "redirect:/admin/settings";
+    }
+
+    @PostMapping("/settings/cors/remove/{id}")
+    public String removeCorsOrigin(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        corsAllowedOriginRepository.deleteById(id);
+        redirectAttributes.addFlashAttribute("successMessage", "CORS origin removed.");
         return "redirect:/admin/settings";
     }
 
