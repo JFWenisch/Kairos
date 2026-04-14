@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.10.0 - 2026-04-14
+
+## [1.10.0](https://github.com/wenisch-tech/Kairos/compare/v1.9.0...v1.10.0) (2026-04-14)
+
+
+### Features
+
+* add support for font-color for embedd ([c781fa2](https://github.com/wenisch-tech/Kairos/commit/c781fa252f666abb48ebda50044016b12b7c6b72))
+* Added embed widget feature to display overall status on external sites ([a48af61](https://github.com/wenisch-tech/Kairos/commit/a48af61626f92debc9b6dfa115b1259779fe6183)), closes [#41](https://github.com/wenisch-tech/Kairos/issues/41)
+* added support for switching font-size and dark / light mode for embedd ([63e389d](https://github.com/wenisch-tech/Kairos/commit/63e389da8d2e5d9accc266f26369de017c37efe9))
+* initial commit for embed functionality ([c113569](https://github.com/wenisch-tech/Kairos/commit/c113569910017f6ebbc0b57998dce5d747544d9f))
+
+
+### Code Refactoring
+
+* Moved admin menu to layout component ([e6646b8](https://github.com/wenisch-tech/Kairos/commit/e6646b8ed87a3eeff61ff577a86cc55ae192c7f1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.10.0
+
+
 ## v1.9.0 - 2026-04-14
 
 ## [1.9.0](https://github.com/wenisch-tech/Kairos/compare/v1.8.2...v1.9.0) (2026-04-14)
