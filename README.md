@@ -49,6 +49,7 @@
 - **YAML import / export** - export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** - publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
 - **Public announcements** - active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
+- **Embeddable status widget** - expose a lightweight iframe status badge (green/red indicator with status text) and control embedding centrally via **Admin -> Embed Widget** with policies for disabled, allow-all, or domain allowlist
 - **Public submission mode** - optionally allow unauthenticated users to add resources via the REST API
 - **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
 - **OIDC / OAuth2 login** - plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
@@ -207,6 +208,7 @@ Behavior notes:
 - [docs/importexport.md](docs/importexport.md) - YAML import/export workflow, format and compatibility notes
 - [docs/docker-pullability.md](docs/docker-pullability.md) - socketless Docker/OCI pullability validation behavior
 - [docs/announcements.md](docs/announcements.md) - announcement features, permissions and lifecycle
+- [docs/embed.md](docs/embed.md) - embed status widget setup, policies and domain allowlist
 - [docs/troubleshooting.md](docs/troubleshooting.md) - common issues, diagnosis steps and fixes
 
 See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.

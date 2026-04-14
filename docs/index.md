@@ -17,6 +17,7 @@ This site is built automatically from the Markdown files in this folder and publ
 - [Import / Export](importexport.md)
 - [Docker Pullability](docker-pullability.md)
 - [Announcements](announcements.md)
+- [Embed Status Widget](embed.md)
 
 ## Project Links
 

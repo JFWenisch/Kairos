@@ -5,6 +5,7 @@ import tech.wenisch.kairos.dto.ResourceViewModel;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
+import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
@@ -14,6 +15,7 @@ import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.HttpStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -49,6 +53,7 @@ public class HomeController {
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
+    private final EmbedSettingsService embedSettingsService;
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
@@ -150,6 +155,23 @@ public class HomeController {
     public String announcements(Model model) {
         model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
         return "announcements";
+    }
+
+    @GetMapping("/embed/status")
+    public String embedStatus(@RequestParam(name = "refresh", defaultValue = "30") int refreshSeconds,
+                              Model model) {
+        if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        int sanitizedRefreshSeconds = Math.min(3600, Math.max(10, refreshSeconds));
+        long activeOutages = outageService.countActiveOutages();
+        boolean hasActiveIncidents = activeOutages > 0;
+
+        model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
+        model.addAttribute("hasActiveIncidents", hasActiveIncidents);
+        model.addAttribute("activeOutages", activeOutages);
+        return "embed-status";
     }
 
     @PostMapping("/resources/{id}/check")
