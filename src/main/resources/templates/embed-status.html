@@ -7,7 +7,6 @@
     <meta http-equiv="refresh" th:content="${refreshSeconds}">
     <style>
         :root {
-            color-scheme: light;
             font-family: "Segoe UI", Tahoma, sans-serif;
         }
 
@@ -18,18 +17,23 @@
         body {
             margin: 0;
             background: transparent;
+        }
+
+        body.theme-light {
+            color-scheme: light;
             color: #0f172a;
+        }
+
+        body.theme-dark {
+            color-scheme: dark;
+            color: #e5edf7;
         }
 
         .status-widget {
             display: inline-flex;
             align-items: center;
             gap: 0.65rem;
-            padding: 0.5rem 0.8rem;
-            border: 1px solid #d0d7de;
-            border-radius: 999px;
-            background: #ffffff;
-            font-size: 0.95rem;
+            padding: 0.35rem 0.2rem;
             line-height: 1.2;
             white-space: nowrap;
         }
@@ -59,9 +63,16 @@
         }
 
         .status-count {
-            color: #5b6678;
-            font-size: 0.8rem;
+            font-size: 0.82em;
             margin-left: 0.2rem;
+        }
+
+        body.theme-light .status-count {
+            color: #5b6678;
+        }
+
+        body.theme-dark .status-count {
+            color: #a9b8cc;
         }
 
         @keyframes pulse {
@@ -84,8 +95,8 @@
         }
     </style>
 </head>
-<body>
-<div class="status-widget" role="status" aria-live="polite">
+<body th:class="'theme-' + ${mode}">
+<div class="status-widget" role="status" aria-live="polite" th:style="'font-size:' + ${fontSize} + 'px'">
     <span class="status-dot"
           th:classappend="${hasActiveIncidents} ? ' incident' : ' ok'"
           aria-hidden="true"></span>

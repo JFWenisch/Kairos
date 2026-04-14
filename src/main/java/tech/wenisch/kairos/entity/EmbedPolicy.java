@@ -9,12 +9,12 @@ public enum EmbedPolicy {
 
     public static EmbedPolicy fromValue(String raw) {
         if (raw == null || raw.isBlank()) {
-            return DISABLED;
+            return ALLOW_ALL;
         }
         try {
             return EmbedPolicy.valueOf(raw.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            return DISABLED;
+            return ALLOW_ALL;
         }
     }
 }

@@ -59,8 +59,32 @@
             <div class="card mb-4">
                 <div class="card-header">Embed Snippet</div>
                 <div class="card-body">
-                    <p class="text-muted small mb-2">Copy this snippet into any external HTML page.</p>
-                    <pre class="mb-0"><code th:text="'&lt;iframe src=&quot;' + ${embedUrl} + '?refresh=30&quot; title=&quot;Kairos Service Status&quot; width=&quot;360&quot; height=&quot;56&quot; style=&quot;border:0;overflow:hidden;&quot; loading=&quot;lazy&quot;&gt;&lt;/iframe&gt;'">snippet</code></pre>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="embedMode" class="form-label">Mode</label>
+                            <select id="embedMode" class="form-select" onchange="updateEmbedGenerator()">
+                                <option value="light" selected>Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="embedFontSize" class="form-label">Font size (px)</label>
+                            <input id="embedFontSize" type="number" min="10" max="32" step="1" value="15"
+                                   class="form-control" oninput="updateEmbedGenerator()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="embedRefresh" class="form-label">Refresh (seconds)</label>
+                            <input id="embedRefresh" type="number" min="10" max="3600" step="1" value="30"
+                                   class="form-control" oninput="updateEmbedGenerator()">
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <p class="text-muted small mb-0">Copy this snippet into any external HTML page.</p>
+                        <button id="copyEmbedSnippetButton" type="button" class="btn btn-sm btn-outline-light" onclick="copyEmbedSnippet()">
+                            <i class="bi bi-clipboard me-1"></i>Copy
+                        </button>
+                    </div>
+                    <pre class="mb-0"><code id="embedSnippetCode">snippet</code></pre>
                 </div>
             </div>
 
@@ -70,7 +94,8 @@
                     <p class="text-muted small mb-3">Live preview of the embedded widget using the current policy and status data.</p>
                     <div class="d-inline-flex p-3 border rounded bg-body-tertiary">
                         <iframe
-                                th:src="@{/embed/status(refresh=30)}"
+                                id="embedPreviewIframe"
+                                th:src="@{/embed/status(refresh=30,mode='light',fontSize=15)}"
                                 title="Kairos Service Status Preview"
                                 width="360"
                                 height="56"
@@ -148,5 +173,58 @@
 
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/kairos.js}"></script>
+<script th:inline="javascript">
+    const embedBaseUrl = /*[[${embedUrl}]]*/ '';
+
+    function sanitizeNumber(value, min, max, fallbackValue) {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isNaN(parsed)) {
+            return fallbackValue;
+        }
+        return Math.min(max, Math.max(min, parsed));
+    }
+
+    function updateEmbedGenerator() {
+        const modeElement = document.getElementById('embedMode');
+        const fontSizeElement = document.getElementById('embedFontSize');
+        const refreshElement = document.getElementById('embedRefresh');
+        const snippetElement = document.getElementById('embedSnippetCode');
+        const previewElement = document.getElementById('embedPreviewIframe');
+
+        if (!modeElement || !fontSizeElement || !refreshElement || !snippetElement || !previewElement) {
+            return;
+        }
+
+        const mode = modeElement.value === 'dark' ? 'dark' : 'light';
+        const fontSize = sanitizeNumber(fontSizeElement.value, 10, 32, 15);
+        const refresh = sanitizeNumber(refreshElement.value, 10, 3600, 30);
+
+        fontSizeElement.value = String(fontSize);
+        refreshElement.value = String(refresh);
+
+        const src = `${embedBaseUrl}?refresh=${refresh}&mode=${mode}&fontSize=${fontSize}`;
+        previewElement.src = src;
+
+        snippetElement.textContent = `<iframe src="${src}" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>`;
+    }
+
+    function copyEmbedSnippet() {
+        const snippetElement = document.getElementById('embedSnippetCode');
+        const buttonElement = document.getElementById('copyEmbedSnippetButton');
+        if (!snippetElement || !buttonElement) {
+            return;
+        }
+
+        navigator.clipboard.writeText(snippetElement.textContent || '')
+            .then(() => {
+                buttonElement.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied';
+                window.setTimeout(() => {
+                    buttonElement.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy';
+                }, 1600);
+            });
+    }
+
+    updateEmbedGenerator();
+</script>
 </body>
 </html>

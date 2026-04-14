@@ -26,7 +26,7 @@ public class EmbedSettingsService {
                 .map(ResourceTypeConfig::getEmbedPolicy)
                 .findFirst()
                 .map(EmbedPolicy::fromValue)
-                .orElse(EmbedPolicy.DISABLED);
+                .orElse(EmbedPolicy.ALLOW_ALL);
     }
 
     @Transactional

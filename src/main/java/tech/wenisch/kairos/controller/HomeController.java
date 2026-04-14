@@ -159,16 +159,22 @@ public class HomeController {
 
     @GetMapping("/embed/status")
     public String embedStatus(@RequestParam(name = "refresh", defaultValue = "30") int refreshSeconds,
+                              @RequestParam(name = "mode", required = false) String mode,
+                              @RequestParam(name = "fontSize", defaultValue = "15") int fontSize,
                               Model model) {
         if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
         int sanitizedRefreshSeconds = Math.min(3600, Math.max(10, refreshSeconds));
+        int sanitizedFontSize = Math.min(32, Math.max(10, fontSize));
+        String normalizedMode = "dark".equalsIgnoreCase(mode) ? "dark" : "light";
         long activeOutages = outageService.countActiveOutages();
         boolean hasActiveIncidents = activeOutages > 0;
 
         model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
+        model.addAttribute("mode", normalizedMode);
+        model.addAttribute("fontSize", sanitizedFontSize);
         model.addAttribute("hasActiveIncidents", hasActiveIncidents);
         model.addAttribute("activeOutages", activeOutages);
         return "embed-status";

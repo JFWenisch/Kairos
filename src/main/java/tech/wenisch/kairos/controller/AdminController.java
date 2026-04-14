@@ -127,7 +127,7 @@ public class AdminController {
     }
 
     @PostMapping("/embed/policy")
-    public String saveEmbedPolicy(@RequestParam(defaultValue = "DISABLED") String embedPolicy,
+    public String saveEmbedPolicy(@RequestParam(defaultValue = "ALLOW_ALL") String embedPolicy,
                                   RedirectAttributes redirectAttributes) {
         EmbedPolicy policy = EmbedPolicy.fromValue(embedPolicy);
         embedSettingsService.setPolicyForAllResourceTypes(policy);
