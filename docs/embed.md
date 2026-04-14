@@ -28,12 +28,19 @@ The embed endpoint supports these query parameters:
 
 - `refresh` (optional): refresh interval in seconds, range `10..3600`, default `30`
 - `mode` (optional): `light` or `dark`, default `light`
-- `fontSize` (optional): base font size in pixels, range `10..32`, default `15`
+- `fontSize` (optional): base font size in pixels, range `6..32`, default `15`
+- `fontColor` (optional): hex text color like `#ffffff` or `#0f172a`; if omitted, the default mode text color is used
 
 Example with dark mode and larger text:
 
 ```html
 <iframe src="https://kairos.example.com/embed/status?mode=dark&fontSize=18&refresh=30" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>
+```
+
+Example with custom font color:
+
+```html
+<iframe src="https://kairos.example.com/embed/status?mode=dark&fontSize=16&fontColor=%23ffffff&refresh=30" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>
 ```
 
 ## What the widget shows
@@ -42,6 +49,8 @@ The widget is based on active outages:
 
 - Green indicator + "All systems operational" when no active outages exist
 - Red indicator + "Active problems detected" when one or more active outages exist
+
+The full widget is clickable and links to the Kairos landing page (`/`) of the same instance. Link styling inherits the configured/default text color.
 
 ## Admin configuration
 

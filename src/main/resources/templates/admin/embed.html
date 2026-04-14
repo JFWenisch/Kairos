@@ -60,19 +60,23 @@
                 <div class="card-header">Embed Snippet</div>
                 <div class="card-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="embedMode" class="form-label">Mode</label>
                             <select id="embedMode" class="form-select" onchange="updateEmbedGenerator()">
                                 <option value="light" selected>Light</option>
                                 <option value="dark">Dark</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="embedFontSize" class="form-label">Font size (px)</label>
-                            <input id="embedFontSize" type="number" min="10" max="32" step="1" value="15"
+                            <input id="embedFontSize" type="number" min="6" max="32" step="1" value="15"
                                    class="form-control" oninput="updateEmbedGenerator()">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="embedFontColor" class="form-label">Font color (hex)</label>
+                            <input id="embedFontColor" type="text" class="form-control" placeholder="#ffffff" maxlength="7" oninput="updateEmbedGenerator()">
+                        </div>
+                        <div class="col-md-3">
                             <label for="embedRefresh" class="form-label">Refresh (seconds)</label>
                             <input id="embedRefresh" type="number" min="10" max="3600" step="1" value="30"
                                    class="form-control" oninput="updateEmbedGenerator()">
@@ -92,16 +96,14 @@
                 <div class="card-header">Preview</div>
                 <div class="card-body">
                     <p class="text-muted small mb-3">Live preview of the embedded widget using the current policy and status data.</p>
-                    <div class="d-inline-flex p-3 border rounded bg-body-tertiary">
-                        <iframe
-                                id="embedPreviewIframe"
-                                th:src="@{/embed/status(refresh=30,mode='light',fontSize=15)}"
-                                title="Kairos Service Status Preview"
-                                width="360"
-                                height="56"
-                                style="border:0;overflow:hidden;"
-                                loading="lazy"></iframe>
-                    </div>
+                    <iframe
+                            id="embedPreviewIframe"
+                            th:src="@{/embed/status(refresh=30,mode='light',fontSize=15)}"
+                            title="Kairos Service Status Preview"
+                            width="360"
+                            height="56"
+                            style="border:0;overflow:hidden;"
+                            loading="lazy"></iframe>
                 </div>
             </div>
 
@@ -184,25 +186,45 @@
         return Math.min(max, Math.max(min, parsed));
     }
 
+    function normalizeHexColor(value) {
+        const raw = (value || '').trim();
+        if (!raw) {
+            return '';
+        }
+        const withHash = raw.startsWith('#') ? raw : `#${raw}`;
+        return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(withHash) ? withHash : '';
+    }
+
     function updateEmbedGenerator() {
         const modeElement = document.getElementById('embedMode');
         const fontSizeElement = document.getElementById('embedFontSize');
+        const fontColorElement = document.getElementById('embedFontColor');
         const refreshElement = document.getElementById('embedRefresh');
         const snippetElement = document.getElementById('embedSnippetCode');
         const previewElement = document.getElementById('embedPreviewIframe');
 
-        if (!modeElement || !fontSizeElement || !refreshElement || !snippetElement || !previewElement) {
+        if (!modeElement || !fontSizeElement || !fontColorElement || !refreshElement || !snippetElement || !previewElement) {
             return;
         }
 
         const mode = modeElement.value === 'dark' ? 'dark' : 'light';
-        const fontSize = sanitizeNumber(fontSizeElement.value, 10, 32, 15);
+        const fontSize = sanitizeNumber(fontSizeElement.value, 6, 32, 15);
+        const fontColor = normalizeHexColor(fontColorElement.value);
         const refresh = sanitizeNumber(refreshElement.value, 10, 3600, 30);
 
         fontSizeElement.value = String(fontSize);
         refreshElement.value = String(refresh);
 
-        const src = `${embedBaseUrl}?refresh=${refresh}&mode=${mode}&fontSize=${fontSize}`;
+        const params = new URLSearchParams({
+            refresh: String(refresh),
+            mode,
+            fontSize: String(fontSize)
+        });
+        if (fontColor) {
+            params.set('fontColor', fontColor);
+        }
+
+        const src = `${embedBaseUrl}?${params.toString()}`;
         previewElement.src = src;
 
         snippetElement.textContent = `<iframe src="${src}" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>`;

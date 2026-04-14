@@ -41,11 +41,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
+
+    private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$");
 
     private final ResourceService resourceService;
     private final CheckExecutorService checkExecutorService;
@@ -161,20 +164,23 @@ public class HomeController {
     public String embedStatus(@RequestParam(name = "refresh", defaultValue = "30") int refreshSeconds,
                               @RequestParam(name = "mode", required = false) String mode,
                               @RequestParam(name = "fontSize", defaultValue = "15") int fontSize,
+                              @RequestParam(name = "fontColor", required = false) String fontColor,
                               Model model) {
         if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
         int sanitizedRefreshSeconds = Math.min(3600, Math.max(10, refreshSeconds));
-        int sanitizedFontSize = Math.min(32, Math.max(10, fontSize));
+        int sanitizedFontSize = Math.min(32, Math.max(6, fontSize));
         String normalizedMode = "dark".equalsIgnoreCase(mode) ? "dark" : "light";
+        String normalizedFontColor = normalizeHexColor(fontColor);
         long activeOutages = outageService.countActiveOutages();
         boolean hasActiveIncidents = activeOutages > 0;
 
         model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
         model.addAttribute("mode", normalizedMode);
         model.addAttribute("fontSize", sanitizedFontSize);
+        model.addAttribute("fontColor", normalizedFontColor);
         model.addAttribute("hasActiveIncidents", hasActiveIncidents);
         model.addAttribute("activeOutages", activeOutages);
         return "embed-status";
@@ -473,6 +479,17 @@ public class HomeController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private String normalizeHexColor(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        if (!HEX_COLOR_PATTERN.matcher(trimmed).matches()) {
+            return "";
+        }
+        return trimmed.startsWith("#") ? trimmed : "#" + trimmed;
     }
 
     private record OutageRowViewModel(
