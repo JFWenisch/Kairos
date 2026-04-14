@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.9.0 - 2026-04-14
+
+## [1.9.0](https://github.com/wenisch-tech/Kairos/compare/v1.8.2...v1.9.0) (2026-04-14)
+
+
+### Features
+
+* Added cors support and added configuration to add/remove allowed origins ([cb4d560](https://github.com/wenisch-tech/Kairos/commit/cb4d560bb583fff654b2b1e8e4269d430da1c514))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.9.0
+
+
 ## v1.8.2 - 2026-04-13
 
 ### [1.8.2](https://github.com/wenisch-tech/Kairos/compare/v1.8.1...v1.8.2) (2026-04-13)
