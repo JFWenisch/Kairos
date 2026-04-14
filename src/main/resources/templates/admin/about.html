@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>About - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+
+        <div class="col-md-10 py-4 px-4">
+            <h2 class="h4 mb-4"><i class="bi bi-info-circle me-2"></i>About Kairos</h2>
+
+            <div class="card mb-4">
+                <div class="card-header">Application</div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Name:</strong> Kairos - Availability Monitor</p>
+                    <p class="mb-2"><strong>Version:</strong> <span th:text="${appVersion}">unknown</span></p>
+                    <p class="mb-2"><strong>Spring Boot:</strong> <span th:text="${springBootVersion}">unknown</span></p>
+                    <p class="mb-0"><strong>Java:</strong> <span th:text="${javaVersion}">unknown</span></p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Author</div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Author:</strong> Jean-Fabian Wenisch</p>
+                    <p class="mb-0"><strong>Website:</strong> <a href="https://wenisch.tech" target="_blank" rel="noopener">https://wenisch.tech</a></p>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Project</div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Repository:</strong> <a href="https://github.com/wenisch-tech/Kairos" target="_blank" rel="noopener">github.com/wenisch-tech/Kairos</a></p>
+                    <p class="mb-2"><strong>Issues:</strong> <a href="https://github.com/wenisch-tech/Kairos/issues" target="_blank" rel="noopener">github.com/wenisch-tech/Kairos/issues</a></p>
+                    <p class="mb-0"><strong>Container:</strong> <a href="https://github.com/wenisch-tech/Kairos/pkgs/container/kairos" target="_blank" rel="noopener">ghcr.io/wenisch-tech/kairos</a></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">License</div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>License:</strong> GNU AGPL v3.0</p>
+                    <p class="mb-2"><strong>License File:</strong> <a href="https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md" target="_blank" rel="noopener">LICENSE.md</a></p>
+                    <p class="mb-0 text-muted">Use and distribution are subject to the terms of the AGPL v3.0.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

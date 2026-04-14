@@ -5,6 +5,7 @@ import tech.wenisch.kairos.dto.ResourceViewModel;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
+import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
@@ -14,6 +15,7 @@ import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.HttpStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,11 +41,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
+
+    private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$");
 
     private final ResourceService resourceService;
     private final CheckExecutorService checkExecutorService;
@@ -49,6 +56,7 @@ public class HomeController {
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
+    private final EmbedSettingsService embedSettingsService;
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
@@ -150,6 +158,32 @@ public class HomeController {
     public String announcements(Model model) {
         model.addAttribute("announcements", announcementService.findAllOrderedByCreatedAtDesc());
         return "announcements";
+    }
+
+    @GetMapping("/embed/status")
+    public String embedStatus(@RequestParam(name = "refresh", defaultValue = "30") int refreshSeconds,
+                              @RequestParam(name = "mode", required = false) String mode,
+                              @RequestParam(name = "fontSize", defaultValue = "15") int fontSize,
+                              @RequestParam(name = "fontColor", required = false) String fontColor,
+                              Model model) {
+        if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        int sanitizedRefreshSeconds = Math.min(3600, Math.max(10, refreshSeconds));
+        int sanitizedFontSize = Math.min(32, Math.max(6, fontSize));
+        String normalizedMode = "dark".equalsIgnoreCase(mode) ? "dark" : "light";
+        String normalizedFontColor = normalizeHexColor(fontColor);
+        long activeOutages = outageService.countActiveOutages();
+        boolean hasActiveIncidents = activeOutages > 0;
+
+        model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
+        model.addAttribute("mode", normalizedMode);
+        model.addAttribute("fontSize", sanitizedFontSize);
+        model.addAttribute("fontColor", normalizedFontColor);
+        model.addAttribute("hasActiveIncidents", hasActiveIncidents);
+        model.addAttribute("activeOutages", activeOutages);
+        return "embed-status";
     }
 
     @PostMapping("/resources/{id}/check")
@@ -445,6 +479,17 @@ public class HomeController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private String normalizeHexColor(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        if (!HEX_COLOR_PATTERN.matcher(trimmed).matches()) {
+            return "";
+        }
+        return trimmed.startsWith("#") ? trimmed : "#" + trimmed;
     }
 
     private record OutageRowViewModel(

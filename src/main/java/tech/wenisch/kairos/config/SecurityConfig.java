@@ -1,9 +1,11 @@
 package tech.wenisch.kairos.config;
 
 import tech.wenisch.kairos.entity.CorsAllowedOrigin;
+import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
+import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.UserService;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -79,11 +81,13 @@ public class SecurityConfig {
         public SecurityFilterChain filterChain(HttpSecurity http, UserService userService,
             ResourceTypeConfigRepository resourceTypeConfigRepository,
             CorsAllowedOriginRepository corsAllowedOriginRepository,
+            EmbedSettingsService embedSettingsService,
             AuthenticationSuccessHandler formLoginSuccessHandler,
             ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
             .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
+            .requestMatchers("/embed/**").permitAll()
             .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api")
             .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
@@ -149,7 +153,23 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/resources/**", "/api/announcements", "/api/announcements/**")
             )
             .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
+                .frameOptions(frame -> frame.disable())
+                .addHeaderWriter((request, response) -> {
+                    if (!request.getRequestURI().startsWith("/embed/")) {
+                        response.setHeader("X-Frame-Options", "SAMEORIGIN");
+                        return;
+                    }
+
+                    EmbedPolicy policy = embedSettingsService.getPolicy();
+                    if (policy == EmbedPolicy.DISABLED) {
+                        response.setHeader("X-Frame-Options", "DENY");
+                        response.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+                        return;
+                    }
+
+                    response.setHeader("Content-Security-Policy",
+                            "frame-ancestors " + embedSettingsService.frameAncestorsDirective());
+                })
             );
 
         http.addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

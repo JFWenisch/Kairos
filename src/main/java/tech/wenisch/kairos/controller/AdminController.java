@@ -6,21 +6,26 @@ import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
 import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.ApiKeyService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.boot.SpringBootVersion;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.charset.StandardCharsets;
@@ -48,10 +53,26 @@ public class AdminController {
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
     private final CorsAllowedOriginRepository corsAllowedOriginRepository;
+    private final EmbedSettingsService embedSettingsService;
+    private final ApplicationVersionService applicationVersionService;
 
     @GetMapping
     public String admin() {
         return "redirect:/admin/settings";
+    }
+
+    @ModelAttribute("currentRequestUri")
+    public String currentRequestUri(HttpServletRequest request) {
+        return request != null ? request.getRequestURI() : "";
+    }
+
+    @GetMapping("/about")
+    public String about(Model model) {
+        model.addAttribute("appVersion", applicationVersionService.getVersion());
+        model.addAttribute("springBootVersion", SpringBootVersion.getVersion());
+        model.addAttribute("javaVersion", System.getProperty("java.version", "unknown"));
+        model.addAttribute("buildTimestamp", LocalDateTime.now());
+        return "admin/about";
     }
 
     @GetMapping("/settings")
@@ -110,6 +131,50 @@ public class AdminController {
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");
         return "redirect:/admin/settings";
+    }
+
+    @GetMapping("/embed")
+    public String embedSettings(Model model) {
+        String embedUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/embed/status")
+                .toUriString();
+        model.addAttribute("embedPolicy", embedSettingsService.getPolicy().name());
+        model.addAttribute("embedAllowedOrigins", embedSettingsService.listAllowedOrigins());
+        model.addAttribute("embedUrl", embedUrl);
+        return "admin/embed";
+    }
+
+    @PostMapping("/embed/policy")
+    public String saveEmbedPolicy(@RequestParam(defaultValue = "ALLOW_ALL") String embedPolicy,
+                                  RedirectAttributes redirectAttributes) {
+        EmbedPolicy policy = EmbedPolicy.fromValue(embedPolicy);
+        embedSettingsService.setPolicyForAllResourceTypes(policy);
+        redirectAttributes.addFlashAttribute("successMessage", "Embed policy updated.");
+        return "redirect:/admin/embed";
+    }
+
+    @PostMapping("/embed/origins/add")
+    public String addEmbedOrigin(@RequestParam String origin,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            boolean added = embedSettingsService.addAllowedOrigin(origin);
+            if (added) {
+                redirectAttributes.addFlashAttribute("successMessage", "Embed origin added.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Origin already exists.");
+            }
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/embed";
+    }
+
+    @PostMapping("/embed/origins/remove/{id}")
+    public String removeEmbedOrigin(@PathVariable Long id,
+                                    RedirectAttributes redirectAttributes) {
+        embedSettingsService.removeAllowedOrigin(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Embed origin removed.");
+        return "redirect:/admin/embed";
     }
 
     @PostMapping("/settings/cors/add")

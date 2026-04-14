@@ -53,6 +53,9 @@ public class ResourceTypeConfig {
     @Builder.Default
     private boolean deleteOutagesOnResourceDelete = true;
 
+    @Builder.Default
+    private String embedPolicy = "ALLOW_ALL";
+
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default
     private List<ResourceTypeAuth> authentications = new ArrayList<>();
