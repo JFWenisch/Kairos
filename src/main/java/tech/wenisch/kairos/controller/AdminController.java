@@ -25,7 +25,6 @@ import org.springframework.ui.Model;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.charset.StandardCharsets;
@@ -135,12 +134,8 @@ public class AdminController {
 
     @GetMapping("/embed")
     public String embedSettings(Model model) {
-        String embedUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/embed/status")
-                .toUriString();
         model.addAttribute("embedPolicy", embedSettingsService.getPolicy().name());
         model.addAttribute("embedAllowedOrigins", embedSettingsService.listAllowedOrigins());
-        model.addAttribute("embedUrl", embedUrl);
         return "admin/embed";
     }
 

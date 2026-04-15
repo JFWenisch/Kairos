@@ -167,7 +167,7 @@
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/kairos.js}"></script>
 <script th:inline="javascript">
-    const embedBaseUrl = /*[[${embedUrl}]]*/ '';
+    const embedPath = /*[[@{/embed/status}]]*/ '/embed/status';
 
     function sanitizeNumber(value, min, max, fallbackValue) {
         const parsed = Number.parseInt(value, 10);
@@ -215,6 +215,7 @@
             params.set('fontColor', fontColor);
         }
 
+        const embedBaseUrl = new URL(embedPath, window.location.origin).toString();
         const src = `${embedBaseUrl}?${params.toString()}`;
         previewElement.src = src;
 
