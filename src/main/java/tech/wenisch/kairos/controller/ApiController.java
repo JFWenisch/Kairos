@@ -239,9 +239,11 @@ public class ApiController {
                 .skipTls(dto.isSkipTls())
                 .recursive(dto.isRecursive())
                 .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
-                .group(group)
                 .active(true)
                 .build();
+        if (group != null) {
+            resource.getGroups().add(group);
+        }
         MonitoredResource saved = resourceService.save(resource);
         if (saved.getResourceType() == tech.wenisch.kairos.entity.ResourceType.DOCKERREPOSITORY) {
             checkExecutorService.runImmediateCheck(saved);
@@ -282,9 +284,9 @@ public class ApiController {
                 .target("https://dns.google")
                 .skipTls(false)
                 .displayOrder(1)
-                .group(webServicesGroup)
                 .active(true)
                 .build();
+        httpGoogle.getGroups().add(webServicesGroup);
         resourceService.save(httpGoogle);
 
         MonitoredResource httpGithub = MonitoredResource.builder()
@@ -293,9 +295,9 @@ public class ApiController {
                 .target("https://status.github.com")
                 .skipTls(false)
                 .displayOrder(2)
-                .group(webServicesGroup)
                 .active(true)
                 .build();
+        httpGithub.getGroups().add(webServicesGroup);
         resourceService.save(httpGithub);
 
         MonitoredResource httpExample = MonitoredResource.builder()
@@ -304,9 +306,9 @@ public class ApiController {
                 .target("https://example.com")
                 .skipTls(false)
                 .displayOrder(3)
-                .group(webServicesGroup)
                 .active(true)
                 .build();
+        httpExample.getGroups().add(webServicesGroup);
         resourceService.save(httpExample);
 
         // Create Docker image resources
@@ -316,9 +318,9 @@ public class ApiController {
                 .target("docker.io/library/nginx:latest")
                 .skipTls(false)
                 .displayOrder(1)
-                .group(dockerServicesGroup)
                 .active(true)
                 .build();
+        dockerNginx.getGroups().add(dockerServicesGroup);
         resourceService.save(dockerNginx);
 
         MonitoredResource dockerPostgres = MonitoredResource.builder()
@@ -327,9 +329,9 @@ public class ApiController {
                 .target("docker.io/library/postgres:15-alpine")
                 .skipTls(false)
                 .displayOrder(2)
-                .group(dockerServicesGroup)
                 .active(true)
                 .build();
+        dockerPostgres.getGroups().add(dockerServicesGroup);
         resourceService.save(dockerPostgres);
 
         MonitoredResource dockerRedis = MonitoredResource.builder()
@@ -338,9 +340,9 @@ public class ApiController {
                 .target("docker.io/library/redis:latest")
                 .skipTls(false)
                 .displayOrder(3)
-                .group(dockerServicesGroup)
                 .active(true)
                 .build();
+        dockerRedis.getGroups().add(dockerServicesGroup);
         resourceService.save(dockerRedis);
 
         // Trigger immediate checks
