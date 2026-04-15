@@ -120,22 +120,22 @@ class ResourceServiceTest {
         void deleteDockerRepositoryAlsoDeletesManagedDockerResourcesAndGroup() {
         MonitoredResource dockerRepository = MonitoredResource.builder()
             .id(50L)
-            .name("artifactory")
+            .name("registry")
             .resourceType(ResourceType.DOCKERREPOSITORY)
-            .target("https://registry.example.com/artifactory/plain-images/")
+            .target("https://registry.example.com/registry/images/")
             .active(true)
             .build();
 
         ResourceGroup managedGroup = ResourceGroup.builder()
             .id(15L)
-            .name("Dockerrepository: https://registry.example.com/artifactory/plain-images/")
+            .name("registry")
             .build();
 
         MonitoredResource managedDocker = MonitoredResource.builder()
             .id(51L)
             .name("alpine")
             .resourceType(ResourceType.DOCKER)
-            .target("registry.example.com/plain-images/alpine:latest")
+            .target("registry.example.com/images/alpine:latest")
             .group(managedGroup)
             .active(true)
             .build();
@@ -149,7 +149,8 @@ class ResourceServiceTest {
         when(resourceTypeConfigRepository.findAll()).thenReturn(List.of(ResourceTypeConfig.builder()
             .deleteOutagesOnResourceDelete(true)
             .build()));
-        when(resourceGroupRepository.findByNameIgnoreCase(managedGroup.getName())).thenReturn(Optional.of(managedGroup));
+        when(resourceGroupRepository.findByNameIgnoreCase("registry")).thenReturn(Optional.of(managedGroup));
+        when(resourceGroupRepository.findByNameIgnoreCase("Dockerrepository: https://registry.example.com/registry/images/")).thenReturn(Optional.empty());
         when(resourceRepository.findByGroup_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
         when(resourceRepository.findByGroup_Id(15L)).thenReturn(List.of());
         when(outageRepository.findByResourceOrderByStartDateDesc(managedDocker)).thenReturn(List.of(managedOutage));

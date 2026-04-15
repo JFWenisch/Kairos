@@ -106,6 +106,16 @@ jobs:
       - name: Package Helm chart
         run: helm package charts/kairos/ --destination ./release
 
+      - name: Generate application SBOM (CycloneDX)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./release
+          mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom \
+            -DoutputFormat=all \
+            -DoutputName="kairos-${{ inputs.version }}-sbom" \
+            -DoutputDirectory=./release
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
 
@@ -123,6 +133,8 @@ jobs:
           path: |
             ./release/*.tgz
             ./release/*.cosign.bundle
+            ./release/*-sbom.json
+            ./release/*-sbom.xml
 
       - name: Publish Helm chart to charts repository
         env:
@@ -159,6 +171,10 @@ jobs:
           name: ${{ inputs.tag }}
           files: |
             ./release/docker-image-attestation.bundle.json
+            ./release/*.tgz
+            ./release/*.cosign.bundle
+            ./release/*-sbom.json
+            ./release/*-sbom.xml
           body: |
             ${{ inputs.changelog }}
 
@@ -168,13 +184,14 @@ jobs:
             ${{ inputs.image }}@${{ inputs.digest }}
             ```
 
-            ## Signature & Attestation
-            This image was signed using Sigstore Cosign with keyless signing via GitHub Actions OIDC.
-            A SLSA provenance attestation was generated for this image.
+            ## SBOM
+            A CycloneDX SBOM for this application is attached to this release as:
+            - `kairos-${{ inputs.version }}-sbom.json`
+            - `kairos-${{ inputs.version }}-sbom.xml`
 
-            Build-specific links:
-            - [GitHub attestation for this build](${{ steps.read_attestation_url.outputs.url }})
-            - [Sigstore attestation bundle (release asset)](https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/docker-image-attestation.bundle.json)
+            ## Signature & Attestation
+            This image was signed using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) with keyless signing via GitHub Actions OIDC.
+            A [SLSA provenance attestation](https://slsa.dev/provenance) is attached and visible under the package's **Attestations** tab.
 
             **Verify image signature:**
             ```bash
