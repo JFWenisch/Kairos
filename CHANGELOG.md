@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.11.1 - 2026-04-15
+
+### [1.11.1](https://github.com/wenisch-tech/Kairos/compare/v1.11.0...v1.11.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* udated migration for group visibility to also work on empty database ([aaacd47](https://github.com/wenisch-tech/Kairos/commit/aaacd47df0ef75cb08ace46d131f470517446b15))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.11.1
+
+
 ## v1.10.2 - 2026-04-15
 
 ### [1.10.2](https://github.com/wenisch-tech/Kairos/compare/v1.10.1...v1.10.2) (2026-04-15)
