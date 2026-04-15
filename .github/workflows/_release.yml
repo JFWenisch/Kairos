@@ -138,11 +138,27 @@ jobs:
           git commit -m "Add Kairos helm chart in version ${{ inputs.version }}" || echo "No chart changes to commit"
           git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
 
+      - name: Download Docker attestation bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-attestation-bundle
+          path: ./release
+
+      - name: Read attestation URL
+        id: read_attestation_url
+        shell: bash
+        run: |
+          set -euo pipefail
+          url=$(cat ./release/docker-image-attestation.url.txt)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag }}
           name: ${{ inputs.tag }}
+          files: |
+            ./release/docker-image-attestation.bundle.json
           body: |
             ${{ inputs.changelog }}
 
@@ -153,8 +169,12 @@ jobs:
             ```
 
             ## Signature & Attestation
-            This image was signed using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) with keyless signing via GitHub Actions OIDC.
-            A [SLSA provenance attestation](https://slsa.dev/provenance) is attached and visible under the package's **Attestations** tab.
+            This image was signed using Sigstore Cosign with keyless signing via GitHub Actions OIDC.
+            A SLSA provenance attestation was generated for this image.
+
+            Build-specific links:
+            - [GitHub attestation for this build](${{ steps.read_attestation_url.outputs.url }})
+            - [Sigstore attestation bundle (release asset)](https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/docker-image-attestation.bundle.json)
 
             **Verify image signature:**
             ```bash

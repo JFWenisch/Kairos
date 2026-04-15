@@ -216,7 +216,26 @@ jobs:
 
       - name: Attest build provenance
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: attest_build_provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ inputs.image }}
           subject-digest: ${{ steps.sign.outputs.digest }}
+
+      - name: Prepare attestation bundle asset
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp "${{ steps.attest_build_provenance.outputs.bundle-path }}" "release/docker-image-attestation.bundle.json"
+          printf '%s\n' "${{ steps.attest_build_provenance.outputs.attestation-url }}" > "release/docker-image-attestation.url.txt"
+
+      - name: Upload attestation bundle artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-attestation-bundle
+          path: |
+            release/docker-image-attestation.bundle.json
+            release/docker-image-attestation.url.txt
