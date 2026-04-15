@@ -202,6 +202,7 @@ public class AdminController {
 
         model.addAttribute("resources", resources);
         model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
+        model.addAttribute("groupVisibilityOptions", ResourceGroupVisibility.values());
         model.addAttribute("adminResourceGroups", buildAdminResourceGroups(resources, groups));
         model.addAttribute("resourceTypes", ResourceType.values());
         return "admin/resources";
@@ -265,6 +266,7 @@ public class AdminController {
 
     @PostMapping("/resource-groups/add")
     public String addResourceGroup(@RequestParam String name,
+                                   @RequestParam(defaultValue = "PUBLIC") ResourceGroupVisibility visibility,
                                    @RequestParam(defaultValue = "0") int displayOrder,
                                    RedirectAttributes redirectAttributes) {
         if (name == null || name.isBlank()) {
@@ -274,6 +276,7 @@ public class AdminController {
 
         ResourceGroup group = ResourceGroup.builder()
                 .name(name.trim())
+            .visibility(visibility == null ? ResourceGroupVisibility.PUBLIC : visibility)
                 .displayOrder(displayOrder)
                 .build();
         resourceGroupService.save(group);
@@ -284,10 +287,12 @@ public class AdminController {
     @PostMapping("/resource-groups/update/{id}")
     public String updateResourceGroup(@PathVariable Long id,
                                       @RequestParam String name,
+                                      @RequestParam(defaultValue = "PUBLIC") ResourceGroupVisibility visibility,
                                       @RequestParam(defaultValue = "0") int displayOrder,
                                       RedirectAttributes redirectAttributes) {
         resourceGroupService.findById(id).ifPresent(group -> {
             group.setName(name);
+            group.setVisibility(visibility == null ? ResourceGroupVisibility.PUBLIC : visibility);
             group.setDisplayOrder(displayOrder);
             resourceGroupService.save(group);
             redirectAttributes.addFlashAttribute("successMessage", "Group updated: " + group.getName());

@@ -44,6 +44,7 @@
 - **Manual instant checks** - admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
 - **Public "Check Now"** - optionally allow unauthenticated users to trigger an immediate check from the resource detail page
 - **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups
+- **Group visibility controls** - per resource group, choose `PUBLIC`, `AUTHENTICATED`, or `HIDDEN` to control whether that group's resources are visible to everyone, only logged-in users, or not shown on dashboard/public API views
 - **Admin panel** - manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **API keys** - generate and revoke named API keys for machine-to-machine access to the REST API
 - **YAML import / export** - export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format

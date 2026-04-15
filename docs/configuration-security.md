@@ -31,6 +31,20 @@ The **Allow public access** option in **Admin -> General Settings** controls whe
 - Enabled (default): public pages and public endpoints remain reachable for unauthenticated users.
 - Disabled: unauthenticated users are redirected to `/login`, and pages are only accessible to logged-in users.
 
+## Resource Group Visibility
+
+Under **Admin -> Manage Resources**, each group can be assigned a visibility mode:
+
+- `PUBLIC`: group and resources are visible to all users.
+- `AUTHENTICATED`: group and resources are visible only to authenticated users.
+- `HIDDEN`: group and resources are hidden from dashboard and public resource API views.
+
+Notes:
+
+- Ungrouped resources are always treated as visible.
+- Group visibility is evaluated in addition to the global **Allow public access** gate above.
+- If global public access is disabled, anonymous users cannot access public pages regardless of per-group visibility.
+
 ## Public "Check Now"
 
 If **Allow public "Check Now"** is enabled in **Admin -> General Settings**, unauthenticated users can trigger manual checks from resource detail pages.

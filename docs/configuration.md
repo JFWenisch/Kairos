@@ -13,6 +13,7 @@ For easier navigation, each major topic is documented on a dedicated page.
 - [Observability](configuration-observability.md)
 - [Runtime (Tomcat)](configuration-runtime.md)
 - [Security (General Settings, public access, URL visibility, CORS)](configuration-security.md)
+- [Resource group visibility (PUBLIC, AUTHENTICATED, HIDDEN)](configuration-security.md#resource-group-visibility)
 
 ## Related Operational Guides
 

@@ -11,6 +11,10 @@ The feature is available under `Admin -> Manage Resources`.
 - Update existing resources during import when the same resource already exists
 - Keep the format stable across future versions through a versioned exchange envelope
 
+The import/export workflow covers monitored resources only.
+
+- Resource groups and their visibility settings (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`) are managed separately in **Admin -> Manage Resources**.
+
 ## Admin Workflow
 
 On the `Manage Resources` page you can:

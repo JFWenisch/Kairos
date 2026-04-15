@@ -9,6 +9,7 @@ import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceGroupService;
@@ -26,6 +27,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -67,8 +69,12 @@ public class ApiController {
         @ApiResponse(responseCode = "200", description = "Successful – list of active resources (may be empty)")
     })
     @GetMapping("/resources")
-    public ResponseEntity<List<MonitoredResource>> listResources() {
-        return ResponseEntity.ok(resourceService.findAllActive());
+    public ResponseEntity<List<MonitoredResource>> listResources(Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
+        List<MonitoredResource> visibleResources = resourceService.findAllActive().stream()
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
+        return ResponseEntity.ok(visibleResources);
     }
 
     @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -90,8 +96,13 @@ public class ApiController {
     @GetMapping("/resources/{id}/status-update")
     public ResponseEntity<ResourceStatusUpdateDTO> getResourceStatusUpdateByResourceId(
             @PathVariable Long id,
-            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+            @RequestParam(name = "hours", defaultValue = "24") int hours,
+            Authentication authentication) {
         int normalizedHours = normalizeTimelineHours(hours);
+        boolean authenticated = isAuthenticated(authentication);
+        if (resourceService.findById(id).filter(resource -> isVisibleByGroupPolicy(resource, authenticated)).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
         return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -100,9 +111,12 @@ public class ApiController {
     @GetMapping("/resources/{id}/latency-samples")
     public ResponseEntity<List<LatencySampleDTO>> getResourceLatencySamples(
             @PathVariable Long id,
-            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+            @RequestParam(name = "hours", defaultValue = "24") int hours,
+            Authentication authentication) {
         int normalizedHours = normalizeTimelineHours(hours);
+        boolean authenticated = isAuthenticated(authentication);
         return resourceService.findById(id)
+            .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
                 .map(resource -> ResponseEntity.ok(resourceService.getLatencySamples(resource, normalizedHours)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -134,8 +148,11 @@ public class ApiController {
     @GetMapping("/resources/{id}")
     public ResponseEntity<ResourceDetailsDTO> getResourceById(
             @Parameter(description = "Unique ID of the monitored resource", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
         return resourceService.findById(id)
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
                 .map(resource -> {
                     Optional<CheckResult> latestCheckResult = resourceService.getLatestCheckResult(resource);
                     ResourceDetailsDTO response = new ResourceDetailsDTO(
@@ -159,6 +176,26 @@ public class ApiController {
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
+        ResourceGroup group = resource.getGroup();
+        if (group == null) {
+            return true;
+        }
+
+        ResourceGroupVisibility visibility = group.getVisibilityOrDefault();
+        return switch (visibility) {
+            case PUBLIC -> true;
+            case AUTHENTICATED -> authenticated;
+            case HIDDEN -> false;
+        };
     }
 
     /**

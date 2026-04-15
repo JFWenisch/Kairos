@@ -70,6 +70,12 @@ Authorization: ApiKey <api-key-jwt>
 | `PUT /api/announcements/{id}` | `ADMIN` (session or API key) |
 | `DELETE /api/announcements/{id}` | `ADMIN` (session or API key) |
 
+Resource visibility note:
+
+- `GET /api/resources` and `GET /api/resources/{id}` return only resources visible under their group's visibility policy (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`).
+- Resources in `AUTHENTICATED` groups are omitted for anonymous callers.
+- Resources in `HIDDEN` groups are omitted for all public API views.
+
 ---
 
 ## CORS (Cross-Origin Resource Sharing)
@@ -118,7 +124,7 @@ If no origins are configured, the CORS headers are **not sent** for any cross-or
 
 ### `GET /api/resources`
 
-Returns all **active** monitored resources.
+Returns all **active** monitored resources visible to the current caller under group visibility policy.
 
 **Response** `200 OK`
 
@@ -149,6 +155,8 @@ Returns all **active** monitored resources.
 ### `GET /api/resources/{id}`
 
 Returns a single resource by ID including general information and latest health status.
+
+Returns `404` when the resource does not exist **or** is not visible to the caller due to group visibility policy.
 
 **Response** `200 OK`
 
@@ -395,7 +403,7 @@ GET /actuator/prometheus
 
 ### `GET /api/resources`
 
-Returns all **active** monitored resources.
+Returns all **active** monitored resources visible to the current caller under group visibility policy.
 
 **Response** `200 OK`
 
@@ -425,6 +433,8 @@ Returns all **active** monitored resources.
 ### `GET /api/resources/{id}`
 
 Returns a single resource by ID including general resource information and latest health status.
+
+Returns `404` when the resource does not exist **or** is not visible to the caller due to group visibility policy.
 
 **Response** `200 OK`
 

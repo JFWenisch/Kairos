@@ -11,6 +11,7 @@ import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
@@ -64,7 +65,10 @@ public class HomeController {
             return "redirect:/login";
         }
 
-        List<MonitoredResource> resources = resourceService.findAllActive();
+        boolean authenticated = isAuthenticated(authentication);
+        List<MonitoredResource> resources = resourceService.findAllActive().stream()
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
 
         List<MonitoredResource> ungroupedResources = new ArrayList<>();
         Map<Long, ResourceGroup> groupsById = new LinkedHashMap<>();
@@ -190,6 +194,12 @@ public class HomeController {
     public String runManualCheck(@PathVariable Long id,
                                  Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
+        MonitoredResource resource = resourceService.findById(id).orElse(null);
+        if (resource == null || !isVisibleByGroupPolicy(resource, isAuthenticated(authentication))) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Resource not found.");
+            return "redirect:/";
+        }
+
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !isPublicCheckNowAllowed()) {
@@ -224,8 +234,13 @@ public class HomeController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         model.addAttribute("allowCheckNow", isAdmin || isPublicCheckNowAllowed());
         model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
+        boolean authenticated = isAuthenticated(authentication);
 
         return resourceService.findById(id).map(resource -> {
+            if (!isVisibleByGroupPolicy(resource, authenticated)) {
+                return "redirect:/";
+            }
+
             int sanitizedPage = Math.max(0, page);
             int sanitizedSize = normalizePageSize(size);
             CheckStatus statusFilter = parseStatus(status);
@@ -479,6 +494,20 @@ public class HomeController {
         return authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
+        ResourceGroup group = resource.getGroup();
+        if (group == null) {
+            return true;
+        }
+
+        ResourceGroupVisibility visibility = group.getVisibilityOrDefault();
+        return switch (visibility) {
+            case PUBLIC -> true;
+            case AUTHENTICATED -> authenticated;
+            case HIDDEN -> false;
+        };
     }
 
     private String normalizeHexColor(String raw) {
