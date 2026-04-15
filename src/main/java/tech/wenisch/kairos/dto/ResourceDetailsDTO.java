@@ -5,14 +5,18 @@ import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.ResourceType;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ResourceDetailsDTO(
         Long id,
         String name,
         ResourceType resourceType,
         String target,
+        /** @deprecated Use {@code groups} instead. */
         Long groupId,
+        /** @deprecated Use {@code groups} instead. */
         String groupName,
+        List<GroupSummaryDTO> groups,
         int displayOrder,
         @JsonProperty("skipTLS")
         boolean skipTls,

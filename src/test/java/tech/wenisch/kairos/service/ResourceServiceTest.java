@@ -136,9 +136,9 @@ class ResourceServiceTest {
             .name("alpine")
             .resourceType(ResourceType.DOCKER)
             .target("registry.example.com/images/alpine:latest")
-            .group(managedGroup)
             .active(true)
             .build();
+        managedDocker.getGroups().add(managedGroup);
 
         CheckResult managedHistory = CheckResult.builder().id(100L).resource(managedDocker).build();
         CheckResult repositoryHistory = CheckResult.builder().id(101L).resource(dockerRepository).build();
@@ -151,8 +151,8 @@ class ResourceServiceTest {
             .build()));
         when(resourceGroupRepository.findByNameIgnoreCase("registry")).thenReturn(Optional.of(managedGroup));
         when(resourceGroupRepository.findByNameIgnoreCase("Dockerrepository: https://registry.example.com/registry/images/")).thenReturn(Optional.empty());
-        when(resourceRepository.findByGroup_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
-        when(resourceRepository.findByGroup_Id(15L)).thenReturn(List.of());
+        when(resourceRepository.findByGroups_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
+        when(resourceRepository.findByGroups_Id(15L)).thenReturn(List.of());
         when(outageRepository.findByResourceOrderByStartDateDesc(managedDocker)).thenReturn(List.of(managedOutage));
         when(outageRepository.findByResourceOrderByStartDateDesc(dockerRepository)).thenReturn(List.of(repositoryOutage));
         when(checkResultRepository.findByResourceOrderByCheckedAtDesc(managedDocker)).thenReturn(List.of(managedHistory));
@@ -260,16 +260,19 @@ class ResourceServiceTest {
     @Test
     void clearGroupAssignmentUnsetsGroupAndSavesAll() {
         ResourceGroup group = ResourceGroup.builder().id(1L).name("backend").build();
-        MonitoredResource one = MonitoredResource.builder().id(1L).group(group).build();
-        MonitoredResource two = MonitoredResource.builder().id(2L).group(group).build();
+        MonitoredResource one = MonitoredResource.builder().id(1L).build();
+        one.getGroups().add(group);
+        MonitoredResource two = MonitoredResource.builder().id(2L).build();
+        two.getGroups().add(group);
 
-        when(resourceRepository.findByGroup_Id(1L)).thenReturn(List.of(one, two));
+        when(resourceRepository.findByGroups_Id(1L)).thenReturn(List.of(one, two));
+        when(resourceGroupRepository.findById(1L)).thenReturn(Optional.of(group));
 
         int count = resourceService.clearGroupAssignment(1L);
 
         assertThat(count).isEqualTo(2);
-        assertThat(one.getGroup()).isNull();
-        assertThat(two.getGroup()).isNull();
+        assertThat(one.getGroups()).doesNotContain(group);
+        assertThat(two.getGroups()).doesNotContain(group);
         verify(resourceRepository).saveAll(List.of(one, two));
     }
 

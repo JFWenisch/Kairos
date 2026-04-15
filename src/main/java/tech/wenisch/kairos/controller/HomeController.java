@@ -38,6 +38,7 @@ import org.springframework.http.HttpStatus;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -75,12 +76,13 @@ public class HomeController {
         Map<Long, List<MonitoredResource>> groupedResourceMap = new LinkedHashMap<>();
 
         for (MonitoredResource resource : resources) {
-            ResourceGroup group = resource.getGroup();
-            if (group == null) {
+            if (resource.getGroups().isEmpty()) {
                 ungroupedResources.add(resource);
             } else {
-                groupsById.putIfAbsent(group.getId(), group);
-                groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(resource);
+                for (ResourceGroup group : resource.getGroups()) {
+                    groupsById.putIfAbsent(group.getId(), group);
+                    groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(resource);
+                }
             }
         }
 
@@ -497,13 +499,15 @@ public class HomeController {
     }
 
     private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
-        ResourceGroup group = resource.getGroup();
-        if (group == null) {
+        if (resource.getGroups().isEmpty()) {
             return true;
         }
-
-        ResourceGroupVisibility visibility = group.getVisibilityOrDefault();
-        return switch (visibility) {
+        // Most-permissive rule: take the least-restrictive visibility across all groups.
+        ResourceGroupVisibility effective = resource.getGroups().stream()
+                .map(ResourceGroup::getVisibilityOrDefault)
+                .min(Comparator.comparingInt(ResourceGroupVisibility::ordinal))
+                .orElse(ResourceGroupVisibility.PUBLIC);
+        return switch (effective) {
             case PUBLIC -> true;
             case AUTHENTICATED -> authenticated;
             case HIDDEN -> false;

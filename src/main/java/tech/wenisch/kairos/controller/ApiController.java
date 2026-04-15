@@ -1,6 +1,7 @@
 package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.AnnouncementDTO;
+import tech.wenisch.kairos.dto.GroupSummaryDTO;
 import tech.wenisch.kairos.dto.LatencySampleDTO;
 import tech.wenisch.kairos.dto.ResourceDTO;
 import tech.wenisch.kairos.dto.ResourceDetailsDTO;
@@ -155,13 +156,20 @@ public class ApiController {
                 .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
                 .map(resource -> {
                     Optional<CheckResult> latestCheckResult = resourceService.getLatestCheckResult(resource);
+                    List<GroupSummaryDTO> groupDtos = resource.getGroups().stream()
+                            .sorted(java.util.Comparator.comparing(tech.wenisch.kairos.entity.ResourceGroup::getId))
+                            .map(g -> new GroupSummaryDTO(g.getId(), g.getName()))
+                            .toList();
+                    Long firstGroupId = groupDtos.isEmpty() ? null : groupDtos.get(0).id();
+                    String firstGroupName = groupDtos.isEmpty() ? null : groupDtos.get(0).name();
                     ResourceDetailsDTO response = new ResourceDetailsDTO(
                             resource.getId(),
                             resource.getName(),
                             resource.getResourceType(),
                             resource.getTarget(),
-                            resource.getGroup() != null ? resource.getGroup().getId() : null,
-                            resource.getGroup() != null ? resource.getGroup().getName() : null,
+                            firstGroupId,
+                            firstGroupName,
+                            groupDtos,
                             resource.getDisplayOrder(),
                             resource.isSkipTls(),
                             resource.isRecursive(),
@@ -185,13 +193,15 @@ public class ApiController {
     }
 
     private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
-        ResourceGroup group = resource.getGroup();
-        if (group == null) {
+        if (resource.getGroups().isEmpty()) {
             return true;
         }
-
-        ResourceGroupVisibility visibility = group.getVisibilityOrDefault();
-        return switch (visibility) {
+        // Most-permissive rule: take the least-restrictive visibility across all groups.
+        ResourceGroupVisibility effective = resource.getGroups().stream()
+                .map(ResourceGroup::getVisibilityOrDefault)
+                .min(java.util.Comparator.comparingInt(ResourceGroupVisibility::ordinal))
+                .orElse(ResourceGroupVisibility.PUBLIC);
+        return switch (effective) {
             case PUBLIC -> true;
             case AUTHENTICATED -> authenticated;
             case HIDDEN -> false;

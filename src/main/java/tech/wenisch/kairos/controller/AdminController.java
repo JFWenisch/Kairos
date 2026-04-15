@@ -31,10 +31,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Controller
@@ -244,9 +246,13 @@ public class AdminController {
                 continue;
             }
 
-            Long resourceGroupId = resource.getGroup() != null ? resource.getGroup().getId() : null;
-            if (!Objects.equals(resourceGroupId, groupId)) {
-                resource.setGroup(targetGroup);
+            boolean alreadyInGroup = targetGroup == null
+                    ? resource.getGroups().isEmpty()
+                    : resource.getGroups().stream().anyMatch(g -> Objects.equals(g.getId(), groupId));
+            if (!alreadyInGroup) {
+                if (targetGroup != null) {
+                    resource.getGroups().add(targetGroup);
+                }
                 reassigned++;
             }
 
@@ -348,7 +354,7 @@ public class AdminController {
                               @RequestParam String target,
                               @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
                       @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
-                              @RequestParam(required = false) Long groupId,
+                              @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
                               @RequestParam(defaultValue = "0") int displayOrder,
                               RedirectAttributes redirectAttributes) {
         MonitoredResource resource = MonitoredResource.builder()
@@ -359,8 +365,8 @@ public class AdminController {
                 .recursive(recursive)
                 .active(true)
                 .displayOrder(displayOrder)
-                .group(resolveGroup(groupId))
                 .build();
+        resolveGroups(groupIds).forEach(resource.getGroups()::add);
         MonitoredResource saved = resourceService.save(resource);
         checkExecutorService.runImmediateCheck(saved);
         redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
@@ -369,14 +375,15 @@ public class AdminController {
 
     @PostMapping("/resources/update/{id}")
     public String updateResourceGrouping(@PathVariable Long id,
-                                         @RequestParam(required = false) Long groupId,
+                                         @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
                                          @RequestParam(defaultValue = "0") int displayOrder,
                                          RedirectAttributes redirectAttributes) {
         resourceService.findById(id).ifPresent(resource -> {
-            resource.setGroup(resolveGroup(groupId));
+            resource.getGroups().clear();
+            resolveGroups(groupIds).forEach(resource.getGroups()::add);
             resource.setDisplayOrder(displayOrder);
             resourceService.save(resource);
-            redirectAttributes.addFlashAttribute("successMessage", "Resource order updated: " + resource.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
         });
         return "redirect:/admin/resources";
     }
@@ -405,7 +412,7 @@ public class AdminController {
                                  @RequestParam String target,
                                  @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
                                  @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
-                                 @RequestParam(required = false) Long groupId,
+                                 @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
                                  @RequestParam(defaultValue = "0") int displayOrder,
                                  RedirectAttributes redirectAttributes) {
         resourceService.findById(id).ifPresentOrElse(resource -> {
@@ -414,7 +421,8 @@ public class AdminController {
             resource.setTarget(target == null ? "" : target.trim());
             resource.setSkipTls(skipTls);
             resource.setRecursive(recursive);
-            resource.setGroup(resolveGroup(groupId));
+            resource.getGroups().clear();
+            resolveGroups(groupIds).forEach(resource.getGroups()::add);
             resource.setDisplayOrder(displayOrder);
             MonitoredResource saved = resourceService.save(resource);
             checkExecutorService.runImmediateCheck(saved);
@@ -641,6 +649,20 @@ public class AdminController {
         return resourceGroupService.findById(groupId).orElse(null);
     }
 
+    private Set<ResourceGroup> resolveGroups(List<Long> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<ResourceGroup> groups = new HashSet<>();
+        for (Long gid : groupIds) {
+            ResourceGroup g = resolveGroup(gid);
+            if (g != null) {
+                groups.add(g);
+            }
+        }
+        return groups;
+    }
+
     private List<AdminResourceGroupViewModel> buildAdminResourceGroups(List<MonitoredResource> resources,
                                                                         List<ResourceGroup> groups) {
         Map<Long, List<MonitoredResource>> byGroupId = new LinkedHashMap<>();
@@ -655,11 +677,13 @@ public class AdminController {
                 continue;
             }
 
-            if (resource.getGroup() == null) {
+            if (resource.getGroups().isEmpty()) {
                 ungrouped.add(resource);
                 continue;
             }
-            byGroupId.computeIfAbsent(resource.getGroup().getId(), ignored -> new ArrayList<>()).add(resource);
+            for (ResourceGroup g : resource.getGroups()) {
+                byGroupId.computeIfAbsent(g.getId(), ignored -> new ArrayList<>()).add(resource);
+            }
         }
 
         List<AdminResourceGroupViewModel> result = new ArrayList<>();

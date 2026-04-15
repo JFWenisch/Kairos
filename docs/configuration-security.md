@@ -39,11 +39,25 @@ Under **Admin -> Manage Resources**, each group can be assigned a visibility mod
 - `AUTHENTICATED`: group and resources are visible only to authenticated users.
 - `HIDDEN`: group and resources are hidden from dashboard and public resource API views.
 
-Notes:
+### Multi-group assignment
+
+A resource can belong to **more than one group**. In the resource table and on the edit page, hold **Ctrl** (Windows/Linux) or **⌘** (macOS) to select multiple groups. Deselecting all groups leaves the resource ungrouped.
+
+When a resource belongs to multiple groups, the **most-permissive** visibility across all of its groups is applied:
+
+| Assigned groups | Effective visibility |
+|---|---|
+| `PUBLIC`, `HIDDEN` | `PUBLIC` (most permissive wins) |
+| `AUTHENTICATED`, `HIDDEN` | `AUTHENTICATED` |
+| `HIDDEN` only | `HIDDEN` |
+| None (ungrouped) | Always visible |
+
+### Notes
 
 - Ungrouped resources are always treated as visible.
 - Group visibility is evaluated in addition to the global **Allow public access** gate above.
 - If global public access is disabled, anonymous users cannot access public pages regardless of per-group visibility.
+- A resource will appear in **every** group it belongs to on the dashboard.
 
 ## Public "Check Now"
 

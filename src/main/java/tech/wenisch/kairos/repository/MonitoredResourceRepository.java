@@ -10,31 +10,28 @@ import java.util.List;
 @Repository
 public interface MonitoredResourceRepository extends JpaRepository<MonitoredResource, Long> {
     @Query("""
-            select r from MonitoredResource r
-            left join fetch r.group g
+            select distinct r from MonitoredResource r
+            left join fetch r.groups g
             where r.active = true
-                                                        and r.resourceType in (
-                                                                        tech.wenisch.kairos.entity.ResourceType.HTTP,
-                                                                        tech.wenisch.kairos.entity.ResourceType.DOCKER
-                                                        )
-            order by case when g.id is null then 0 else 1 end,
-                     g.displayOrder asc,
-                     r.displayOrder asc,
+                and r.resourceType in (
+                    tech.wenisch.kairos.entity.ResourceType.HTTP,
+                    tech.wenisch.kairos.entity.ResourceType.DOCKER
+                )
+            order by r.displayOrder asc,
                      lower(r.name) asc
             """)
     List<MonitoredResource> findAllActiveForLanding();
 
     @Query("""
-            select r from MonitoredResource r
-            left join fetch r.group g
-            order by case when g.id is null then 0 else 1 end,
-                     g.displayOrder asc,
-                     r.displayOrder asc,
+            select distinct r from MonitoredResource r
+            left join fetch r.groups g
+            order by r.displayOrder asc,
                      lower(r.name) asc
             """)
     List<MonitoredResource> findAllForAdmin();
 
     List<MonitoredResource> findByResourceTypeAndActiveTrue(ResourceType resourceType);
-    List<MonitoredResource> findByGroup_Id(Long groupId);
-        List<MonitoredResource> findByGroup_IdAndResourceType(Long groupId, ResourceType resourceType);
+    List<MonitoredResource> findByResourceType(ResourceType resourceType);
+    List<MonitoredResource> findByGroups_Id(Long groupId);
+    List<MonitoredResource> findByGroups_IdAndResourceType(Long groupId, ResourceType resourceType);
 }

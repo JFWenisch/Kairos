@@ -97,7 +97,7 @@ public class ResourceService {
                 }
 
                 List<MonitoredResource> managedResources = resourceRepository
-                        .findByGroup_IdAndResourceType(group.getId(), ResourceType.DOCKER);
+                        .findByGroups_IdAndResourceType(group.getId(), ResourceType.DOCKER);
 
                 for (MonitoredResource managedResource : managedResources) {
                     deleteOrNullifyOutages(managedResource, deleteOutages);
@@ -106,7 +106,7 @@ public class ResourceService {
                     resourceRepository.delete(managedResource);
                 }
 
-                if (resourceRepository.findByGroup_Id(group.getId()).isEmpty()) {
+                if (resourceRepository.findByGroups_Id(group.getId()).isEmpty()) {
                     resourceGroupRepository.delete(group);
                 }
             });
@@ -376,10 +376,10 @@ public class ResourceService {
 
     @Transactional
     public int clearGroupAssignment(Long groupId) {
-        List<MonitoredResource> resources = resourceRepository.findByGroup_Id(groupId);
-        for (MonitoredResource resource : resources) {
-            resource.setGroup(null);
-        }
+        List<MonitoredResource> resources = resourceRepository.findByGroups_Id(groupId);
+        resourceGroupRepository.findById(groupId).ifPresent(group ->
+            resources.forEach(resource -> resource.getGroups().remove(group))
+        );
         resourceRepository.saveAll(resources);
         return resources.size();
     }

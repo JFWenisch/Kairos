@@ -72,9 +72,11 @@ Authorization: ApiKey <api-key-jwt>
 
 Resource visibility note:
 
-- `GET /api/resources` and `GET /api/resources/{id}` return only resources visible under their group's visibility policy (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`).
-- Resources in `AUTHENTICATED` groups are omitted for anonymous callers.
-- Resources in `HIDDEN` groups are omitted for all public API views.
+- `GET /api/resources` and `GET /api/resources/{id}` return only resources visible under their group visibility policy.
+- A resource can belong to **multiple groups**. The **most-permissive** visibility across all assigned groups is applied.
+- Resources whose effective visibility is `AUTHENTICATED` are omitted for anonymous callers.
+- Resources whose effective visibility is `HIDDEN` (all groups are `HIDDEN` and there is no more-permissive group) are omitted for all public API views.
+- Ungrouped resources are always returned.
 
 ---
 
@@ -166,6 +168,12 @@ Returns `404` when the resource does not exist **or** is not visible to the call
   "name": "GitHub",
   "resourceType": "HTTP",
   "target": "https://github.com",
+  "groupId": 3,
+  "groupName": "External",
+  "groups": [
+    { "id": 3, "name": "External" },
+    { "id": 7, "name": "CI/CD" }
+  ],
   "skipTLS": false,
   "active": true,
   "createdAt": "2026-03-11T10:00:00",
@@ -177,7 +185,9 @@ Returns `404` when the resource does not exist **or** is not visible to the call
 }
 ```
 
-**Response** `404 Not Found` — if the resource ID does not exist.
+> **Note:** `groupId` and `groupName` are retained for backward compatibility and reflect the first group (sorted by ID). Prefer the `groups` array for multi-group-aware clients.
+
+**Response** `404 Not Found` — if the resource ID does not exist or is not visible to the caller due to group visibility policy.
 
 ---
 

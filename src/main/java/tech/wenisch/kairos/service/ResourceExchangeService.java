@@ -97,11 +97,10 @@ public class ResourceExchangeService {
             resource.setDisplayOrder(readInt(node, "displayOrder", "order").orElse(0));
 
             String groupName = firstText(node, "groupName", "group");
+            resource.getGroups().clear();
             if (groupName != null && !groupName.isBlank()) {
                 // Keep YAML compatibility simple by importing group names as plain labels when available.
-                resource.setGroup(resourceService.findOrCreateGroupByName(groupName.trim()));
-            } else {
-                resource.setGroup(null);
+                resource.getGroups().add(resourceService.findOrCreateGroupByName(groupName.trim()));
             }
 
             if (isNew) {
@@ -130,7 +129,8 @@ public class ResourceExchangeService {
         node.put("recursive", resource.isRecursive());
         node.put("active", resource.isActive());
         node.put("displayOrder", resource.getDisplayOrder());
-        node.put("groupName", resource.getGroup() != null ? resource.getGroup().getName() : null);
+        node.put("groupName", resource.getGroups().isEmpty() ? null
+                : resource.getGroups().iterator().next().getName());
         node.put("createdAt", resource.getCreatedAt());
         return node;
     }

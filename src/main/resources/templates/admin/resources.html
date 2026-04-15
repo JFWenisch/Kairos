@@ -176,13 +176,14 @@
                                         <code class="small" th:text="${resource.target}">target</code>
                                     </div>
                                     <div class="col-lg-2">
-                                        <select class="form-select form-select-sm" name="groupId" th:attr="form=${formId}">
-                                            <option value="">Ungrouped</option>
+                                        <select class="form-select form-select-sm" name="groupIds" multiple
+                                                th:attr="form=${formId}" size="3">
                                             <option th:each="group : ${resourceGroups}"
                                                     th:value="${group.id}"
-                                                    th:selected="${resource.group != null and resource.group.id == group.id}"
+                                                    th:selected="${resource.groups != null and resource.groups.![id].contains(group.id)}"
                                                     th:text="${group.name}">Group</option>
                                         </select>
+                                        <div class="form-text small">Hold Ctrl/⌘ to select multiple</div>
                                     </div>
                                     <div class="col-lg-1">
                                         <input type="number" class="form-control form-control-sm" name="displayOrder"
@@ -276,11 +277,11 @@
                         <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Group</label>
-                        <select class="form-select" name="groupId">
-                            <option value="">Ungrouped</option>
+                        <label class="form-label">Groups</label>
+                        <select class="form-select" name="groupIds" multiple size="4">
                             <option th:each="group : ${resourceGroups}" th:value="${group.id}" th:text="${group.name}">Group</option>
                         </select>
+                        <div class="form-text">Hold Ctrl/⌘ to select multiple groups. Leave empty to leave ungrouped.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Order</label>

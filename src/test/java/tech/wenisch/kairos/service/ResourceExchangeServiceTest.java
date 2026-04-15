@@ -74,8 +74,8 @@ class ResourceExchangeServiceTest {
                 .name("DB")
                 .resourceType(ResourceType.HTTP)
                 .target("https://db.example.com")
-                .group(group)
                 .build();
+        r.getGroups().add(group);
         when(resourceService.findAll()).thenReturn(List.of(r));
 
         String yaml = resourceExchangeService.exportResourcesAsYaml();
@@ -259,7 +259,7 @@ class ResourceExchangeServiceTest {
 
         resourceExchangeService.importResourcesFromYaml(file);
 
-        verify(resourceService).save(argThat(r -> group.equals(r.getGroup())));
+        verify(resourceService).save(argThat(r -> r.getGroups().contains(group)));
     }
 
     @Test

@@ -86,7 +86,7 @@ Then open `http://localhost:8080`.
 
 1. Change the default admin password.
 2. Add your first resource in **Admin -> Manage Resources**.
-3. Create or edit a resource group and set its visibility (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`) as needed.
+3. Create or edit a resource group and set its visibility (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`) as needed. A resource can belong to **multiple groups** — hold Ctrl/⌘ in the group selector to assign more than one.
 4. Trigger a manual check on the resource detail page.
 5. Optionally create an API key in **Admin -> API Keys** for automation.
 
