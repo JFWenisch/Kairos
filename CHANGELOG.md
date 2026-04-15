@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.10.2 - 2026-04-15
+
+### [1.10.2](https://github.com/wenisch-tech/Kairos/compare/v1.10.1...v1.10.2) (2026-04-15)
+
+
+### Documentation
+
+* updated release to include information about attestation and sbom ([5f08849](https://github.com/wenisch-tech/Kairos/commit/5f088491ded154576578973bb9857ecc6b90f3e1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.10.2
+
+
 ## v1.10.0 - 2026-04-14
 
 ## [1.10.0](https://github.com/wenisch-tech/Kairos/compare/v1.9.0...v1.10.0) (2026-04-14)
