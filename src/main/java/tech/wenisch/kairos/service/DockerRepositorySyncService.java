@@ -57,8 +57,7 @@ public class DockerRepositorySyncService {
         RepositoryRef repositoryRef = parseRepositoryRef(sourceResource.getTarget());
         Set<String> discoveredRepositories = discoverRepositories(repositoryRef, sourceResource);
 
-        String groupName = "Dockerrepository: " + repositoryRef.originalInput();
-        ResourceGroup targetGroup = resourceService.findOrCreateGroupByName(groupName);
+        ResourceGroup targetGroup = resourceService.findOrCreateManagedDockerGroup(sourceResource);
 
         List<MonitoredResource> existingResources = resourceRepository
                 .findByGroup_IdAndResourceType(targetGroup.getId(), ResourceType.DOCKER);

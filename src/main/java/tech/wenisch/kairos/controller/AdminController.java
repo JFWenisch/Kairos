@@ -644,7 +644,9 @@ public class AdminController {
 
         for (MonitoredResource resource : resources) {
             if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-                dockerRepositoryByManagedGroupName.put(managedGroupName(resource.getTarget()), resource);
+                for (String managedGroupName : resourceService.managedGroupNames(resource)) {
+                    dockerRepositoryByManagedGroupName.put(managedGroupName, resource);
+                }
                 continue;
             }
 
@@ -675,10 +677,5 @@ public class AdminController {
         }
 
         return result;
-    }
-
-    private String managedGroupName(String target) {
-        String normalizedTarget = target == null ? "" : target.trim();
-        return "Dockerrepository: " + normalizedTarget;
     }
 }

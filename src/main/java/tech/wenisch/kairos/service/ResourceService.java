@@ -50,7 +50,16 @@ public class ResourceService {
         if (resource.getCreatedAt() == null) {
             resource.setCreatedAt(LocalDateTime.now());
         }
-        return resourceRepository.save(resource);
+        MonitoredResource existing = null;
+        if (resource.getId() != null && resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            existing = resourceRepository.findById(resource.getId()).orElse(null);
+        }
+
+        MonitoredResource saved = resourceRepository.save(resource);
+        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            renameManagedDockerGroupIfNeeded(existing, saved);
+        }
+        return saved;
     }
 
     @Transactional
@@ -80,27 +89,108 @@ public class ResourceService {
     }
 
     private void deleteManagedDockerResources(MonitoredResource dockerRepositoryResource, boolean deleteOutages) {
-        String groupName = managedGroupName(dockerRepositoryResource);
-        resourceGroupRepository.findByNameIgnoreCase(groupName).ifPresent(group -> {
-            List<MonitoredResource> managedResources = resourceRepository
-                    .findByGroup_IdAndResourceType(group.getId(), ResourceType.DOCKER);
+        Set<Long> processedGroupIds = new HashSet<>();
+        for (String groupName : managedGroupNames(dockerRepositoryResource)) {
+            resourceGroupRepository.findByNameIgnoreCase(groupName).ifPresent(group -> {
+                if (!processedGroupIds.add(group.getId())) {
+                    return;
+                }
 
-            for (MonitoredResource managedResource : managedResources) {
-                deleteOrNullifyOutages(managedResource, deleteOutages);
-                checkResultRepository.findByResourceOrderByCheckedAtDesc(managedResource)
-                        .forEach(checkResultRepository::delete);
-                resourceRepository.delete(managedResource);
+                List<MonitoredResource> managedResources = resourceRepository
+                        .findByGroup_IdAndResourceType(group.getId(), ResourceType.DOCKER);
+
+                for (MonitoredResource managedResource : managedResources) {
+                    deleteOrNullifyOutages(managedResource, deleteOutages);
+                    checkResultRepository.findByResourceOrderByCheckedAtDesc(managedResource)
+                            .forEach(checkResultRepository::delete);
+                    resourceRepository.delete(managedResource);
+                }
+
+                if (resourceRepository.findByGroup_Id(group.getId()).isEmpty()) {
+                    resourceGroupRepository.delete(group);
+                }
+            });
+        }
+    }
+
+    public ResourceGroup findOrCreateManagedDockerGroup(MonitoredResource dockerRepositoryResource) {
+        String preferredGroupName = managedGroupName(dockerRepositoryResource);
+        Optional<ResourceGroup> existingPreferred = resourceGroupRepository.findByNameIgnoreCase(preferredGroupName);
+        if (existingPreferred.isPresent()) {
+            return existingPreferred.get();
+        }
+
+        for (String candidateName : managedGroupNames(dockerRepositoryResource)) {
+            if (candidateName.equalsIgnoreCase(preferredGroupName)) {
+                continue;
             }
 
-            if (resourceRepository.findByGroup_Id(group.getId()).isEmpty()) {
-                resourceGroupRepository.delete(group);
+            Optional<ResourceGroup> candidateGroup = resourceGroupRepository.findByNameIgnoreCase(candidateName);
+            if (candidateGroup.isPresent()) {
+                ResourceGroup group = candidateGroup.get();
+                group.setName(preferredGroupName);
+                return resourceGroupRepository.save(group);
             }
-        });
+        }
+
+        return resourceGroupRepository.save(ResourceGroup.builder()
+                .name(preferredGroupName)
+                .displayOrder(0)
+                .build());
+    }
+
+    public List<String> managedGroupNames(MonitoredResource dockerRepositoryResource) {
+        LinkedHashSet<String> groupNames = new LinkedHashSet<>();
+        groupNames.add(managedGroupName(dockerRepositoryResource));
+
+        String legacyGroupName = legacyManagedGroupName(dockerRepositoryResource.getTarget());
+        if (!legacyGroupName.isBlank()) {
+            groupNames.add(legacyGroupName);
+        }
+
+        return new ArrayList<>(groupNames);
     }
 
     private String managedGroupName(MonitoredResource dockerRepositoryResource) {
+        String name = dockerRepositoryResource.getName() == null ? "" : dockerRepositoryResource.getName().trim();
+        if (!name.isBlank()) {
+            return name;
+        }
+
         String target = dockerRepositoryResource.getTarget() == null ? "" : dockerRepositoryResource.getTarget().trim();
-        return "Dockerrepository: " + target;
+        return target;
+    }
+
+    private String legacyManagedGroupName(String target) {
+        String normalizedTarget = target == null ? "" : target.trim();
+        return normalizedTarget.isBlank() ? "" : "Dockerrepository: " + normalizedTarget;
+    }
+
+    private void renameManagedDockerGroupIfNeeded(MonitoredResource existing, MonitoredResource saved) {
+        String preferredGroupName = managedGroupName(saved);
+        Optional<ResourceGroup> existingPreferred = resourceGroupRepository.findByNameIgnoreCase(preferredGroupName);
+        if (existingPreferred.isPresent()) {
+            return;
+        }
+
+        LinkedHashSet<String> candidateNames = new LinkedHashSet<>(managedGroupNames(saved));
+        if (existing != null) {
+            candidateNames.addAll(managedGroupNames(existing));
+        }
+
+        for (String candidateName : candidateNames) {
+            if (candidateName.equalsIgnoreCase(preferredGroupName)) {
+                continue;
+            }
+
+            Optional<ResourceGroup> candidateGroup = resourceGroupRepository.findByNameIgnoreCase(candidateName);
+            if (candidateGroup.isPresent()) {
+                ResourceGroup group = candidateGroup.get();
+                group.setName(preferredGroupName);
+                resourceGroupRepository.save(group);
+                return;
+            }
+        }
     }
 
     public List<CheckResult> getHistory(Long resourceId, int limit) {
