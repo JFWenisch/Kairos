@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.5 - 2026-04-16
+
+### [1.12.5](https://github.com/wenisch-tech/Kairos/compare/v1.12.4...v1.12.5) (2026-04-16)
+
+
+### Bug Fixes
+
+* updated fetching of Resourcesgroups and sorting when using postgresql ([b5dde97](https://github.com/wenisch-tech/Kairos/commit/b5dde976702a522996003de86687e04a4262c026))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.5
+
+
 ## v1.12.4 - 2026-04-16
 
 ### [1.12.4](https://github.com/wenisch-tech/Kairos/compare/v1.12.3...v1.12.4) (2026-04-16)
