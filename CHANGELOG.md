@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.3 - 2026-04-15
+
+### [1.12.3](https://github.com/wenisch-tech/Kairos/compare/v1.12.2...v1.12.3) (2026-04-15)
+
+
+### Bug Fixes
+
+* switched to v16 migration to no op-ops, so no problems occur if resource group is not yet existing ([2c07d21](https://github.com/wenisch-tech/Kairos/commit/2c07d21f461c4fc51fe3429903d6bee5afb42315))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.3
+
+
 ## v1.11.1 - 2026-04-15
 
 ### [1.11.1](https://github.com/wenisch-tech/Kairos/compare/v1.11.0...v1.11.1) (2026-04-15)
