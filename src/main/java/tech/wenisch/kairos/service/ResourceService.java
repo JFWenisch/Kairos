@@ -21,12 +21,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ResourceService {
+
+    private static final Comparator<MonitoredResource> RESOURCE_ORDER =
+            Comparator.comparingInt(MonitoredResource::getDisplayOrder)
+                    .thenComparing(MonitoredResource::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
 
     private final MonitoredResourceRepository resourceRepository;
     private final CheckResultRepository checkResultRepository;
@@ -35,15 +40,21 @@ public class ResourceService {
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     public List<MonitoredResource> findAllActive() {
-        return resourceRepository.findAllActiveForLanding();
+        return sortResources(resourceRepository.findAllActiveForLanding());
     }
 
     public List<MonitoredResource> findAll() {
-        return resourceRepository.findAllForAdmin();
+        return sortResources(resourceRepository.findAllForAdmin());
     }
 
     public Optional<MonitoredResource> findById(Long id) {
         return resourceRepository.findById(id);
+    }
+
+    private List<MonitoredResource> sortResources(List<MonitoredResource> resources) {
+        return resources.stream()
+                .sorted(RESOURCE_ORDER)
+                .toList();
     }
 
     public MonitoredResource save(MonitoredResource resource) {

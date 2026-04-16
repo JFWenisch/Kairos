@@ -5,6 +5,7 @@ import tech.wenisch.kairos.entity.ResourceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 @Repository
@@ -17,16 +18,14 @@ public interface MonitoredResourceRepository extends JpaRepository<MonitoredReso
                     tech.wenisch.kairos.entity.ResourceType.HTTP,
                     tech.wenisch.kairos.entity.ResourceType.DOCKER
                 )
-            order by r.displayOrder asc,
-                     lower(r.name) asc
+            order by r.displayOrder asc
             """)
     List<MonitoredResource> findAllActiveForLanding();
 
     @Query("""
             select distinct r from MonitoredResource r
             left join fetch r.groups g
-            order by r.displayOrder asc,
-                     lower(r.name) asc
+            order by r.displayOrder asc
             """)
     List<MonitoredResource> findAllForAdmin();
 
