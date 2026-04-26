@@ -5,9 +5,13 @@ import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.dto.LatencySampleDTO;
+import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.OutageRepository;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -16,42 +20,188 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ResourceService {
 
+    private static final Comparator<MonitoredResource> RESOURCE_ORDER =
+            Comparator.comparingInt(MonitoredResource::getDisplayOrder)
+                    .thenComparing(MonitoredResource::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+
     private final MonitoredResourceRepository resourceRepository;
     private final CheckResultRepository checkResultRepository;
+    private final OutageRepository outageRepository;
     private final ResourceGroupRepository resourceGroupRepository;
+    private final ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     public List<MonitoredResource> findAllActive() {
-        return resourceRepository.findAllActiveForLanding();
+        return sortResources(resourceRepository.findAllActiveForLanding());
     }
 
     public List<MonitoredResource> findAll() {
-        return resourceRepository.findAllForAdmin();
+        return sortResources(resourceRepository.findAllForAdmin());
     }
 
     public Optional<MonitoredResource> findById(Long id) {
         return resourceRepository.findById(id);
     }
 
+    private List<MonitoredResource> sortResources(List<MonitoredResource> resources) {
+        return resources.stream()
+                .sorted(RESOURCE_ORDER)
+                .toList();
+    }
+
     public MonitoredResource save(MonitoredResource resource) {
         if (resource.getCreatedAt() == null) {
             resource.setCreatedAt(LocalDateTime.now());
         }
-        return resourceRepository.save(resource);
+        MonitoredResource existing = null;
+        if (resource.getId() != null && resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            existing = resourceRepository.findById(resource.getId()).orElse(null);
+        }
+
+        MonitoredResource saved = resourceRepository.save(resource);
+        if (saved.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+            renameManagedDockerGroupIfNeeded(existing, saved);
+        }
+        return saved;
     }
 
     @Transactional
     public void delete(Long id) {
+        boolean deleteOutages = resourceTypeConfigRepository.findAll().stream()
+                .anyMatch(c -> c.isDeleteOutagesOnResourceDelete());
         resourceRepository.findById(id).ifPresent(resource -> {
+            if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+                deleteManagedDockerResources(resource, deleteOutages);
+            }
+
+            deleteOrNullifyOutages(resource, deleteOutages);
             checkResultRepository.findByResourceOrderByCheckedAtDesc(resource)
                     .forEach(checkResultRepository::delete);
             resourceRepository.delete(resource);
         });
+    }
+
+    private void deleteOrNullifyOutages(MonitoredResource resource, boolean deleteOutages) {
+        List<tech.wenisch.kairos.entity.Outage> outages = outageRepository.findByResourceOrderByStartDateDesc(resource);
+        if (deleteOutages) {
+            outageRepository.deleteAll(outages);
+        } else {
+            outages.forEach(o -> o.setResource(null));
+            outageRepository.saveAll(outages);
+        }
+    }
+
+    private void deleteManagedDockerResources(MonitoredResource dockerRepositoryResource, boolean deleteOutages) {
+        Set<Long> processedGroupIds = new HashSet<>();
+        for (String groupName : managedGroupNames(dockerRepositoryResource)) {
+            resourceGroupRepository.findByNameIgnoreCase(groupName).ifPresent(group -> {
+                if (!processedGroupIds.add(group.getId())) {
+                    return;
+                }
+
+                List<MonitoredResource> managedResources = resourceRepository
+                        .findByGroups_IdAndResourceType(group.getId(), ResourceType.DOCKER);
+
+                for (MonitoredResource managedResource : managedResources) {
+                    deleteOrNullifyOutages(managedResource, deleteOutages);
+                    checkResultRepository.findByResourceOrderByCheckedAtDesc(managedResource)
+                            .forEach(checkResultRepository::delete);
+                    resourceRepository.delete(managedResource);
+                }
+
+                if (resourceRepository.findByGroups_Id(group.getId()).isEmpty()) {
+                    resourceGroupRepository.delete(group);
+                }
+            });
+        }
+    }
+
+    public ResourceGroup findOrCreateManagedDockerGroup(MonitoredResource dockerRepositoryResource) {
+        String preferredGroupName = managedGroupName(dockerRepositoryResource);
+        Optional<ResourceGroup> existingPreferred = resourceGroupRepository.findByNameIgnoreCase(preferredGroupName);
+        if (existingPreferred.isPresent()) {
+            return existingPreferred.get();
+        }
+
+        for (String candidateName : managedGroupNames(dockerRepositoryResource)) {
+            if (candidateName.equalsIgnoreCase(preferredGroupName)) {
+                continue;
+            }
+
+            Optional<ResourceGroup> candidateGroup = resourceGroupRepository.findByNameIgnoreCase(candidateName);
+            if (candidateGroup.isPresent()) {
+                ResourceGroup group = candidateGroup.get();
+                group.setName(preferredGroupName);
+                return resourceGroupRepository.save(group);
+            }
+        }
+
+        return resourceGroupRepository.save(ResourceGroup.builder()
+                .name(preferredGroupName)
+                .displayOrder(0)
+                .build());
+    }
+
+    public List<String> managedGroupNames(MonitoredResource dockerRepositoryResource) {
+        LinkedHashSet<String> groupNames = new LinkedHashSet<>();
+        groupNames.add(managedGroupName(dockerRepositoryResource));
+
+        String legacyGroupName = legacyManagedGroupName(dockerRepositoryResource.getTarget());
+        if (!legacyGroupName.isBlank()) {
+            groupNames.add(legacyGroupName);
+        }
+
+        return new ArrayList<>(groupNames);
+    }
+
+    private String managedGroupName(MonitoredResource dockerRepositoryResource) {
+        String name = dockerRepositoryResource.getName() == null ? "" : dockerRepositoryResource.getName().trim();
+        if (!name.isBlank()) {
+            return name;
+        }
+
+        String target = dockerRepositoryResource.getTarget() == null ? "" : dockerRepositoryResource.getTarget().trim();
+        return target;
+    }
+
+    private String legacyManagedGroupName(String target) {
+        String normalizedTarget = target == null ? "" : target.trim();
+        return normalizedTarget.isBlank() ? "" : "Dockerrepository: " + normalizedTarget;
+    }
+
+    private void renameManagedDockerGroupIfNeeded(MonitoredResource existing, MonitoredResource saved) {
+        String preferredGroupName = managedGroupName(saved);
+        Optional<ResourceGroup> existingPreferred = resourceGroupRepository.findByNameIgnoreCase(preferredGroupName);
+        if (existingPreferred.isPresent()) {
+            return;
+        }
+
+        LinkedHashSet<String> candidateNames = new LinkedHashSet<>(managedGroupNames(saved));
+        if (existing != null) {
+            candidateNames.addAll(managedGroupNames(existing));
+        }
+
+        for (String candidateName : candidateNames) {
+            if (candidateName.equalsIgnoreCase(preferredGroupName)) {
+                continue;
+            }
+
+            Optional<ResourceGroup> candidateGroup = resourceGroupRepository.findByNameIgnoreCase(candidateName);
+            if (candidateGroup.isPresent()) {
+                ResourceGroup group = candidateGroup.get();
+                group.setName(preferredGroupName);
+                resourceGroupRepository.save(group);
+                return;
+            }
+        }
     }
 
     public List<CheckResult> getHistory(Long resourceId, int limit) {
@@ -91,7 +241,10 @@ public class ResourceService {
         LocalDateTime since = LocalDateTime.now().minusHours(hours);
         List<CheckResult> results = checkResultRepository
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, since);
+        return computeUptimePercentage(results);
+    }
 
+    private double computeUptimePercentage(List<CheckResult> results) {
         if (results.isEmpty()) return 0.0;
 
         long available = results.stream()
@@ -108,17 +261,83 @@ public class ResourceService {
     /** Number of color-coded blocks displayed in the 24-hour timeline visualization (one block ≈ 16 min). */
     private static final int TIMELINE_BUCKETS = 90;
 
-    public List<String> getTimelineBlocks(MonitoredResource resource) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = now.minusHours(24);
+    private static final DateTimeFormatter LATENCY_SAMPLE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /** Maximum number of raw check results returned by the latency-samples endpoint. */
+    private static final int LATENCY_SAMPLE_MAX = 500;
+
+    /**
+     * Returns up to {@value #LATENCY_SAMPLE_MAX} chronological latency samples for the given
+     * resource and time window. Results are evenly downsampled when the raw count exceeds the cap.
+     */
+    public List<LatencySampleDTO> getLatencySamples(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
+        LocalDateTime since = LocalDateTime.now().minusHours(safeHours);
+        List<CheckResult> all = checkResultRepository
+                .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, since);
+        List<CheckResult> withLatency = all.stream()
+                .filter(r -> r.getLatencyMs() != null)
+                .collect(Collectors.toList());
+        List<CheckResult> sampled;
+        if (withLatency.size() <= LATENCY_SAMPLE_MAX) {
+            sampled = withLatency;
+        } else {
+            sampled = new ArrayList<>(LATENCY_SAMPLE_MAX);
+            double step = (double) withLatency.size() / LATENCY_SAMPLE_MAX;
+            for (int i = 0; i < LATENCY_SAMPLE_MAX; i++) {
+                sampled.add(withLatency.get((int) (i * step)));
+            }
+        }
+        return sampled.stream()
+                .map(r -> new LatencySampleDTO(
+                        r.getLatencyMs(),
+                        r.getDnsResolutionMs(),
+                        r.getConnectMs(),
+                        r.getTlsHandshakeMs(),
+                        r.getCheckedAt().format(LATENCY_SAMPLE_FORMATTER)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Combined result of a single history query, carrying both the timeline blocks and the
+     * uptime percentage so callers avoid issuing the same database query twice.
+     */
+    public record TimelineData(List<TimelineBlockDTO> timelineBlocks, double uptimePercentage) {}
+
+    public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource) {
+        return getTimelineBlocks(resource, 24);
+    }
+
+    public List<TimelineBlockDTO> getTimelineBlocks(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
+        LocalDateTime start = LocalDateTime.now().minusHours(safeHours);
         List<CheckResult> results = checkResultRepository
                 .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
+        return buildTimelineBlocks(results, start, safeHours);
+    }
 
-        long totalMinutes = 24 * 60;
-        long bucketMinutes = totalMinutes / TIMELINE_BUCKETS;
+    /**
+     * Fetches check results for the given time window exactly once and returns both
+     * the timeline blocks and the uptime percentage, eliminating the duplicate query
+     * that was present when {@link #getTimelineBlocks} and {@link #getUptimePercentage}
+     * were called independently.
+     */
+    public TimelineData getTimelineData(MonitoredResource resource, int hours) {
+        int safeHours = Math.max(hours, 1);
+        LocalDateTime start = LocalDateTime.now().minusHours(safeHours);
+        List<CheckResult> results = checkResultRepository
+                .findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(resource, start);
+        return new TimelineData(
+                buildTimelineBlocks(results, start, safeHours),
+                computeUptimePercentage(results));
+    }
 
-        List<String> blocks = new ArrayList<>(TIMELINE_BUCKETS);
+    private List<TimelineBlockDTO> buildTimelineBlocks(List<CheckResult> results, LocalDateTime start, int safeHours) {
+        long totalMinutes = (long) safeHours * 60;
+        long bucketMinutes = Math.max(totalMinutes / TIMELINE_BUCKETS, 1);
+
+        List<TimelineBlockDTO> blocks = new ArrayList<>(TIMELINE_BUCKETS);
         for (int i = 0; i < TIMELINE_BUCKETS; i++) {
             LocalDateTime bucketStart = start.plusMinutes(i * bucketMinutes);
             LocalDateTime bucketEnd = bucketStart.plusMinutes(bucketMinutes);
@@ -130,26 +349,31 @@ public class ResourceService {
                 }
             }
 
-            if (lastInBucket == null) {
-                blocks.add("unknown");
-            } else {
-                switch (lastInBucket.getStatus()) {
-                    case AVAILABLE -> blocks.add("available");
-                    case NOT_AVAILABLE -> blocks.add("not-available");
-                    default -> blocks.add("unknown");
-                }
-            }
+            String status = lastInBucket == null ? "unknown" : mapStatus(lastInBucket.getStatus());
+            LocalDateTime timestamp = lastInBucket == null ? bucketEnd : lastInBucket.getCheckedAt();
+            blocks.add(new TimelineBlockDTO(
+                    status,
+                    timestamp,
+                    lastInBucket == null ? null : lastInBucket.getLatencyMs(),
+                    lastInBucket == null ? null : lastInBucket.getDnsResolutionMs(),
+                    lastInBucket == null ? null : lastInBucket.getConnectMs(),
+                    lastInBucket == null ? null : lastInBucket.getTlsHandshakeMs()
+            ));
         }
         return blocks;
     }
 
+    private String mapStatus(CheckStatus status) {
+        return switch (status) {
+            case AVAILABLE -> "available";
+            case NOT_AVAILABLE -> "not-available";
+            default -> "unknown";
+        };
+    }
+
     public String getCurrentStatus(MonitoredResource resource) {
         return checkResultRepository.findTopByResourceOrderByCheckedAtDesc(resource)
-                .map(r -> switch (r.getStatus()) {
-                    case AVAILABLE -> "available";
-                    case NOT_AVAILABLE -> "not-available";
-                    default -> "unknown";
-                })
+                .map(r -> mapStatus(r.getStatus()))
                 .orElse("unknown");
     }
 
@@ -163,10 +387,10 @@ public class ResourceService {
 
     @Transactional
     public int clearGroupAssignment(Long groupId) {
-        List<MonitoredResource> resources = resourceRepository.findByGroup_Id(groupId);
-        for (MonitoredResource resource : resources) {
-            resource.setGroup(null);
-        }
+        List<MonitoredResource> resources = resourceRepository.findByGroups_Id(groupId);
+        resourceGroupRepository.findById(groupId).ifPresent(group ->
+            resources.forEach(resource -> resource.getGroups().remove(group))
+        );
         resourceRepository.saveAll(resources);
         return resources.size();
     }

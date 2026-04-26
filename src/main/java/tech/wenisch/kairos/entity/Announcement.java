@@ -19,7 +19,6 @@ public class Announcement {
     @Enumerated(EnumType.STRING)
     private AnnouncementKind kind;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String content;
 

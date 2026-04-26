@@ -11,6 +11,11 @@ The feature is available under `Admin -> Manage Resources`.
 - Update existing resources during import when the same resource already exists
 - Keep the format stable across future versions through a versioned exchange envelope
 
+The import/export workflow covers monitored resources only.
+
+- Resource groups, their visibility settings (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`), and multi-group assignments are managed separately in **Admin -> Manage Resources**.
+- The YAML exchange format carries a single `groupName` field per resource for compatibility. On export, the first assigned group name is written. On import, the resource is linked to that one group (by name, creating it if needed). Multi-group assignments must be set up manually in the admin panel after import.
+
 ## Admin Workflow
 
 On the `Manage Resources` page you can:
@@ -33,13 +38,21 @@ resources:
     resourceType: HTTP
     target: https://example.com/health
     skipTLS: false
+    recursive: false
     active: true
     createdAt: 2026-03-11T12:00:00
   - name: Nginx Image
     resourceType: DOCKER
     target: nginx:latest
+    recursive: false
     active: true
     createdAt: 2026-03-11T12:10:00
+  - name: GHCR Namespace
+    resourceType: DOCKERREPOSITORY
+    target: ghcr.io/jfwenisch
+    recursive: true
+    active: true
+    createdAt: 2026-03-11T12:15:00
 ```
 
 ## Compatibility Strategy
@@ -79,8 +92,10 @@ Preferred fields in exported YAML:
 - `resourceType`
 - `target`
 - `skipTLS`
+- `recursive`
 - `active`
 - `createdAt`
+- `groupName` *(first assigned group; single-group import only — see note above)*
 
 Additionally, the importer tolerates some alternate names for compatibility:
 

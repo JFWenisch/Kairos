@@ -1,0 +1,93 @@
+:root {
+  --kairos-cyan: #0dcaf0;
+  --kairos-cyan-soft: #31d2f3;
+  --kairos-green: #198754;
+  --kairos-red: #dc3545;
+  --kairos-muted: #6c757d;
+}
+
+/* Light mode palette */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #1b2b3b;
+  --md-primary-fg-color--light: #27445a;
+  --md-primary-fg-color--dark: #122131;
+  --md-accent-fg-color: var(--kairos-cyan);
+  --md-typeset-a-color: #0b7f99;
+}
+
+/* Dark mode palette inspired by Kairos dashboard */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0f1a24;
+  --md-primary-fg-color--light: #1b2b3b;
+  --md-primary-fg-color--dark: #0a1219;
+  --md-accent-fg-color: var(--kairos-cyan);
+  --md-default-bg-color: #05080c;
+  --md-default-bg-color--light: #0a0f16;
+  --md-default-bg-color--lighter: #0d141d;
+  --md-default-bg-color--lightest: #121b26;
+  --md-code-bg-color: #0a1119;
+  --md-default-fg-color: #e8f0f7;
+  --md-typeset-a-color: #72d9ef;
+}
+
+[data-md-color-scheme="slate"] body,
+[data-md-color-scheme="slate"] .md-main,
+[data-md-color-scheme="slate"] .md-main__inner,
+[data-md-color-scheme="slate"] .md-content,
+[data-md-color-scheme="slate"] .md-sidebar__scrollwrap,
+[data-md-color-scheme="slate"] .md-nav,
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) {
+  background-color: #05080c;
+}
+
+[data-md-color-scheme="slate"] .md-header,
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #0a1119;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link--active,
+[data-md-color-scheme="slate"] .md-typeset a,
+[data-md-color-scheme="slate"] .md-search__icon,
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  color: var(--kairos-cyan);
+}
+
+.md-header {
+  border-bottom: 1px solid rgba(13, 202, 240, 0.28);
+}
+
+.md-tabs {
+  border-bottom: 1px solid rgba(13, 202, 240, 0.16);
+}
+
+.md-typeset a:hover {
+  color: var(--kairos-cyan-soft);
+}
+
+.md-typeset h1 {
+  letter-spacing: -0.01em;
+}
+
+/* Give admonitions semantic colors close to app status colors */
+.md-typeset .admonition.success,
+.md-typeset details.success {
+  border-color: rgba(25, 135, 84, 0.5);
+}
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-color: rgba(255, 193, 7, 0.6);
+}
+
+.md-typeset .admonition.failure,
+.md-typeset details.failure,
+.md-typeset .admonition.danger,
+.md-typeset details.danger {
+  border-color: rgba(220, 53, 69, 0.6);
+}
+
+/* Improve code block separation in both schemes */
+.md-typeset pre > code {
+  border: 1px solid rgba(108, 117, 125, 0.28);
+  border-radius: 8px;
+}
