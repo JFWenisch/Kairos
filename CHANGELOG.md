@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.7 - 2026-04-26
+
+### [1.12.7](https://github.com/wenisch-tech/Kairos/compare/v1.12.6...v1.12.7) (2026-04-26)
+
+
+### Documentation
+
+* Updated PAT allowing upload of docs to website repo ([1f5ce03](https://github.com/wenisch-tech/Kairos/commit/1f5ce0316eacddfeca0b2505a4d6912b5ea72a94))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.7
+
+
 ## v1.12.6 - 2026-04-26
 
 ### [1.12.6](https://github.com/wenisch-tech/Kairos/compare/v1.12.5...v1.12.6) (2026-04-26)
