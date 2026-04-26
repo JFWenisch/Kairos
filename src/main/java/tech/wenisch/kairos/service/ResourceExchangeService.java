@@ -92,15 +92,15 @@ public class ResourceExchangeService {
             resource.setResourceType(resourceType);
             resource.setTarget(target.trim());
             resource.setSkipTls(readBoolean(node, false, "skipTLS", "skipTls"));
+            resource.setRecursive(readBoolean(node, false, "recursive"));
             resource.setActive(readBoolean(node, "active", true));
             resource.setDisplayOrder(readInt(node, "displayOrder", "order").orElse(0));
 
             String groupName = firstText(node, "groupName", "group");
+            resource.getGroups().clear();
             if (groupName != null && !groupName.isBlank()) {
                 // Keep YAML compatibility simple by importing group names as plain labels when available.
-                resource.setGroup(resourceService.findOrCreateGroupByName(groupName.trim()));
-            } else {
-                resource.setGroup(null);
+                resource.getGroups().add(resourceService.findOrCreateGroupByName(groupName.trim()));
             }
 
             if (isNew) {
@@ -126,9 +126,11 @@ public class ResourceExchangeService {
         node.put("resourceType", resource.getResourceType() != null ? resource.getResourceType().name() : null);
         node.put("target", resource.getTarget());
         node.put("skipTLS", resource.isSkipTls());
+        node.put("recursive", resource.isRecursive());
         node.put("active", resource.isActive());
         node.put("displayOrder", resource.getDisplayOrder());
-        node.put("groupName", resource.getGroup() != null ? resource.getGroup().getName() : null);
+        node.put("groupName", resource.getGroups().isEmpty() ? null
+                : resource.getGroups().iterator().next().getName());
         node.put("createdAt", resource.getCreatedAt());
         return node;
     }

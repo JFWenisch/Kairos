@@ -25,9 +25,36 @@ public class ResourceTypeConfig {
 
     private int parallelism;
 
+    @Builder.Default
+    private boolean allowPublicAccess = true;
+
     private boolean allowPublicAdd;
 
     private boolean allowPublicCheckNow;
+
+    @Builder.Default
+    private boolean alwaysDisplayUrl = false;
+
+    @Builder.Default
+    private boolean checkHistoryRetentionEnabled = true;
+
+    @Builder.Default
+    private int checkHistoryRetentionIntervalMinutes = 60;
+
+    @Builder.Default
+    private int checkHistoryRetentionDays = 31;
+
+    @Builder.Default
+    private int outageThreshold = 3;
+
+    @Builder.Default
+    private int recoveryThreshold = 2;
+
+    @Builder.Default
+    private boolean deleteOutagesOnResourceDelete = true;
+
+    @Builder.Default
+    private String embedPolicy = "ALLOW_ALL";
 
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Builder.Default

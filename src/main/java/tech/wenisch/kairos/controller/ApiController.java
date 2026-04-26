@@ -1,13 +1,18 @@
 package tech.wenisch.kairos.controller;
 
 import tech.wenisch.kairos.dto.AnnouncementDTO;
+import tech.wenisch.kairos.dto.GroupSummaryDTO;
+import tech.wenisch.kairos.dto.LatencySampleDTO;
 import tech.wenisch.kairos.dto.ResourceDTO;
 import tech.wenisch.kairos.dto.ResourceDetailsDTO;
+import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,8 +24,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -45,6 +53,7 @@ public class ApiController {
 
     private final ResourceService resourceService;
     private final ResourceGroupService resourceGroupService;
+    private final CheckExecutorService checkExecutorService;
     private final AnnouncementService announcementService;
     private final ResourceStatusStreamService resourceStatusStreamService;
 
@@ -61,13 +70,63 @@ public class ApiController {
         @ApiResponse(responseCode = "200", description = "Successful – list of active resources (may be empty)")
     })
     @GetMapping("/resources")
-    public ResponseEntity<List<MonitoredResource>> listResources() {
-        return ResponseEntity.ok(resourceService.findAllActive());
+    public ResponseEntity<List<MonitoredResource>> listResources(Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
+        List<MonitoredResource> visibleResources = resourceService.findAllActive().stream()
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
+        return ResponseEntity.ok(visibleResources);
     }
 
     @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamResourceUpdates() {
-        return resourceStatusStreamService.subscribe();
+    public ResponseEntity<SseEmitter> streamResourceUpdates() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setCacheControl(CacheControl.noStore().mustRevalidate());
+        headers.add(HttpHeaders.PRAGMA, "no-cache");
+        headers.add("X-Accel-Buffering", "no");
+        return ResponseEntity.ok().headers(headers).body(resourceStatusStreamService.subscribe());
+    }
+
+    @GetMapping("/resources/status-updates")
+    public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates(
+            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours));
+    }
+
+    @GetMapping("/resources/{id}/status-update")
+    public ResponseEntity<ResourceStatusUpdateDTO> getResourceStatusUpdateByResourceId(
+            @PathVariable Long id,
+            @RequestParam(name = "hours", defaultValue = "24") int hours,
+            Authentication authentication) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        boolean authenticated = isAuthenticated(authentication);
+        if (resourceService.findById(id).filter(resource -> isVisibleByGroupPolicy(resource, authenticated)).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/resources/{id}/latency-samples")
+    public ResponseEntity<List<LatencySampleDTO>> getResourceLatencySamples(
+            @PathVariable Long id,
+            @RequestParam(name = "hours", defaultValue = "24") int hours,
+            Authentication authentication) {
+        int normalizedHours = normalizeTimelineHours(hours);
+        boolean authenticated = isAuthenticated(authentication);
+        return resourceService.findById(id)
+            .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .map(resource -> ResponseEntity.ok(resourceService.getLatencySamples(resource, normalizedHours)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    private int normalizeTimelineHours(int hours) {
+        return switch (hours) {
+            case 24, 168, 720 -> hours;
+            default -> 24;
+        };
     }
 
     /**
@@ -90,19 +149,30 @@ public class ApiController {
     @GetMapping("/resources/{id}")
     public ResponseEntity<ResourceDetailsDTO> getResourceById(
             @Parameter(description = "Unique ID of the monitored resource", required = true, example = "1")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
         return resourceService.findById(id)
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
                 .map(resource -> {
                     Optional<CheckResult> latestCheckResult = resourceService.getLatestCheckResult(resource);
+                    List<GroupSummaryDTO> groupDtos = resource.getGroups().stream()
+                            .sorted(java.util.Comparator.comparing(tech.wenisch.kairos.entity.ResourceGroup::getId))
+                            .map(g -> new GroupSummaryDTO(g.getId(), g.getName()))
+                            .toList();
+                    Long firstGroupId = groupDtos.isEmpty() ? null : groupDtos.get(0).id();
+                    String firstGroupName = groupDtos.isEmpty() ? null : groupDtos.get(0).name();
                     ResourceDetailsDTO response = new ResourceDetailsDTO(
                             resource.getId(),
                             resource.getName(),
                             resource.getResourceType(),
                             resource.getTarget(),
-                            resource.getGroup() != null ? resource.getGroup().getId() : null,
-                            resource.getGroup() != null ? resource.getGroup().getName() : null,
+                            firstGroupId,
+                            firstGroupName,
+                            groupDtos,
                             resource.getDisplayOrder(),
                             resource.isSkipTls(),
+                            resource.isRecursive(),
                             resource.isActive(),
                             resource.getCreatedAt(),
                             resourceService.getCurrentStatus(resource),
@@ -114,6 +184,28 @@ public class ApiController {
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
+        if (resource.getGroups().isEmpty()) {
+            return true;
+        }
+        // Most-permissive rule: take the least-restrictive visibility across all groups.
+        ResourceGroupVisibility effective = resource.getGroups().stream()
+                .map(ResourceGroup::getVisibilityOrDefault)
+                .min(java.util.Comparator.comparingInt(ResourceGroupVisibility::ordinal))
+                .orElse(ResourceGroupVisibility.PUBLIC);
+        return switch (effective) {
+            case PUBLIC -> true;
+            case AUTHENTICATED -> authenticated;
+            case HIDDEN -> false;
+        };
     }
 
     /**
@@ -145,11 +237,125 @@ public class ApiController {
                 .resourceType(dto.getResourceType())
                 .target(dto.getTarget())
                 .skipTls(dto.isSkipTls())
+                .recursive(dto.isRecursive())
                 .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
-                .group(group)
                 .active(true)
                 .build();
-        return ResponseEntity.ok(resourceService.save(resource));
+        if (group != null) {
+            resource.getGroups().add(group);
+        }
+        MonitoredResource saved = resourceService.save(resource);
+        if (saved.getResourceType() == tech.wenisch.kairos.entity.ResourceType.DOCKERREPOSITORY) {
+            checkExecutorService.runImmediateCheck(saved);
+        }
+        return ResponseEntity.ok(saved);
+    }
+
+    /**
+     * Creates template/sample resources for testing purposes.
+     *
+     * <p>Creates a set of diverse sample resources (HTTP endpoints, Docker images)
+     * organized into groups to demonstrate Kairos functionality. Useful for testing
+     * and demos. Requires {@code ADMIN} role.
+     *
+     * @return a JSON map with status and count of created resources
+     */
+    @Operation(summary = "Create template resources",
+               description = "Creates a set of sample resources for testing (HTTP services, Docker images, groups). Requires ADMIN role.",
+               security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Template resources created successfully"),
+        @ApiResponse(responseCode = "403", description = "Caller does not hold the ADMIN role", content = @Content)
+    })
+    @PostMapping("/resources/templates")
+    public ResponseEntity<Map<String, Object>> createTemplateResources() {
+        // Create groups
+        ResourceGroup webServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Web Services").displayOrder(1).build()
+        );
+        ResourceGroup dockerServicesGroup = resourceGroupService.save(
+            ResourceGroup.builder().name("Docker Images").displayOrder(2).build()
+        );
+
+        // Create HTTP resources
+        MonitoredResource httpGoogle = MonitoredResource.builder()
+                .name("Google DNS")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://dns.google")
+                .skipTls(false)
+                .displayOrder(1)
+                .active(true)
+                .build();
+        httpGoogle.getGroups().add(webServicesGroup);
+        resourceService.save(httpGoogle);
+
+        MonitoredResource httpGithub = MonitoredResource.builder()
+                .name("GitHub Status")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://status.github.com")
+                .skipTls(false)
+                .displayOrder(2)
+                .active(true)
+                .build();
+        httpGithub.getGroups().add(webServicesGroup);
+        resourceService.save(httpGithub);
+
+        MonitoredResource httpExample = MonitoredResource.builder()
+                .name("Example.com")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.HTTP)
+                .target("https://example.com")
+                .skipTls(false)
+                .displayOrder(3)
+                .active(true)
+                .build();
+        httpExample.getGroups().add(webServicesGroup);
+        resourceService.save(httpExample);
+
+        // Create Docker image resources
+        MonitoredResource dockerNginx = MonitoredResource.builder()
+                .name("Nginx Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/nginx:latest")
+                .skipTls(false)
+                .displayOrder(1)
+                .active(true)
+                .build();
+        dockerNginx.getGroups().add(dockerServicesGroup);
+        resourceService.save(dockerNginx);
+
+        MonitoredResource dockerPostgres = MonitoredResource.builder()
+                .name("PostgreSQL 15")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/postgres:15-alpine")
+                .skipTls(false)
+                .displayOrder(2)
+                .active(true)
+                .build();
+        dockerPostgres.getGroups().add(dockerServicesGroup);
+        resourceService.save(dockerPostgres);
+
+        MonitoredResource dockerRedis = MonitoredResource.builder()
+                .name("Redis Latest")
+                .resourceType(tech.wenisch.kairos.entity.ResourceType.DOCKER)
+                .target("docker.io/library/redis:latest")
+                .skipTls(false)
+                .displayOrder(3)
+                .active(true)
+                .build();
+        dockerRedis.getGroups().add(dockerServicesGroup);
+        resourceService.save(dockerRedis);
+
+        // Trigger immediate checks
+        checkExecutorService.runImmediateCheck(dockerNginx);
+        checkExecutorService.runImmediateCheck(dockerPostgres);
+        checkExecutorService.runImmediateCheck(dockerRedis);
+
+        return ResponseEntity.ok(Map.of(
+            "status", "success",
+            "message", "Template resources created",
+            "groupsCreated", 2,
+            "resourcesCreated", 6
+        ));
     }
 
     /**

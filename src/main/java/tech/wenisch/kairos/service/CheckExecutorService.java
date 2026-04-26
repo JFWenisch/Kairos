@@ -3,14 +3,12 @@ package tech.wenisch.kairos.service;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
@@ -27,25 +29,26 @@ public class CheckExecutorService {
 
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
+    private final DockerRepositorySyncService dockerRepositorySyncService;
     private final ResourceStatusStreamService resourceStatusStreamService;
-    private final CheckResultRepository checkResultRepository;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
 
     private final Map<String, Long> lastRunTimeMap = new ConcurrentHashMap<>();
     private final Map<String, ExecutorService> executorMap = new ConcurrentHashMap<>();
+    private final Map<String, Integer> executorParallelismMap = new ConcurrentHashMap<>();
 
     public CheckExecutorService(
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
+            DockerRepositorySyncService dockerRepositorySyncService,
             ResourceStatusStreamService resourceStatusStreamService,
-            CheckResultRepository checkResultRepository,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
+        this.dockerRepositorySyncService = dockerRepositorySyncService;
         this.resourceStatusStreamService = resourceStatusStreamService;
-        this.checkResultRepository = checkResultRepository;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
     }
@@ -65,53 +68,40 @@ public class CheckExecutorService {
             if (now - lastRun >= intervalMs) {
                 lastRunTimeMap.put(typeName, now);
                 int parallelism = Math.max(1, config.getParallelism());
-                ExecutorService executor = executorMap.computeIfAbsent(typeName,
-                        k -> Executors.newFixedThreadPool(parallelism));
+                ExecutorService executor = resolveExecutor(typeName, parallelism);
 
                 List<MonitoredResource> resources = resourceRepository.findByResourceTypeAndActiveTrue(type);
                 for (MonitoredResource resource : resources) {
-                    final MonitoredResource r = resource;
-                    executor.submit(() -> {
-                        try {
-                            resourceStatusStreamService.publishResourceChecking(r);
-                            if (type == ResourceType.HTTP) {
-                                httpCheckService.check(r);
-                            } else if (type == ResourceType.DOCKER) {
-                                dockerCheckService.check(r);
-                            }
-                        } catch (Exception e) {
-                            log.error("Error checking resource {}: {}", r.getName(), e.getMessage(), e);
-                        }
-                    });
+                    submitCheck(executor, resource, type, false);
                 }
                 log.debug("Dispatched checks for type {} ({} resources)", typeName, resources.size());
             }
         }
     }
 
-    @Transactional
     public boolean runImmediateCheck(Long resourceId) {
         return resourceRepository.findById(resourceId)
                 .map(this::runImmediateCheck)
                 .orElse(false);
     }
 
-    @Transactional
     public boolean runImmediateCheck(MonitoredResource resource) {
         if (resource == null || !resource.isActive()) {
             return false;
         }
 
-        resourceStatusStreamService.publishResourceChecking(resource);
-        if (resource.getResourceType() == ResourceType.HTTP) {
-            httpCheckService.check(resource);
-            return true;
+        ResourceType type = resource.getResourceType();
+        if (type == null) {
+            return false;
         }
-        if (resource.getResourceType() == ResourceType.DOCKER) {
-            dockerCheckService.check(resource);
-            return true;
-        }
-        return false;
+
+        int parallelism = configRepository.findByTypeName(type.name())
+                .map(ResourceTypeConfig::getParallelism)
+                .map(value -> Math.max(1, value))
+                .orElse(1);
+
+        ExecutorService executor = resolveExecutor(type.name(), parallelism);
+        return submitCheck(executor, resource, type, true);
     }
 
     /**
@@ -125,6 +115,82 @@ public class CheckExecutorService {
     public void runChecksOnStartup() {
         log.info("Application ready – running initial resource checks");
         dispatch();
+    }
+
+    private ExecutorService resolveExecutor(String typeName, int parallelism) {
+        Integer currentParallelism = executorParallelismMap.get(typeName);
+        if (currentParallelism != null && currentParallelism == parallelism) {
+            return executorMap.get(typeName);
+        }
+
+        ExecutorService newExecutor = createExecutor(typeName, parallelism);
+        ExecutorService oldExecutor = executorMap.put(typeName, newExecutor);
+        executorParallelismMap.put(typeName, parallelism);
+
+        if (oldExecutor != null) {
+            oldExecutor.shutdown();
+        }
+
+        return newExecutor;
+    }
+
+    private ExecutorService createExecutor(String typeName, int parallelism) {
+        int queueCapacity = Math.max(50, parallelism * 20);
+        AtomicInteger threadCounter = new AtomicInteger(0);
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setName("kairos-check-" + typeName.toLowerCase() + "-" + threadCounter.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
+        };
+
+        return new ThreadPoolExecutor(
+                parallelism,
+                parallelism,
+                30,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(queueCapacity),
+                threadFactory
+        );
+    }
+
+    private boolean submitCheck(ExecutorService executor,
+                                MonitoredResource resource,
+                                ResourceType type,
+                                boolean immediate) {
+        try {
+            executor.submit(() -> executeCheck(resource, type));
+            return true;
+        } catch (RejectedExecutionException ex) {
+            log.warn("Skipping {} check for resource '{}' (type {}) because the worker queue is full",
+                    immediate ? "immediate" : "scheduled", resource.getName(), type.name());
+            return false;
+        }
+    }
+
+    private void executeCheck(MonitoredResource resource, ResourceType type) {
+        try {
+            if (type == ResourceType.HTTP) {
+                publishCheckingState(resource);
+                httpCheckService.check(resource);
+            } else if (type == ResourceType.DOCKER) {
+                publishCheckingState(resource);
+                dockerCheckService.check(resource);
+            } else if (type == ResourceType.DOCKERREPOSITORY) {
+                dockerRepositorySyncService.sync(resource);
+            }
+        } catch (Exception e) {
+            log.error("Error checking resource {}: {}", resource.getName(), e.getMessage(), e);
+        }
+    }
+
+    private void publishCheckingState(MonitoredResource resource) {
+        try {
+            resourceStatusStreamService.publishResourceChecking(resource);
+        } catch (Throwable ex) {
+            log.trace("Ignoring transient SSE failure while marking resource '{}' as checking: {}",
+                    resource.getName(), ex.getMessage());
+        }
     }
 
     @PreDestroy

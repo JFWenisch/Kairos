@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Custom Headers - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <span th:text="${successMessage}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <h2 class="h4 mb-1"><i class="bi bi-code-square me-2"></i>Custom Headers</h2>
+            <p class="text-muted mb-4" style="font-size:.875rem">
+                Inject custom HTML or JavaScript into the <code>&lt;head&gt;</code> tag of all pages.
+                Use this to add analytics scripts, custom stylesheets, or other head-level integrations.
+            </p>
+
+            <form th:action="@{/admin/custom-headers}" method="post">
+                <div class="card mb-4">
+                    <div class="card-header">Custom HTML / JavaScript</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content</label>
+                            <textarea id="content" name="content" class="form-control font-monospace"
+                                      rows="12" placeholder="&lt;script&gt;...&lt;/script&gt; or &lt;style&gt;...&lt;/style&gt;"
+                                      th:text="${settings.content}"></textarea>
+                            <div class="form-text">
+                                The content is injected verbatim inside the <code>&lt;head&gt;</code> tag of every page.
+                                Leave blank to disable custom headers.
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="applyToAdmin" name="applyToAdmin"
+                                   value="true" th:checked="${settings.applyToAdmin}">
+                            <label class="form-check-label" for="applyToAdmin">
+                                Also apply to admin pages
+                            </label>
+                            <div class="form-text">
+                                When unchecked, the custom headers are only injected into public-facing pages (dashboard, resource detail, outages, announcements).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy me-1"></i>Save
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="card" style="font-size:.875rem">
+                <div class="card-header py-2">Notes</div>
+                <div class="card-body py-3">
+                    <ul class="mb-0 ps-3">
+                        <li>The content is <strong>not sanitised</strong> — only admins can configure this setting.</li>
+                        <li>Changes take effect immediately on the next page load.</li>
+                        <li>Typical use cases: analytics tags, custom fonts, <code>&lt;style&gt;</code> overrides.</li>
+                        <li>For security, avoid injecting untrusted third-party scripts.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

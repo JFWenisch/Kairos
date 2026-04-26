@@ -65,8 +65,41 @@ jobs:
             BUILD_VERSION=${{ inputs.version }}
             BUILD_REVISION=${{ github.sha }}
 
+      - name: Make container check script executable
+        run: chmod +x scripts/check-container-endpoints.sh
+
+      - name: Validate container endpoints and latency
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="${{ inputs.image }}:${{ inputs.version }}"
+          ./scripts/check-container-endpoints.sh "$image" 18080 container-endpoint-latency.md "Container Endpoint Check"
+
+      - name: Upload container endpoint check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-endpoint-check-${{ github.run_id }}
+          path: container-endpoint-latency.md
+
+      - name: Add container endpoint check to PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('container-endpoint-latency.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
       - name: Set up Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.2.6
 
       - name: Run Trivy scan
         shell: bash
@@ -183,7 +216,26 @@ jobs:
 
       - name: Attest build provenance
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: attest_build_provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ inputs.image }}
           subject-digest: ${{ steps.sign.outputs.digest }}
+
+      - name: Prepare attestation bundle asset
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp "${{ steps.attest_build_provenance.outputs.bundle-path }}" "release/docker-image-attestation.bundle.json"
+          printf '%s\n' "${{ steps.attest_build_provenance.outputs.attestation-url }}" > "release/docker-image-attestation.url.txt"
+
+      - name: Upload attestation bundle artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-attestation-bundle
+          path: |
+            release/docker-image-attestation.bundle.json
+            release/docker-image-attestation.url.txt

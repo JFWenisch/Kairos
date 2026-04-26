@@ -15,4 +15,5 @@ public class ResourceDTO {
     @JsonProperty("skipTLS")
     @JsonAlias("skipTls")
     private boolean skipTls;
+    private boolean recursive;
 }

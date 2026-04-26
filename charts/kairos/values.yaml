@@ -1,32 +1,28 @@
 replicaCount: 1
-
 image:
   registry: ghcr.io
-  repository: jfwendisch/kairos
-  tag: latest
+  repository: wenisch-tech/kairos
+  tag: 1.13.0
   pullPolicy: IfNotPresent
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
   fsGroup: 65532
-
+autoscaling:
+  enabled: false
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
   readOnlyRootFilesystem: false
-
 service:
   type: ClusterIP
   port: 8080
   targetPort: 8080
-
 ingress:
   enabled: false
   className: ""
@@ -37,70 +33,72 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
-
 resources:
   requests:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 1000m
+    memory: 2Gi
   limits:
-    cpu: 500m
-    memory: 512Mi
-
+    cpu: 2000m
+    memory: 4Gi
 persistence:
   enabled: false
   storageClassName: ""
   accessMode: ReadWriteOnce
   size: 1Gi
   mountPath: /app/data
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 # Environment variables for Spring Boot and application configuration
+
 # Leave empty to use defaults
 env:
   # Database configuration
   SPRING_DATASOURCE_URL: ""
   SPRING_DATASOURCE_USERNAME: ""
   SPRING_DATASOURCE_PASSWORD: ""
-
   # OIDC / OAuth2 configuration
   OIDC_ENABLED: "false"
   OIDC_CLIENT_ID: ""
   OIDC_CLIENT_SECRET: ""
   OIDC_ISSUER_URI: ""
-
   # Docker socket configuration (if accessing Docker from container)
   DOCKER_HOST: ""
-
   # Optional: Custom Spring Boot properties
-  # SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
-  # LOGGING_LEVEL_ROOT: "INFO"
+# SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+
+# LOGGING_LEVEL_ROOT: "INFO"
 
 # Secrets for sensitive data
 secrets: {}
-  # SPRING_DATASOURCE_PASSWORD: "your-password"
-  # OIDC_CLIENT_SECRET: "your-secret"
+# SPRING_DATASOURCE_PASSWORD: "your-password"
 
+# OIDC_CLIENT_SECRET: "your-secret"
 livenessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
-    port: 8080
+    path: /actuator/health/liveness
+    port: http
   initialDelaySeconds: 30
   periodSeconds: 10
-  timeoutSeconds: 5
+  timeoutSeconds: 10
   failureThreshold: 3
-
 readinessProbe:
   enabled: true
   httpGet:
-    path: /actuator/health
-    port: 8080
-  initialDelaySeconds: 10
+    path: /actuator/health/readiness
+    port: http
+  initialDelaySeconds: 30
   periodSeconds: 5
-  timeoutSeconds: 3
-  failureThreshold: 3
+  timeoutSeconds: 5
+  failureThreshold: 5
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /actuator/health
+    port: http
+  # Allow slower boots (migrations, cold starts) before liveness kicks in.
+
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 30
