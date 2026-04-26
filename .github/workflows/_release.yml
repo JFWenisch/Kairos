@@ -85,6 +85,7 @@ jobs:
           version="${{ inputs.version }}"
           yq eval ".appVersion = \"$version\"" -i charts/kairos/Chart.yaml
           yq eval ".version = \"$version\"" -i charts/kairos/Chart.yaml
+          yq eval ".image.tag = \"$version\"" -i charts/kairos/values.yaml
 
       - name: Generate Helm values schema
         shell: bash
@@ -99,7 +100,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml charts/kairos/values.schema.json
+          git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml charts/kairos/values.yaml charts/kairos/values.schema.json
           git commit -m "chore(release): ${{ inputs.tag }} [skip ci]" || exit 0
           git push
 
