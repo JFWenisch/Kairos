@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
     <title>Login - Kairos</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
 </head>
 <body class="login-modern">
 <div class="container">
@@ -19,7 +21,7 @@
                             <img th:src="@{/img/kairos.png}" alt="Kairos" height="40" class="me-2">
                             <span>Kairos</span>
                         </h2>
-                        <p class="text-muted">Uptime Monitoring</p>
+                        <p class="text-muted">Availability Monitor</p>
                     </div>
 
                     <div th:if="${param.error}" class="alert alert-danger">

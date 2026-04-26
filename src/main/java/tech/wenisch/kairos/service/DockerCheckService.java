@@ -29,9 +29,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +52,7 @@ public class DockerCheckService {
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final OutageService outageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = createDefaultHttpClient();
@@ -57,19 +60,22 @@ public class DockerCheckService {
 
     public CheckResult check(MonitoredResource resource) {
         String image = resource.getTarget();
+        long checkStartedNanos = System.nanoTime();
         try {
             DockerImageRef imageRef = parseImageRef(image);
 
-            Optional<ResourceTypeAuth> authOpt = authService.findMatchingAuth(image, "DOCKER");
-            String basicAuthHeader = authOpt
-                    .map(auth -> {
-                        String credentials = auth.getUsername() + ":" + auth.getPassword();
-                        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-                    })
+            Optional<ResourceTypeAuth> authOpt = resolveDockerAuth(image, imageRef);
+                String basicAuthHeader = authOpt
+                    .map(auth -> toBasicHeader(auth.getUsername(), auth.getPassword()))
                     .orElse(null);
+                String authUsername = authOpt.map(ResourceTypeAuth::getUsername).orElse(null);
 
             HttpClient client = getHttpClient(resource);
-            AuthState authState = new AuthState(basicAuthHeader, null);
+            AuthState authState = new AuthState(
+                    basicAuthHeader,
+                    authUsername,
+                null
+            );
 
             ManifestResponse manifestResponse = fetchManifest(client, imageRef, imageRef.reference(), authState);
             List<String> blobDigests = extractBlobDigests(client, imageRef, manifestResponse, authState);
@@ -87,8 +93,10 @@ public class DockerCheckService {
                     .status(CheckStatus.AVAILABLE)
                     .checkedAt(LocalDateTime.now())
                     .message("Manifest and " + blobDigests.size() + " blobs downloadable")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
 
@@ -96,15 +104,46 @@ public class DockerCheckService {
             log.warn("Docker check failed for image {}: {}", image, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
-                    .status(CheckStatus.NOT_AVAILABLE)
+                    .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
                     .message(e.getMessage())
                     .errorCode("DOCKER_ERROR")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         }
+    }
+
+    private Optional<ResourceTypeAuth> resolveDockerAuth(String image, DockerImageRef imageRef) {
+        Set<String> candidates = new LinkedHashSet<>();
+        String repositoryPath = imageRef.registry() + "/" + imageRef.repository();
+
+        candidates.add(image);
+        candidates.add(imageRef.registry());
+        candidates.add(repositoryPath);
+        candidates.add("https://" + imageRef.registry());
+        candidates.add("https://" + repositoryPath);
+
+        if ("registry-1.docker.io".equalsIgnoreCase(imageRef.registry())) {
+            candidates.add("docker.io");
+            candidates.add("docker.io/" + imageRef.repository());
+            candidates.add("https://docker.io");
+            candidates.add("https://docker.io/" + imageRef.repository());
+            candidates.add("index.docker.io");
+            candidates.add("index.docker.io/" + imageRef.repository());
+            candidates.add("https://index.docker.io");
+            candidates.add("https://index.docker.io/" + imageRef.repository());
+        }
+
+        return candidates.stream()
+                .filter(candidate -> candidate != null && !candidate.isBlank())
+                .map(candidate -> authService.findMatchingAuth(candidate, "DOCKER"))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
     }
 
     private ManifestResponse fetchManifest(HttpClient client,
@@ -127,7 +166,7 @@ public class DockerCheckService {
         );
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("Manifest endpoint responded with HTTP " + response.statusCode());
+            throw new RuntimeException(formatRegistryHttpError("Manifest endpoint", response.statusCode(), response.body()));
         }
 
         String contentType = response.headers().firstValue("Content-Type").orElse("");
@@ -177,7 +216,7 @@ public class DockerCheckService {
                                    AuthState authState) throws Exception {
         String blobUrl = "https://" + imageRef.registry() + "/v2/" + imageRef.repository() + "/blobs/" + digest;
 
-        HttpResponse<Void> response = sendAuthenticatedRequest(
+        HttpResponse<String> response = sendAuthenticatedRequest(
                 client,
                 HttpRequest.newBuilder()
                         .uri(URI.create(blobUrl))
@@ -186,12 +225,12 @@ public class DockerCheckService {
                         .GET(),
                 imageRef,
                 authState,
-                HttpResponse.BodyHandlers.discarding()
+            HttpResponse.BodyHandlers.ofString()
         );
 
         int status = response.statusCode();
         if (status < 200 || status >= 300) {
-            throw new RuntimeException("Blob download denied for " + digest + " (HTTP " + status + ")");
+            throw new RuntimeException(formatRegistryHttpError("Blob download denied for " + digest, status, response.body()));
         }
     }
 
@@ -205,7 +244,13 @@ public class DockerCheckService {
         if (response.statusCode() == 401) {
             String authHeader = response.headers().firstValue("WWW-Authenticate").orElse("");
             if (authHeader.toLowerCase().startsWith("bearer ")) {
-                authState.setBearerToken(fetchBearerToken(client, authHeader, imageRef.repository(), authState.getBasicAuthHeader()));
+                authState.setBearerToken(fetchBearerToken(
+                        client,
+                        authHeader,
+                        imageRef.repository(),
+                        authState.getBasicAuthHeader(),
+                        authState.getBasicUsername()
+                ));
                 response = sendWithAuth(client, baseRequest, authState, bodyHandler);
             }
         }
@@ -232,10 +277,19 @@ public class DockerCheckService {
         return client.send(requestBuilder.build(), bodyHandler);
     }
 
+    private String toBasicHeader(String username, String password) {
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            return null;
+        }
+        String credentials = username + ":" + password;
+        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+    }
+
     private String fetchBearerToken(HttpClient client,
                                     String wwwAuthenticate,
                                     String repository,
-                                    String basicAuthHeader) throws Exception {
+                                    String basicAuthHeader,
+                                    String basicUsername) throws Exception {
         Map<String, String> params = parseAuthParams(wwwAuthenticate.substring(7));
         String realm = params.get("realm");
         if (realm == null || realm.isBlank()) {
@@ -249,6 +303,9 @@ public class DockerCheckService {
                 + (realm.contains("?") ? "&" : "?")
                 + "service=" + URLEncoder.encode(service, StandardCharsets.UTF_8)
                 + "&scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8);
+        if (basicUsername != null && !basicUsername.isBlank()) {
+            tokenUrl += "&account=" + URLEncoder.encode(basicUsername, StandardCharsets.UTF_8);
+        }
 
         HttpRequest.Builder tokenRequestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(tokenUrl))
@@ -260,8 +317,16 @@ public class DockerCheckService {
         }
 
         HttpResponse<String> tokenResponse = client.send(tokenRequestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+        if (tokenResponse.statusCode() == 401 && basicAuthHeader != null && !basicAuthHeader.isBlank()) {
+            HttpRequest retryRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(tokenUrl))
+                    .timeout(Duration.ofSeconds(30))
+                    .GET()
+                    .build();
+            tokenResponse = client.send(retryRequest, HttpResponse.BodyHandlers.ofString());
+        }
         if (tokenResponse.statusCode() < 200 || tokenResponse.statusCode() >= 300) {
-            throw new RuntimeException("Token endpoint responded with HTTP " + tokenResponse.statusCode());
+            throw new RuntimeException(formatRegistryHttpError("Token endpoint", tokenResponse.statusCode(), tokenResponse.body()));
         }
 
         String body = tokenResponse.body();
@@ -339,6 +404,55 @@ public class DockerCheckService {
         Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(json == null ? "" : json);
         return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private String formatRegistryHttpError(String endpoint, int statusCode, String body) {
+        String detail = extractRegistryErrorDetail(body);
+        if (detail.isBlank()) {
+            return endpoint + " responded with HTTP " + statusCode;
+        }
+        return endpoint + " responded with HTTP " + statusCode + ": " + detail;
+    }
+
+    private String extractRegistryErrorDetail(String body) {
+        if (body == null || body.isBlank()) {
+            return "";
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode errors = root.path("errors");
+            if (errors.isArray() && !errors.isEmpty()) {
+                JsonNode firstError = errors.get(0);
+                String code = firstError.path("code").asText("").trim();
+                String message = firstError.path("message").asText("").trim();
+                String manifest = firstError.path("detail").path("manifest").asText("").trim();
+
+                StringBuilder builder = new StringBuilder();
+                if (!code.isBlank()) {
+                    builder.append(code);
+                }
+                if (!message.isBlank()) {
+                    if (builder.length() > 0) {
+                        builder.append(" - ");
+                    }
+                    builder.append(message);
+                }
+                if (!manifest.isBlank()) {
+                    builder.append(" (manifest=").append(manifest).append(")");
+                }
+                if (builder.length() > 0) {
+                    return builder.toString();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        String normalized = body.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= 240) {
+            return normalized;
+        }
+        return normalized.substring(0, 240) + "...";
     }
 
     private DockerImageRef parseImageRef(String image) {
@@ -425,15 +539,23 @@ public class DockerCheckService {
         }
     }
 
+    private Long elapsedMillis(long startedNanos) {
+        return Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
+    }
+
     private record ManifestResponse(String contentType, String body) {
     }
 
     private static class AuthState {
         private final String basicAuthHeader;
+        private final String basicUsername;
         private String bearerToken;
 
-        private AuthState(String basicAuthHeader, String bearerToken) {
+        private AuthState(String basicAuthHeader,
+                          String basicUsername,
+                          String bearerToken) {
             this.basicAuthHeader = basicAuthHeader;
+            this.basicUsername = basicUsername;
             this.bearerToken = bearerToken;
         }
 
@@ -443,6 +565,10 @@ public class DockerCheckService {
 
         private String getBearerToken() {
             return bearerToken;
+        }
+
+        private String getBasicUsername() {
+            return basicUsername;
         }
 
         private void setBearerToken(String bearerToken) {

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Error - Kairos</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body class="error-modern">
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container py-5 error-shell">
+    <div class="error-card mx-auto">
+        <div class="error-header">
+            <span class="error-badge">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                Server Error
+            </span>
+            <h1 class="h3 mt-3 mb-2">Something went wrong</h1>
+            <p class="text-muted mb-0">
+                An unexpected server-side error occurred while processing your request.
+            </p>
+        </div>
+
+        <div class="error-meta-grid mt-4">
+            <div class="error-meta-item">
+                <small>Status</small>
+                <strong th:text="${status} ?: '500'">500</strong>
+            </div>
+            <div class="error-meta-item">
+                <small>Error</small>
+                <strong th:text="${error} ?: 'Internal Server Error'">Internal Server Error</strong>
+            </div>
+            <div class="error-meta-item">
+                <small>Path</small>
+                <strong class="text-break" th:text="${path} ?: '/'">/</strong>
+            </div>
+            <div class="error-meta-item">
+                <small>Timestamp</small>
+                <strong th:text="${timestamp} ?: '-'">-</strong>
+            </div>
+        </div>
+
+        <div class="alert alert-danger mt-4 mb-0" th:if="${message != null and !#strings.isEmpty(message)}">
+            <div class="fw-semibold mb-1">Error message</div>
+            <div th:text="${message}">Unexpected error</div>
+        </div>
+
+        <div class="alert alert-secondary mt-3 mb-0" th:if="${message == null or #strings.isEmpty(message)}">
+            No detailed message was provided by the server.
+        </div>
+
+        <details class="error-details mt-4" th:if="${trace != null and !#strings.isEmpty(trace)}">
+            <summary>
+                <i class="bi bi-terminal me-1"></i>
+                Show stacktrace
+            </summary>
+            <pre class="mb-0" th:text="${trace}">stacktrace</pre>
+        </details>
+
+        <div class="form-text mt-3" th:if="${trace == null or #strings.isEmpty(trace)}">
+            Stacktrace hidden. Append <span class="fw-semibold">?trace=true</span> to the URL to include it.
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <a th:href="@{/}" class="btn btn-primary">
+                <i class="bi bi-house-door me-1"></i>Back to Dashboard
+            </a>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Go Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

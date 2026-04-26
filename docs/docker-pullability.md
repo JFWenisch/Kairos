@@ -2,6 +2,8 @@
 
 Kairos validates Docker/OCI image **pullability** without requiring Docker Engine, Podman, containerd, or a mounted socket.
 
+For `DOCKERREPOSITORY` resources, Kairos first discovers matching repositories (for example from `ghcr.io/<owner>`), then creates/updates generated `DOCKER` resources for each discovered image. Pullability checks are executed on those generated Docker resources.
+
 ## Why this exists
 
 Some registries allow manifest access but block actual layer downloads due to policy enforcement (for example CVE policies). A simple manifest check can report a false positive in those cases.
@@ -30,6 +32,8 @@ If any blob probe is denied (for example `401` or `403`), the check is marked as
 ## TLS behavior
 
 `skipTLS` on a resource also applies to Docker registry checks.
+
+For `DOCKERREPOSITORY`, `skipTLS` also applies during repository discovery API calls.
 
 When enabled, Kairos bypasses certificate-chain and hostname verification for that resource's HTTPS calls.
 

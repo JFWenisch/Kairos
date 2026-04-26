@@ -27,4 +27,12 @@ public class CheckResult {
     private String message;
 
     private String errorCode;
+
+    private Long latencyMs;
+
+    private Long dnsResolutionMs;
+
+    private Long connectMs;
+
+    private Long tlsHandshakeMs;
 }
