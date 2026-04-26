@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.13.6 - 2026-04-26
+
+### [1.13.6](https://github.com/wenisch-tech/Kairos/compare/v1.13.5...v1.13.6) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump actions/github-script from 7 to 8 ([79ae69b](https://github.com/wenisch-tech/Kairos/commit/79ae69bac3ab9c41cc113445d0388484c7bdb089))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.6
+
+
 ## v1.13.4 - 2026-04-26
 
 ### [1.13.4](https://github.com/wenisch-tech/Kairos/compare/v1.13.3...v1.13.4) (2026-04-26)
