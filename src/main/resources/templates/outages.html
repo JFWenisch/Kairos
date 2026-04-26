@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Outages - Kairos</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body class="landing-modern outages-modern">
+<nav th:replace="~{layout :: navbar}"></nav>
+
+<div class="container-fluid py-4 dashboard-shell">
+    <div class="dashboard-hero mb-4 outages-hero">
+        <div>
+            <p class="dashboard-kicker mb-2">OUTAGE OVERVIEW</p>
+            <h1 class="h3 mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Outages</h1>
+            <p class="text-muted mb-0">
+                Showing <span class="fw-semibold" th:text="${selectedStatus}">active</span> outages in the
+                <span class="fw-semibold" th:text="${rangeLabel}">last 24 hours</span>.
+            </p>
+        </div>
+
+        <form method="get" th:action="@{/outages}" class="outage-filters">
+            <div class="filter-grid">
+                <div>
+                    <label for="status" class="form-label mb-1">Status</label>
+                    <select id="status" name="status" class="form-select form-select-sm">
+                        <option value="active" th:selected="${selectedStatus == 'active'}">Active</option>
+                        <option value="resolved" th:selected="${selectedStatus == 'resolved'}">Resolved</option>
+                        <option value="all" th:selected="${selectedStatus == 'all'}">All</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="range" class="form-label mb-1">Timespan</label>
+                    <select id="range" name="range" class="form-select form-select-sm">
+                        <option value="24h" th:selected="${selectedRange == '24h'}">24 hours</option>
+                        <option value="7d" th:selected="${selectedRange == '7d'}">7 days</option>
+                        <option value="30d" th:selected="${selectedRange == '30d'}">30 days</option>
+                    </select>
+                </div>
+                <div class="d-flex align-items-end">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i>Apply
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card outage-calendar-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0"><i class="bi bi-calendar3 me-2"></i>Outage Calendar</h2>
+            <small class="text-muted" th:text="${rangeLabel}">last 24 hours</small>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(rows)}" class="text-muted">No outages for the selected filters.</div>
+
+            <div class="outage-calendar" th:unless="${#lists.isEmpty(rows)}">
+                <div class="outage-calendar-axis">
+                    <div class="axis-tick" th:each="tick : ${ticks}"
+                         th:style="'left:' + ${tick.leftPercent}">
+                        <span th:text="${tick.label}">00:00</span>
+                    </div>
+                </div>
+
+                <div class="outage-board" th:style="'height:' + (${#lists.size(rows) * 34 + 16}) + 'px'">
+                    <div class="outage-board-grid"></div>
+                    <a th:each="row, rowStat : ${rows}"
+                       th:if="${row.outage.resource != null}"
+                       th:href="@{/resources/{id}(id=${row.outage.resource.id})}"
+                       class="outage-board-item"
+                       th:classappend="${row.outage.active} ? ' outage-bar-active' : ' outage-bar-resolved'"
+                       th:style="'left:' + ${row.leftPercent} + ';width:' + ${row.widthPercent} + ';top:' + ${(rowStat.index * 34 + 8)} + 'px'">
+                        <span class="outage-board-label" th:text="${row.outage.resource.name}">Resource</span>
+                        <span class="outage-board-duration" th:text="${row.duration}">2h 10m</span>
+                    </a>
+                    <div th:each="row, rowStat : ${rows}"
+                         th:unless="${row.outage.resource != null}"
+                         class="outage-board-item"
+                         th:classappend="${row.outage.active} ? ' outage-bar-active' : ' outage-bar-resolved'"
+                         th:style="'left:' + ${row.leftPercent} + ';width:' + ${row.widthPercent} + ';top:' + ${(rowStat.index * 34 + 8)} + 'px'">
+                        <span class="outage-board-label fst-italic text-muted">Deleted resource</span>
+                        <span class="outage-board-duration" th:text="${row.duration}">2h 10m</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card outage-table-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0"><i class="bi bi-table me-2"></i>Outage List</h2>
+            <small class="text-muted" th:text="${#lists.size(rows)} + ' entries'">0 entries</small>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${#lists.isEmpty(rows)}" class="p-3 text-muted">No outages match the selected filters.</div>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(rows)}">
+                <table class="table table-hover mb-0 outage-table">
+                    <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${rows}">
+                        <td>
+                            <a th:if="${row.outage.resource != null}"
+                               th:href="@{/resources/{id}(id=${row.outage.resource.id})}"
+                               class="text-decoration-none fw-semibold"
+                               th:text="${row.outage.resource.name}">Resource</a>
+                            <span th:unless="${row.outage.resource != null}"
+                                  class="text-muted fst-italic">Deleted resource</span>
+                            <small th:if="${row.outage.resource != null}" class="text-muted ms-2"
+                                   th:text="${row.outage.resource.resourceType}">TYPE</small>
+                        </td>
+                        <td>
+                            <span th:if="${row.outage.active}" class="badge bg-danger">Active</span>
+                            <span th:unless="${row.outage.active}" class="badge bg-success">Resolved</span>
+                        </td>
+                        <td th:text="${#temporals.format(row.outage.startDate, 'yyyy-MM-dd HH:mm:ss')}">-</td>
+                        <td>
+                            <span th:if="${row.outage.endDate != null}"
+                                  th:text="${#temporals.format(row.outage.endDate, 'yyyy-MM-dd HH:mm:ss')}">-</span>
+                            <span th:unless="${row.outage.endDate != null}" class="text-muted fst-italic">ongoing</span>
+                        </td>
+                        <td>
+                            <span th:text="${row.duration}">0m</span>
+                            <small th:if="${row.outage.active}" class="text-muted ms-1">(current)</small>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

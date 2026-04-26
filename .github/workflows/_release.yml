@@ -85,12 +85,14 @@ jobs:
           version="${{ inputs.version }}"
           yq eval ".appVersion = \"$version\"" -i charts/kairos/Chart.yaml
           yq eval ".version = \"$version\"" -i charts/kairos/Chart.yaml
+          yq eval ".image.tag = \"$version\"" -i charts/kairos/values.yaml
 
       - name: Generate Helm values schema
-        uses: losisin/helm-values-schema-json@v2
-        with:
-          input: charts/kairos/values.yaml
-          output: charts/kairos/values.schema.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm plugin install https://github.com/karuppiah7890/helm-schema-gen.git
+          helm schema-gen charts/kairos/values.yaml > charts/kairos/values.schema.json
 
       - name: Commit release files
         shell: bash
@@ -98,12 +100,22 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml charts/kairos/values.schema.json
+          git add pom.xml CHANGELOG.md charts/kairos/Chart.yaml charts/kairos/values.yaml charts/kairos/values.schema.json
           git commit -m "chore(release): ${{ inputs.tag }} [skip ci]" || exit 0
           git push
 
       - name: Package Helm chart
         run: helm package charts/kairos/ --destination ./release
+
+      - name: Generate application SBOM (CycloneDX)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./release
+          mvn -B org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom \
+            -DoutputFormat=all \
+            -DoutputName="kairos-${{ inputs.version }}-sbom" \
+            -DoutputDirectory=./release
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
@@ -122,6 +134,8 @@ jobs:
           path: |
             ./release/*.tgz
             ./release/*.cosign.bundle
+            ./release/*-sbom.json
+            ./release/*-sbom.xml
 
       - name: Publish Helm chart to charts repository
         env:
@@ -137,11 +151,31 @@ jobs:
           git commit -m "Add Kairos helm chart in version ${{ inputs.version }}" || echo "No chart changes to commit"
           git push https://$GH_TOKEN@github.com/JFWenisch/charts.git main
 
+      - name: Download Docker attestation bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-attestation-bundle
+          path: ./release
+
+      - name: Read attestation URL
+        id: read_attestation_url
+        shell: bash
+        run: |
+          set -euo pipefail
+          url=$(cat ./release/docker-image-attestation.url.txt)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag }}
           name: ${{ inputs.tag }}
+          files: |
+            ./release/docker-image-attestation.bundle.json
+            ./release/*.tgz
+            ./release/*.cosign.bundle
+            ./release/*-sbom.json
+            ./release/*-sbom.xml
           body: |
             ${{ inputs.changelog }}
 
@@ -151,6 +185,11 @@ jobs:
             ${{ inputs.image }}@${{ inputs.digest }}
             ```
 
+            ## SBOM
+            A CycloneDX SBOM for this application is attached to this release as:
+            - `kairos-${{ inputs.version }}-sbom.json`
+            - `kairos-${{ inputs.version }}-sbom.xml`
+
             ## Signature & Attestation
             This image was signed using [Sigstore Cosign](https://docs.sigstore.dev/cosign/overview/) with keyless signing via GitHub Actions OIDC.
             A [SLSA provenance attestation](https://slsa.dev/provenance) is attached and visible under the package's **Attestations** tab.
@@ -158,20 +197,20 @@ jobs:
             **Verify image signature:**
             ```bash
             cosign verify ${{ inputs.image }}@${{ inputs.digest }} \
-              --certificate-identity-regexp="https://github.com/JFWenisch/Kairos" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/Kairos" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```
 
             **Verify build provenance:**
             ```bash
             gh attestation verify oci://${{ inputs.image }}@${{ inputs.digest }} \
-              --repo JFWenisch/Kairos
+              --repo wenisch-tech/Kairos
             ```
 
             **Verify Helm chart signature:**
             ```bash
             cosign verify-blob kairos-${{ inputs.version }}.tgz \
               --bundle kairos-${{ inputs.version }}.tgz.cosign.bundle \
-              --certificate-identity-regexp="https://github.com/JFWenisch/Kairos" \
+              --certificate-identity-regexp="https://github.com/wenisch-tech/Kairos" \
               --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
             ```

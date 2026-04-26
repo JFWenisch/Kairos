@@ -1,14 +1,16 @@
 package tech.wenisch.kairos.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.Components;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 /**
  * Configures the global OpenAPI specification metadata served at {@code /v3/api-docs}
@@ -23,8 +25,8 @@ public class OpenApiConfig {
      *
      * <p>Two authentication schemes are declared:
      * <ul>
-     *   <li><b>cookieAuth</b> – session cookie obtained via {@code POST /login} (form login)</li>
-        *   <li><b>apiKeyAuth</b> – bearer JWT token created in the Admin Panel</li>
+     *   <li><b>cookieAuth</b> â€“ session cookie obtained via {@code POST /login} (form login)</li>
+        *   <li><b>apiKeyAuth</b> â€“ bearer JWT token created in the Admin Panel</li>
      * </ul>
      *
      * @return a fully populated {@link OpenAPI} instance
@@ -45,15 +47,20 @@ public class OpenApiConfig {
                                 Read-only endpoints (`GET /api/resources`, `GET /api/resources/{id}`, `GET /api/announcements`, `GET /api/announcements/{id}`) are public.
 
                                 Obtain a session by `POST`-ing credentials to `/login`,
-                                or use an API key JWT created in **Admin → API Keys** as `Authorization: Bearer <token>`.
+                                or use an API key JWT created in **Admin -> API Keys** as `Authorization: Bearer <token>`.
+
+                                ### Links
+                                - [Official Website](https://kairos.wenisch.tech)
+                                - [Documentation](https://kairos.wenisch.tech/docs)
+                                - [Source Code](https://github.com/wenisch-tech/Kairos)
                                 """)
                         .version("1.0.0")
                         .contact(new Contact()
-                                .name("Jean-Fabian Wenisch")
-                                .url("https://github.com/JFWenisch/Kairos"))
+                                .name("Official Website")
+                                .url("https://kairos.wenisch.tech"))
                         .license(new License()
-                                .name("GNU GPL v3.0")
-                                .url("https://github.com/JFWenisch/Kairos/blob/main/LICENSE.md")))
+                                .name("GNU AGPL v3.0")
+                                .url("https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md")))
                 .components(new Components()
                         .addSecuritySchemes(cookieScheme, new SecurityScheme()
                                 .type(SecurityScheme.Type.APIKEY)
@@ -64,7 +71,10 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Bearer JWT API key token created in Admin → API Keys")))
+                                .description("Bearer JWT API key token created in Admin -> API Keys")))
+                .externalDocs(new ExternalDocumentation()
+                        .description("Documentation")
+                        .url("https://kairos.wenisch.tech/docs"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(cookieScheme)
                         .addList(apiKeyScheme));
