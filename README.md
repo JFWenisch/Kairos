@@ -177,42 +177,9 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 
 See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Flyway migrations, registry checks, and OIDC.
 
-Database schema changes are applied automatically at startup via Flyway (`spring.flyway.enabled=true`).
-
-### Outage Configuration
-
-Outage thresholds are configured per resource type in the UI under **Admin -> Resource Types**:
-
-- **Outage threshold**: number of consecutive unsuccessful checks required to open an outage
-- **Recovery threshold**: number of consecutive successful checks required to close an outage
-
-Defaults for new resource type configs:
-
-- Outage threshold: `3`
-- Recovery threshold: `2`
-
-Behavior notes:
-
-- Kairos keeps only one active outage per resource.
-- The public outages page is available at `/outages`.
-- Resource pages and dashboard cards/rows show active outage indicators with live elapsed duration.
 
 ## Documentation
-
-- [docs/index.md](docs/index.md) - documentation index
-- GitHub Pages docs site (auto-published from `docs/`): https://wenisch-tech.github.io/Kairos/
-- [docs/quickstart.md](docs/quickstart.md) - quick setup paths (source, Docker, Helm)
-- [docs/api.md](docs/api.md) - REST API endpoints, payloads and examples
-- [docs/authentication.md](docs/authentication.md) - resource check authentication and credential matching
-- [docs/configuration.md](docs/configuration.md) - runtime configuration, database setup and OIDC
-- [docs/configuration-scheduling.md](docs/configuration-scheduling.md) - intervals, parallelism, and outage threshold behavior
-- [docs/importexport.md](docs/importexport.md) - YAML import/export workflow, format and compatibility notes
-- [docs/docker-pullability.md](docs/docker-pullability.md) - socketless Docker/OCI pullability validation behavior
-- [docs/announcements.md](docs/announcements.md) - announcement features, permissions and lifecycle
-- [docs/embed.md](docs/embed.md) - embed status widget setup, policies and domain allowlist
-- [docs/troubleshooting.md](docs/troubleshooting.md) - common issues, diagnosis steps and fixes
-
-See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.
+Official Documentation including advanced configuration and information is generated via the markdown files in [docs/](docs/index.md)  folder and published to https://kairos.wenisch.tech . 
 
 ---
 
@@ -268,4 +235,4 @@ A health endpoint is also available at `/actuator/health`.
 
 ## License
 Licensed under 
-[AGPL v3.0](LICENSE.md) by Jean-Fabian Wenisch / wenisch.tech
+[AGPL v3.0](LICENSE.md) by  [Jean-Fabian Wenisch](https://github.com/jfwenisch) / wenisch.tech [wenisch.tech](https://wenisch.tech) 
