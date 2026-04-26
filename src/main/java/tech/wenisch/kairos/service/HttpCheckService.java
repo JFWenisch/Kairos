@@ -11,8 +11,14 @@ import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -33,15 +39,20 @@ public class HttpCheckService {
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final OutageService outageService;
 
     private final HttpClient httpClient = createDefaultHttpClient();
     private final HttpClient insecureHttpClient = createInsecureHttpClient();
 
     public CheckResult check(MonitoredResource resource) {
         String url = resource.getTarget();
+        long checkStartedNanos = System.nanoTime();
+        LatencyMetrics phaseLatency = new LatencyMetrics(null, null, null);
         try {
+            URI uri = URI.create(url);
+            phaseLatency = measureHttpPhases(resource, uri);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(uri)
                     .timeout(Duration.ofSeconds(15))
                     .GET();
 
@@ -66,6 +77,10 @@ public class HttpCheckService {
                         .checkedAt(LocalDateTime.now())
                         .message("HTTP " + statusCode)
                         .errorCode(String.valueOf(statusCode))
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .dnsResolutionMs(phaseLatency.dnsResolutionMs())
+                    .connectMs(phaseLatency.connectMs())
+                    .tlsHandshakeMs(phaseLatency.tlsHandshakeMs())
                         .build();
             } else {
                 result = CheckResult.builder()
@@ -74,21 +89,31 @@ public class HttpCheckService {
                         .checkedAt(LocalDateTime.now())
                         .message("HTTP " + statusCode)
                         .errorCode(String.valueOf(statusCode))
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .dnsResolutionMs(phaseLatency.dnsResolutionMs())
+                    .connectMs(phaseLatency.connectMs())
+                    .tlsHandshakeMs(phaseLatency.tlsHandshakeMs())
                         .build();
             }
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         } catch (Exception e) {
             log.warn("HTTP check failed for {}: {}", url, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
-                    .status(CheckStatus.NOT_AVAILABLE)
+                    .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
                     .message(e.getMessage())
                     .errorCode("CONNECTION_ERROR")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .dnsResolutionMs(phaseLatency.dnsResolutionMs())
+                    .connectMs(phaseLatency.connectMs())
+                    .tlsHandshakeMs(phaseLatency.tlsHandshakeMs())
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         }
@@ -137,5 +162,67 @@ public class HttpCheckService {
         } catch (GeneralSecurityException ex) {
             throw new IllegalStateException("Failed to initialize insecure HTTP client", ex);
         }
+    }
+
+    private Long elapsedMillis(long startedNanos) {
+        return Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
+    }
+
+    private LatencyMetrics measureHttpPhases(MonitoredResource resource, URI uri) {
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            return new LatencyMetrics(null, null, null);
+        }
+
+        Long dnsResolutionMs = null;
+        Long connectMs = null;
+        Long tlsHandshakeMs = null;
+
+        InetAddress[] addresses = null;
+        long phaseStart = System.nanoTime();
+        try {
+            addresses = InetAddress.getAllByName(host);
+            dnsResolutionMs = elapsedMillis(phaseStart);
+        } catch (Exception ex) {
+            log.debug("DNS phase timing unavailable for {}: {}", host, ex.getMessage());
+        }
+
+        int port = resolvePort(uri);
+        if (addresses != null && addresses.length > 0 && port > 0) {
+            try (Socket socket = new Socket()) {
+                phaseStart = System.nanoTime();
+                socket.connect(new InetSocketAddress(addresses[0], port), 5000);
+                connectMs = elapsedMillis(phaseStart);
+
+                if ("https".equalsIgnoreCase(uri.getScheme()) && !resource.isSkipTls()) {
+                    phaseStart = System.nanoTime();
+                    SSLSocketFactory sslFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                    try (SSLSocket sslSocket = (SSLSocket) sslFactory.createSocket(socket, host, port, true)) {
+                        sslSocket.startHandshake();
+                    }
+                    tlsHandshakeMs = elapsedMillis(phaseStart);
+                }
+            } catch (IOException ex) {
+                log.debug("Connection phase timing unavailable for {}:{}: {}", host, port, ex.getMessage());
+            }
+        }
+
+        return new LatencyMetrics(dnsResolutionMs, connectMs, tlsHandshakeMs);
+    }
+
+    private int resolvePort(URI uri) {
+        if (uri.getPort() > 0) {
+            return uri.getPort();
+        }
+        if ("https".equalsIgnoreCase(uri.getScheme())) {
+            return 443;
+        }
+        if ("http".equalsIgnoreCase(uri.getScheme())) {
+            return 80;
+        }
+        return -1;
+    }
+
+    private record LatencyMetrics(Long dnsResolutionMs, Long connectMs, Long tlsHandshakeMs) {
     }
 }

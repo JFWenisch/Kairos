@@ -3,6 +3,7 @@ package tech.wenisch.kairos.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
 
 import java.util.List;
@@ -25,6 +26,9 @@ public class ResourceGroupService {
     public ResourceGroup save(ResourceGroup resourceGroup) {
         if (resourceGroup.getName() != null) {
             resourceGroup.setName(resourceGroup.getName().trim());
+        }
+        if (resourceGroup.getVisibility() == null) {
+            resourceGroup.setVisibility(ResourceGroupVisibility.PUBLIC);
         }
         return resourceGroupRepository.save(resourceGroup);
     }

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Embed Status Widget - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <span th:text="${successMessage}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${errorMessage}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <h2 class="h4 mb-4"><i class="bi bi-badge-ad me-2"></i>Embed Status Widget</h2>
+
+            <div class="card mb-4">
+                <div class="card-header">Embed Snippet</div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="embedMode" class="form-label">Mode</label>
+                            <select id="embedMode" class="form-select" onchange="updateEmbedGenerator()">
+                                <option value="light" selected>Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="embedFontSize" class="form-label">Font size (px)</label>
+                            <input id="embedFontSize" type="number" min="6" max="32" step="1" value="15"
+                                   class="form-control" oninput="updateEmbedGenerator()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="embedFontColor" class="form-label">Font color (hex)</label>
+                            <input id="embedFontColor" type="text" class="form-control" placeholder="#ffffff" maxlength="7" oninput="updateEmbedGenerator()">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="embedRefresh" class="form-label">Refresh (seconds)</label>
+                            <input id="embedRefresh" type="number" min="10" max="3600" step="1" value="30"
+                                   class="form-control" oninput="updateEmbedGenerator()">
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <p class="text-muted small mb-0">Copy this snippet into any external HTML page.</p>
+                        <button id="copyEmbedSnippetButton" type="button" class="btn btn-sm btn-outline-light" onclick="copyEmbedSnippet()">
+                            <i class="bi bi-clipboard me-1"></i>Copy
+                        </button>
+                    </div>
+                    <pre class="mb-0"><code id="embedSnippetCode">snippet</code></pre>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Preview</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Live preview of the embedded widget using the current policy and status data.</p>
+                    <iframe
+                            id="embedPreviewIframe"
+                            th:src="@{/embed/status(refresh=30,mode='light',fontSize=15)}"
+                            title="Kairos Service Status Preview"
+                            width="360"
+                            height="56"
+                            style="border:0;overflow:hidden;"
+                            loading="lazy"></iframe>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Embed Access Policy</div>
+                <div class="card-body">
+                    <form th:action="@{/admin/embed/policy}" method="post">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="embedPolicy" id="embedDisabled" value="DISABLED"
+                                   th:checked="${embedPolicy == 'DISABLED'}">
+                            <label class="form-check-label" for="embedDisabled">Disable embed widget</label>
+                            <div class="form-text">Requests to the embed endpoint are blocked.</div>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="embedPolicy" id="embedAllowAll" value="ALLOW_ALL"
+                                   th:checked="${embedPolicy == 'ALLOW_ALL'}">
+                            <label class="form-check-label" for="embedAllowAll">Allow from all sources</label>
+                            <div class="form-text">Any site can embed the widget iframe.</div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="embedPolicy" id="embedAllowList" value="ALLOW_LIST"
+                                   th:checked="${embedPolicy == 'ALLOW_LIST'}">
+                            <label class="form-check-label" for="embedAllowList">Allow only selected domains</label>
+                            <div class="form-text">Only origins listed below may embed the widget.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Save Embed Policy</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-globe me-2"></i>Allowed Embed Origins</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Only used when policy is set to Allow only selected domains.</p>
+
+                    <div th:if="${not #lists.isEmpty(embedAllowedOrigins)}" class="mb-3">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead>
+                            <tr>
+                                <th>Origin</th>
+                                <th style="width: 60px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="embedOrigin : ${embedAllowedOrigins}">
+                                <td><code th:text="${embedOrigin.origin}"></code></td>
+                                <td class="text-center">
+                                    <form th:action="@{/admin/embed/origins/remove/{id}(id=${embedOrigin.id})}" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div th:if="${#lists.isEmpty(embedAllowedOrigins)}" class="alert alert-secondary mb-3">
+                        No embed origins configured.
+                    </div>
+
+                    <form th:action="@{/admin/embed/origins/add}" method="post" class="d-flex gap-2">
+                        <input type="text" name="origin" class="form-control" placeholder="https://example.com" required>
+                        <button type="submit" class="btn btn-primary text-nowrap"><i class="bi bi-plus-lg me-1"></i>Add Origin</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+<script th:inline="javascript">
+    const embedPath = /*[[@{/embed/status}]]*/ '/embed/status';
+
+    function sanitizeNumber(value, min, max, fallbackValue) {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isNaN(parsed)) {
+            return fallbackValue;
+        }
+        return Math.min(max, Math.max(min, parsed));
+    }
+
+    function normalizeHexColor(value) {
+        const raw = (value || '').trim();
+        if (!raw) {
+            return '';
+        }
+        const withHash = raw.startsWith('#') ? raw : `#${raw}`;
+        return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(withHash) ? withHash : '';
+    }
+
+    function updateEmbedGenerator() {
+        const modeElement = document.getElementById('embedMode');
+        const fontSizeElement = document.getElementById('embedFontSize');
+        const fontColorElement = document.getElementById('embedFontColor');
+        const refreshElement = document.getElementById('embedRefresh');
+        const snippetElement = document.getElementById('embedSnippetCode');
+        const previewElement = document.getElementById('embedPreviewIframe');
+
+        if (!modeElement || !fontSizeElement || !fontColorElement || !refreshElement || !snippetElement || !previewElement) {
+            return;
+        }
+
+        const mode = modeElement.value === 'dark' ? 'dark' : 'light';
+        const fontSize = sanitizeNumber(fontSizeElement.value, 6, 32, 15);
+        const fontColor = normalizeHexColor(fontColorElement.value);
+        const refresh = sanitizeNumber(refreshElement.value, 10, 3600, 30);
+
+        fontSizeElement.value = String(fontSize);
+        refreshElement.value = String(refresh);
+
+        const params = new URLSearchParams({
+            refresh: String(refresh),
+            mode,
+            fontSize: String(fontSize)
+        });
+        if (fontColor) {
+            params.set('fontColor', fontColor);
+        }
+
+        const embedBaseUrl = new URL(embedPath, window.location.origin).toString();
+        const src = `${embedBaseUrl}?${params.toString()}`;
+        previewElement.src = src;
+
+        snippetElement.textContent = `<iframe src="${src}" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>`;
+    }
+
+    function copyEmbedSnippet() {
+        const snippetElement = document.getElementById('embedSnippetCode');
+        const buttonElement = document.getElementById('copyEmbedSnippetButton');
+        if (!snippetElement || !buttonElement) {
+            return;
+        }
+
+        navigator.clipboard.writeText(snippetElement.textContent || '')
+            .then(() => {
+                buttonElement.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied';
+                window.setTimeout(() => {
+                    buttonElement.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy';
+                }, 1600);
+            });
+    }
+
+    updateEmbedGenerator();
+</script>
+</body>
+</html>

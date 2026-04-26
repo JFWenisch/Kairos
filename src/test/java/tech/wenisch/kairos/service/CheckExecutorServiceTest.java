@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
@@ -34,10 +33,10 @@ class CheckExecutorServiceTest {
     private DockerCheckService dockerCheckService;
 
     @Mock
-    private ResourceStatusStreamService resourceStatusStreamService;
+    private DockerRepositorySyncService dockerRepositorySyncService;
 
     @Mock
-    private CheckResultRepository checkResultRepository;
+    private ResourceStatusStreamService resourceStatusStreamService;
 
     @Mock
     private MonitoredResourceRepository resourceRepository;
@@ -52,8 +51,8 @@ class CheckExecutorServiceTest {
         checkExecutorService = new CheckExecutorService(
                 httpCheckService,
                 dockerCheckService,
+                dockerRepositorySyncService,
                 resourceStatusStreamService,
-                checkResultRepository,
                 resourceRepository,
                 configRepository
         );
@@ -71,7 +70,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(123L);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -81,7 +80,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(inactive);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -91,7 +90,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(resource);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -111,7 +110,7 @@ class CheckExecutorServiceTest {
         assertThat(triggered).isTrue();
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(httpCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(dockerCheckService);
+        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService);
     }
 
     @Test
@@ -131,18 +130,19 @@ class CheckExecutorServiceTest {
         assertThat(triggered).isTrue();
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(dockerCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(httpCheckService);
+        verifyNoInteractions(httpCheckService, dockerRepositorySyncService);
     }
 
     @Test
     void dispatchSkipsTypesWithoutConfig() {
         when(configRepository.findByTypeName("HTTP")).thenReturn(Optional.empty());
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
+        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
 
         checkExecutorService.dispatch();
 
         verify(resourceRepository, never()).findByResourceTypeAndActiveTrue(any());
-        verifyNoInteractions(httpCheckService, dockerCheckService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService);
     }
 
     @Test
@@ -161,30 +161,33 @@ class CheckExecutorServiceTest {
                         .parallelism(1)
                         .build()));
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
+        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
         when(resourceRepository.findByResourceTypeAndActiveTrue(ResourceType.HTTP)).thenReturn(List.of(resource));
 
         checkExecutorService.dispatch();
 
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(httpCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(dockerCheckService);
+        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService);
     }
 
     @Test
     void runChecksOnStartupDelegatesToDispatch() {
         when(configRepository.findByTypeName("HTTP")).thenReturn(Optional.empty());
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
+        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
 
         checkExecutorService.runChecksOnStartup();
 
         verify(configRepository).findByTypeName(eq("HTTP"));
         verify(configRepository).findByTypeName(eq("DOCKER"));
+        verify(configRepository).findByTypeName(eq("DOCKERREPOSITORY"));
     }
 
     @Test
     void shutdownHandlesEmptyExecutorState() {
         checkExecutorService.shutdown();
 
-        verifyNoInteractions(httpCheckService, dockerCheckService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
     }
 }
