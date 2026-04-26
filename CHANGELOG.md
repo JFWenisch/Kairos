@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.13.7 - 2026-04-26
+
+### [1.13.7](https://github.com/wenisch-tech/Kairos/compare/v1.13.6...v1.13.7) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump com.nimbusds:nimbus-jose-jwt from 9.37.4 to 10.9 ([b933991](https://github.com/wenisch-tech/Kairos/commit/b93399182ea08e12fa0bfd8361331ef1cf419a73))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.7
+
+
 ## v1.13.6 - 2026-04-26
 
 ### [1.13.6](https://github.com/wenisch-tech/Kairos/compare/v1.13.5...v1.13.6) (2026-04-26)
