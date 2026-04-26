@@ -218,10 +218,7 @@ A health endpoint is also available at `/actuator/health`.
 ```bash
 git clone https://github.com/wenisch-tech/Kairos.git
 cd Kairos
-./mvnw spring-boot:run
-```
 
-```bash
 # Run tests
 ./mvnw test
 
@@ -233,7 +230,7 @@ cd Kairos
 
 ```bash
 ./mvnw package -DskipTests
-java -jar target/kairos-0.0.1-SNAPSHOT.jar
+java -jar target/kairos.jar
 ```
 
 ---
