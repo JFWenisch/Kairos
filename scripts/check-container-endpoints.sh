@@ -21,12 +21,26 @@ trap cleanup EXIT
 cleanup
 
 echo "Starting container ${IMAGE} on ${BASE_URL}"
-docker run -d --rm --name "$CONTAINER_NAME" -p "${HOST_PORT}:8080" "$IMAGE" >/dev/null
+docker run -d --name "$CONTAINER_NAME" -p "${HOST_PORT}:8080" "$IMAGE" >/dev/null
 
 # Wait for app startup (up to 120s)
 startup_deadline=$((SECONDS + 120))
 ready=0
 while [ "$SECONDS" -lt "$startup_deadline" ]; do
+  # Bail early if the container already exited (crash at startup)
+  state=$(docker inspect -f '{{.State.Status}}' "$CONTAINER_NAME" 2>/dev/null || echo "gone")
+  if [ "$state" != "running" ]; then
+    echo "Container exited prematurely (state: ${state})"
+    docker logs "$CONTAINER_NAME" | tail -n 200 || true
+    {
+      echo "# ${LABEL}"
+      echo
+      echo "Status: FAILED"
+      echo
+      echo "Reason: Container exited before becoming ready (state: ${state})"
+    } > "$REPORT_FILE"
+    exit 1
+  fi
   code=$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/api/resources" || true)
   if [ "$code" = "200" ]; then
     ready=1

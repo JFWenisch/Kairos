@@ -5,6 +5,14 @@
         "affinity": {
             "type": "object"
         },
+        "autoscaling": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "env": {
             "type": "object",
             "properties": {
@@ -115,7 +123,7 @@
                             "type": "string"
                         },
                         "port": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 },
@@ -186,7 +194,7 @@
                             "type": "string"
                         },
                         "port": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 },
@@ -267,6 +275,34 @@
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "startupProbe": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "failureThreshold": {
+                    "type": "integer"
+                },
+                "httpGet": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        },
+                        "port": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "periodSeconds": {
+                    "type": "integer"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
                 }
             }
         },

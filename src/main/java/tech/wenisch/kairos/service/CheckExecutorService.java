@@ -171,16 +171,25 @@ public class CheckExecutorService {
     private void executeCheck(MonitoredResource resource, ResourceType type) {
         try {
             if (type == ResourceType.HTTP) {
-                resourceStatusStreamService.publishResourceChecking(resource);
+                publishCheckingState(resource);
                 httpCheckService.check(resource);
             } else if (type == ResourceType.DOCKER) {
-                resourceStatusStreamService.publishResourceChecking(resource);
+                publishCheckingState(resource);
                 dockerCheckService.check(resource);
             } else if (type == ResourceType.DOCKERREPOSITORY) {
                 dockerRepositorySyncService.sync(resource);
             }
         } catch (Exception e) {
             log.error("Error checking resource {}: {}", resource.getName(), e.getMessage(), e);
+        }
+    }
+
+    private void publishCheckingState(MonitoredResource resource) {
+        try {
+            resourceStatusStreamService.publishResourceChecking(resource);
+        } catch (Throwable ex) {
+            log.trace("Ignoring transient SSE failure while marking resource '{}' as checking: {}",
+                    resource.getName(), ex.getMessage());
         }
     }
 

@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
 </head>
 <body class="detail-modern">
 <nav th:replace="~{layout :: navbar}"></nav>
@@ -46,7 +47,7 @@
                     <h1 class="h2 mb-0 detail-title" th:text="${vm.resource.name}">Resource Name</h1>
                     <p class="text-muted mb-0 detail-subline">
                         <span class="badge detail-type-badge me-2" th:text="${vm.resource.resourceType}">TYPE</span>
-                        <code th:text="${vm.resource.target}">target</code>
+                        <code th:if="${showResourceUrl}" th:text="${vm.resource.target}">target</code>
                     </p>
                 </div>
             </div>
@@ -130,11 +131,44 @@
                 <div class="timeline-container">
                     <span th:each="block : ${vm.timelineBlocks}"
                           th:class="'timeline-block ' + ${block.status}"
+                          th:attr="data-latency-ms=${block.latencyMs},data-dns-latency-ms=${block.dnsResolutionMs},data-connect-latency-ms=${block.connectMs},data-tls-latency-ms=${block.tlsHandshakeMs}"
                           th:title="${block.status + ' · ' + #temporals.format(block.timestamp, 'yyyy-MM-dd HH:mm:ss')}"></span>
                 </div>
                 <div class="timeline-labels d-flex justify-content-between align-items-center">
                     <small class="text-muted timeline-label-start" data-role="timeline-range-start" data-hours="24">--:--</small>
                     <small class="text-muted timeline-label-end">--:--</small>
+                </div>
+                <div class="latency-panel" data-role="latency-panel">
+                    <div class="latency-panel-header d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Latency trend (ms)</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="btn-group btn-group-sm latency-zoom-controls" role="group" aria-label="Zoom controls">
+                                <button type="button" class="btn btn-outline-secondary" data-role="latency-zoom-out" title="Zoom out" disabled>&#8722;</button>
+                                <button type="button" class="btn btn-outline-secondary" data-role="latency-zoom-reset" title="Reset zoom">&#8962;</button>
+                                <button type="button" class="btn btn-outline-secondary" data-role="latency-zoom-in" title="Zoom in">+</button>
+                            </div>
+                            <small class="text-muted" data-role="latency-summary">No latency samples yet</small>
+                        </div>
+                    </div>
+                    <div class="latency-chart-scroll-wrapper" data-role="latency-chart-wrapper">
+                        <svg class="latency-chart" data-role="latency-chart" viewBox="0 0 900 180" preserveAspectRatio="none" aria-label="Latency chart">
+                            <defs>
+                                <linearGradient id="latencyAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="rgba(13, 202, 240, 0.18)"></stop>
+                                    <stop offset="100%" stop-color="rgba(13, 202, 240, 0.01)"></stop>
+                                </linearGradient>
+                            </defs>
+                            <path class="latency-chart-area" data-role="latency-area"></path>
+                            <path class="latency-chart-line" data-role="latency-line"></path>
+                            <g data-role="latency-dots"></g>
+                        </svg>
+                        <div class="latency-tooltip" data-role="latency-tooltip" hidden></div>
+                        <div class="latency-time-axis" data-role="latency-time-axis"></div>
+                    </div>
+                    <div class="latency-scale d-flex justify-content-between align-items-center">
+                        <small class="text-muted" data-role="latency-min">0 ms</small>
+                        <small class="text-muted" data-role="latency-max">0 ms</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -307,6 +341,7 @@
                     <tr>
                         <th>Time</th>
                         <th>Status</th>
+                        <th>Latency</th>
                         <th>Message</th>
                         <th>Code</th>
                     </tr>
@@ -318,6 +353,8 @@
                             <span th:class="'badge ' + (${result.status.name() == 'AVAILABLE'} ? 'bg-success' : (${result.status.name() == 'NOT_AVAILABLE'} ? 'bg-danger' : 'bg-secondary'))"
                                   th:text="${result.status}">STATUS</span>
                         </td>
+                        <td class="text-nowrap"
+                            th:text="${result.latencyMs != null ? result.latencyMs + ' ms' : '—'}">—</td>
                         <td th:text="${result.message}">message</td>
                         <td th:text="${result.errorCode}">code</td>
                     </tr>

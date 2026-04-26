@@ -38,8 +38,10 @@ nav:
           - Check Scheduling: configuration-scheduling.md
           - Observability: configuration-observability.md
           - Docker Pullability: docker-pullability.md
+          - Embed Status Widget: embed.md
           - Import / Export: importexport.md
           - Announcements: announcements.md
+          - Custom Headers: custom-headers.md
   - Troubleshooting: troubleshooting.md
 markdown_extensions:
   - admonition

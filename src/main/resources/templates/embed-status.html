@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kairos Status</title>
+    <meta http-equiv="refresh" th:content="${refreshSeconds}">
+    <style>
+        :root {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            background: transparent;
+        }
+
+        body {
+            margin: 0;
+            background: transparent;
+        }
+
+        body.theme-light {
+            color-scheme: light;
+            color: #0f172a;
+        }
+
+        body.theme-dark {
+            color-scheme: dark;
+            color: #ffffff;
+        }
+
+        .status-widget {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.35rem 0.2rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .status-link {
+            color: inherit;
+            text-decoration: none;
+            display: inline-flex;
+        }
+
+        .status-link:visited,
+        .status-link:hover,
+        .status-link:active,
+        .status-link:focus {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .status-dot {
+            width: 0.8rem;
+            height: 0.8rem;
+            border-radius: 50%;
+            display: inline-block;
+            flex: 0 0 auto;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+            animation: pulse 2.2s ease-out infinite;
+        }
+
+        .status-dot.ok {
+            background: #198754;
+            box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.38);
+        }
+
+        .status-dot.incident {
+            background: #dc3545;
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45);
+        }
+
+        .status-text {
+            font-weight: 600;
+        }
+
+        .status-count {
+            font-size: 0.82em;
+            margin-left: 0.2rem;
+        }
+
+        body.theme-light .status-count {
+            color: #5b6678;
+        }
+
+        body.theme-dark .status-count {
+            color: #ffffff;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 currentColor;
+            }
+            70% {
+                box-shadow: 0 0 0 9px transparent;
+            }
+            100% {
+                box-shadow: 0 0 0 0 transparent;
+            }
+        }
+
+        @media (max-width: 460px) {
+            .status-widget {
+                padding: 0.42rem 0.65rem;
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+<body th:class="'theme-' + ${mode}">
+<a class="status-link" th:href="@{/}" target="_top" aria-label="Open Kairos landing page">
+    <div class="status-widget"
+         role="status"
+         aria-live="polite"
+         th:style="${(fontColor != null and !#strings.isEmpty(fontColor)) ? 'font-size:' + fontSize + 'px;color:' + fontColor : 'font-size:' + fontSize + 'px'}">
+        <span class="status-dot"
+              th:classappend="${hasActiveIncidents} ? ' incident' : ' ok'"
+              aria-hidden="true"></span>
+        <span class="status-text"
+              th:text="${hasActiveIncidents} ? 'Active problems detected' : 'All systems operational'">
+            All systems operational
+        </span>
+        <span class="status-count"
+              th:if="${hasActiveIncidents}"
+              th:text="'(' + ${activeOutages} + ' active incident' + (${activeOutages} == 1 ? '' : 's') + ')'">
+            (1 active incident)
+        </span>
+    </div>
+</a>
+</body>
+</html>

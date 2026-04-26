@@ -9,6 +9,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
@@ -33,15 +34,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
-            <div class="d-flex flex-column">
-                <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
-                <a th:href="@{/admin/settings}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-sliders me-2"></i>General Settings</a>
-                <a th:href="@{/admin/resources}" class="nav-link px-2 py-2 rounded mb-1 active"><i class="bi bi-hdd-network me-2"></i>Manage Resources</a>
-                <a th:href="@{/admin/resource-types}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-grid-3x3-gap me-2"></i>Resource Types</a>
-                <a th:href="@{/admin/users}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-people me-2"></i>Users</a>
-                <a th:href="@{/admin/announcements}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-megaphone me-2"></i>Announcements</a>
-                <a th:href="@{/admin/api-keys}" class="nav-link px-2 py-2 rounded mb-1"><i class="bi bi-key me-2"></i>API Keys</a>
-            </div>
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
         </div>
         <div class="col-md-10 py-4 px-4">
             <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
@@ -81,6 +74,7 @@
                         <thead>
                         <tr>
                             <th>Name</th>
+                            <th style="width: 190px;">Visibility</th>
                             <th style="width: 160px;">Group Order</th>
                             <th style="width: 190px;">Actions</th>
                         </tr>
@@ -88,25 +82,30 @@
                         <tbody>
                         <tr th:each="group : ${resourceGroups}">
                             <td>
-                                <form class="row g-2 align-items-center" method="post"
+                                <form class="row g-2 align-items-center" method="post" th:id="${'group-update-' + group.id}"
                                       th:action="@{/admin/resource-groups/update/{id}(id=${group.id})}">
-                                    <div class="col-md-7">
+                                    <div class="col-12">
                                         <input type="text" name="name" class="form-control form-control-sm"
                                                th:value="${group.name}" required maxlength="255">
                                     </div>
-                                    <div class="col-md-4">
-                                        <input type="number" name="displayOrder" class="form-control form-control-sm"
-                                               th:value="${group.displayOrder}" step="1">
-                                    </div>
-                                    <div class="col-md-1">
-                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Save group">
-                                            <i class="bi bi-check2"></i>
-                                        </button>
-                                    </div>
                                 </form>
                             </td>
-                            <td class="text-muted" th:text="${group.displayOrder}">0</td>
                             <td>
+                                <select class="form-select form-select-sm" name="visibility" th:attr="form=${'group-update-' + group.id}">
+                                    <option th:each="visibility : ${groupVisibilityOptions}"
+                                            th:value="${visibility}"
+                                            th:selected="${group.visibilityOrDefault == visibility}"
+                                            th:text="${visibility}">PUBLIC</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" name="displayOrder" class="form-control form-control-sm"
+                                       th:value="${group.displayOrder}" step="1" th:attr="form=${'group-update-' + group.id}">
+                            </td>
+                            <td>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" th:attr="form=${'group-update-' + group.id}" title="Save group">
+                                    <i class="bi bi-check2"></i>
+                                </button>
                                 <form method="post" th:action="@{/admin/resource-groups/delete/{id}(id=${group.id})}" class="d-inline"
                                       onsubmit="return confirm('Delete this group? Resources will become ungrouped.')">
                                     <button type="submit" class="btn btn-danger btn-sm">
@@ -178,13 +177,14 @@
                                         <code class="small" th:text="${resource.target}">target</code>
                                     </div>
                                     <div class="col-lg-2">
-                                        <select class="form-select form-select-sm" name="groupId" th:attr="form=${formId}">
-                                            <option value="">Ungrouped</option>
+                                        <select class="form-select form-select-sm" name="groupIds" multiple
+                                                th:attr="form=${formId}" size="3">
                                             <option th:each="group : ${resourceGroups}"
                                                     th:value="${group.id}"
-                                                    th:selected="${resource.group != null and resource.group.id == group.id}"
+                                                    th:selected="${resource.groups != null and resource.groups.![id].contains(group.id)}"
                                                     th:text="${group.name}">Group</option>
                                         </select>
+                                        <div class="form-text small">Hold Ctrl/⌘ to select multiple</div>
                                     </div>
                                     <div class="col-lg-1">
                                         <input type="number" class="form-control form-control-sm" name="displayOrder"
@@ -278,11 +278,11 @@
                         <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Group</label>
-                        <select class="form-select" name="groupId">
-                            <option value="">Ungrouped</option>
+                        <label class="form-label">Groups</label>
+                        <select class="form-select" name="groupIds" multiple size="4">
                             <option th:each="group : ${resourceGroups}" th:value="${group.id}" th:text="${group.name}">Group</option>
                         </select>
+                        <div class="form-text">Hold Ctrl/⌘ to select multiple groups. Leave empty to leave ungrouped.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Order</label>
@@ -331,6 +331,16 @@
                         <label class="form-label">Group Order</label>
                         <input type="number" class="form-control" name="displayOrder" value="0" step="1">
                         <div class="form-text">Lower numbers are shown first on the landing page.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Visibility</label>
+                        <select class="form-select" name="visibility">
+                            <option th:each="visibility : ${groupVisibilityOptions}"
+                                    th:value="${visibility}"
+                                    th:text="${visibility}"
+                                    th:selected="${visibility.name() == 'PUBLIC'}">PUBLIC</option>
+                        </select>
+                        <div class="form-text">PUBLIC shows for everyone, AUTHENTICATED shows only to signed-in users, HIDDEN hides this group from dashboard and public API views.</div>
                     </div>
                 </div>
                 <div class="modal-footer">

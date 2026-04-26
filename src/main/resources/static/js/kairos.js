@@ -196,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeResourceCardLinks();
     initializeOutageSinceCounters();
     initializeTimelineLabels();
+    initializeLatencyChartsFromDom();
     initResourceStatusStream();
     refreshAllGroupCounters();
     initAdminResourceSorting();
@@ -206,6 +207,8 @@ function initResourceStatusStream() {
     if (!hasLiveResourceView) {
         return;
     }
+
+    const preferPollingOverSse = false;
 
     const rangeControls = document.querySelector('[data-role="timeline-range-controls"]');
     const rangeButtons = rangeControls ? rangeControls.querySelectorAll('[data-timeline-hours]') : [];
@@ -523,7 +526,7 @@ function initResourceStatusStream() {
         });
     });
 
-    if (typeof EventSource === 'undefined') {
+    if (preferPollingOverSse || typeof EventSource === 'undefined') {
         startHttpPolling();
         return;
     }
@@ -584,6 +587,7 @@ function updateResourceRow(update) {
         updateTimeline(container, update.timelineBlocks);
         updateUptime(container, update.uptimePercentage);
         updateOutageBadge(container, update.activeOutageSince || null);
+        updateLatencyLabel(container, update.timelineBlocks);
         container.classList.remove('resource-loading');
     });
 
@@ -645,11 +649,36 @@ function updateTimeline(row, timelineBlocks) {
         const status = normalizeStatus(resolveTimelineBlockStatus(block));
         const blockElement = document.createElement('span');
         blockElement.className = 'timeline-block ' + status;
-        blockElement.title = buildTimelineTooltip(status, resolveTimelineBlockTimestamp(block));
+        const latencyMs = resolveTimelineBlockLatency(block);
+        const dnsLatencyMs = resolveTimelineBlockDnsLatency(block);
+        const connectLatencyMs = resolveTimelineBlockConnectLatency(block);
+        const tlsLatencyMs = resolveTimelineBlockTlsLatency(block);
+
+        if (latencyMs !== null) {
+            blockElement.dataset.latencyMs = String(latencyMs);
+        }
+        if (dnsLatencyMs !== null) {
+            blockElement.dataset.dnsLatencyMs = String(dnsLatencyMs);
+        }
+        if (connectLatencyMs !== null) {
+            blockElement.dataset.connectLatencyMs = String(connectLatencyMs);
+        }
+        if (tlsLatencyMs !== null) {
+            blockElement.dataset.tlsLatencyMs = String(tlsLatencyMs);
+        }
+
+        blockElement.title = buildTimelineTooltip(status, resolveTimelineBlockTimestamp(block), block);
         fragment.appendChild(blockElement);
     });
 
     container.replaceChildren(fragment);
+    // Skip chart re-render when the detail page is using fine-grained latency samples fetched
+    // from the API; the SSE timeline blocks are coarser and should not overwrite that data.
+    const latencyPanel = row.querySelector('[data-role="latency-panel"]');
+    const usingSamplesMode = latencyPanel && latencyPanel._latencyRawSamples !== undefined;
+    if (!usingSamplesMode) {
+        renderLatencyChart(row, timelineBlocks);
+    }
 }
 
 function resolveTimelineBlockStatus(block) {
@@ -666,13 +695,80 @@ function resolveTimelineBlockTimestamp(block) {
     return null;
 }
 
-function buildTimelineTooltip(status, timestamp) {
+function resolveTimelineBlockLatency(block) {
+    if (block && typeof block === 'object') {
+        return parseLatencyValue(block.latencyMs);
+    }
+    return null;
+}
+
+function resolveTimelineBlockDnsLatency(block) {
+    if (block && typeof block === 'object') {
+        return parseLatencyValue(block.dnsResolutionMs);
+    }
+    return null;
+}
+
+function resolveTimelineBlockConnectLatency(block) {
+    if (block && typeof block === 'object') {
+        return parseLatencyValue(block.connectMs);
+    }
+    return null;
+}
+
+function resolveTimelineBlockTlsLatency(block) {
+    if (block && typeof block === 'object') {
+        return parseLatencyValue(block.tlsHandshakeMs);
+    }
+    return null;
+}
+
+function parseLatencyValue(value) {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+        return value;
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+            return parsed;
+        }
+    }
+    return null;
+}
+
+function buildTimelineTooltip(status, timestamp, block) {
     const normalizedStatus = normalizeStatus(status);
     const formattedTimestamp = formatTimelineTimestamp(timestamp);
+    const latencyMs = resolveTimelineBlockLatency(block);
+    const dnsLatencyMs = resolveTimelineBlockDnsLatency(block);
+    const connectLatencyMs = resolveTimelineBlockConnectLatency(block);
+    const tlsLatencyMs = resolveTimelineBlockTlsLatency(block);
+
+    const lines = [];
     if (!formattedTimestamp) {
-        return normalizedStatus;
+        lines.push(normalizedStatus);
+    } else {
+        lines.push(normalizedStatus + ' · ' + formattedTimestamp);
     }
-    return normalizedStatus + ' · ' + formattedTimestamp;
+
+    if (latencyMs !== null) {
+        lines.push('Latency: ' + formatLatencyMs(latencyMs));
+    }
+    if (dnsLatencyMs !== null) {
+        lines.push('DNS: ' + formatLatencyMs(dnsLatencyMs));
+    }
+    if (connectLatencyMs !== null) {
+        lines.push('Connect: ' + formatLatencyMs(connectLatencyMs));
+    }
+    if (tlsLatencyMs !== null) {
+        lines.push('TLS: ' + formatLatencyMs(tlsLatencyMs));
+    }
+
+    return lines.join('\n');
+}
+
+function formatLatencyMs(value) {
+    return Math.round(value) + ' ms';
 }
 
 function formatTimelineTimestamp(timestamp) {
@@ -752,11 +848,342 @@ function updateUptime(row, uptimePercentage) {
     uptimeElement.textContent = uptimePercentage.toFixed(1) + '%';
 }
 
+function updateLatencyLabel(row, timelineBlocks) {
+    const label = row.querySelector('[data-role="resource-latency"]');
+    if (!label) { return; }
+    const blocks = Array.isArray(timelineBlocks) ? timelineBlocks : [];
+    const values = blocks
+        .map(function(b) { return resolveTimelineBlockLatency(b); })
+        .filter(function(v) { return v !== null; });
+    if (values.length === 0) {
+        label.textContent = '';
+        return;
+    }
+    const latest = values[values.length - 1];
+    const avg = Math.round(values.reduce(function(s, v) { return s + v; }, 0) / values.length);
+    label.textContent = formatLatencyMs(latest) + ' avg ' + formatLatencyMs(avg);
+}
+
 function normalizeStatus(status) {
     if (status === 'available' || status === 'not-available' || status === 'unknown') {
         return status;
     }
     return 'unknown';
+}
+
+function fetchAndRenderLatencySamples(row, hours) {
+    var resourceId = row.getAttribute('data-resource-id');
+    if (!resourceId) { return; }
+    fetch('/api/resources/' + encodeURIComponent(resourceId) + '/latency-samples?hours=' + encodeURIComponent(String(hours || 24)), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store'
+    })
+    .then(function(resp) {
+        if (!resp.ok) { throw new Error('HTTP ' + resp.status); }
+        return resp.json();
+    })
+    .then(function(samples) {
+        var panel = row.querySelector('[data-role="latency-panel"]');
+        if (panel) {
+            panel._latencyRawSamples = Array.isArray(samples) ? samples : [];
+        }
+        renderLatencyChart(row, panel ? panel._latencyRawSamples : []);
+    })
+    .catch(function() { /* chart stays as-is */ });
+}
+
+function downsampleLatency(samples, targetCount) {
+    if (!Array.isArray(samples) || samples.length <= targetCount) { return samples; }
+    var result = [];
+    var groupSize = samples.length / targetCount;
+    for (var i = 0; i < targetCount; i++) {
+        var start = Math.floor(i * groupSize);
+        var end = Math.min(samples.length, Math.floor((i + 1) * groupSize));
+        if (start >= samples.length) { break; }
+        var group = samples.slice(start, end);
+        var sum = 0;
+        for (var j = 0; j < group.length; j++) { sum += group[j].latencyMs; }
+        var mid = group[Math.floor(group.length / 2)];
+        result.push({
+            latencyMs: Math.round(sum / group.length),
+            checkedAt: mid.checkedAt || null,
+            dnsResolutionMs: mid.dnsResolutionMs,
+            connectMs: mid.connectMs,
+            tlsHandshakeMs: mid.tlsHandshakeMs
+        });
+    }
+    return result;
+}
+
+function initializeLatencyChartsFromDom() {
+    const rows = document.querySelectorAll('.resource-detail[data-resource-id], .resource-row[data-resource-id]');
+    rows.forEach(function(row) {
+        if (!row.querySelector('[data-role="latency-chart"]')) {
+            return;
+        }
+        const panel = row.querySelector('[data-role="latency-panel"]');
+        if (panel) {
+            initLatencyZoomControls(row, panel);
+        }
+        const wrapper = row.querySelector('[data-role="latency-chart-wrapper"]');
+        if (wrapper) {
+            initLatencyChartDrag(wrapper);
+        }
+        const svgEl = row.querySelector('[data-role="latency-chart"]');
+        const tooltipEl = row.querySelector('[data-role="latency-tooltip"]');
+        if (svgEl && tooltipEl && wrapper) {
+            initLatencyTooltip(svgEl, tooltipEl, wrapper);
+        }
+        // Fetch for the currently active range
+        var currentHours = 24;
+        var activeBtn = document.querySelector('[data-role="timeline-range-controls"] .btn.active[data-timeline-hours]');
+        if (activeBtn) {
+            currentHours = parseInt(activeBtn.getAttribute('data-timeline-hours'), 10) || 24;
+        }
+        fetchAndRenderLatencySamples(row, currentHours);
+        // Re-fetch when the user switches range
+        document.querySelectorAll('[data-role="timeline-range-controls"] [data-timeline-hours]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var hours = parseInt(btn.getAttribute('data-timeline-hours'), 10) || 24;
+                fetchAndRenderLatencySamples(row, hours);
+            });
+        });
+    });
+}
+
+function initLatencyTooltip(svg, tooltipEl, wrapper) {
+    svg.addEventListener('mouseover', function(e) {
+        if (!e.target.classList.contains('latency-dot')) {
+            tooltipEl.hidden = true;
+            return;
+        }
+        var samples = svg._latencySamples;
+        if (!samples) { return; }
+        var idx = parseInt(e.target.dataset.idx, 10);
+        var sample = samples[idx];
+        if (!sample) { return; }
+        var svgRect = svg.getBoundingClientRect();
+        var cx = parseFloat(e.target.getAttribute('cx'));
+        var cy = parseFloat(e.target.getAttribute('cy'));
+        var xPx = (cx / 900) * svgRect.width;
+        var yPx = (cy / 180) * svgRect.height;
+        tooltipEl.innerHTML = '';
+        var valDiv = document.createElement('div');
+        valDiv.className = 'latency-tooltip-value';
+        valDiv.textContent = formatLatencyMs(sample.latencyMs);
+        tooltipEl.appendChild(valDiv);
+        if (sample.checkedAt) {
+            var timeDiv = document.createElement('div');
+            timeDiv.className = 'latency-tooltip-time';
+            timeDiv.textContent = formatCheckedAtShort(sample.checkedAt);
+            tooltipEl.appendChild(timeDiv);
+        }
+        tooltipEl.style.left = xPx + 'px';
+        tooltipEl.style.top = yPx + 'px';
+        tooltipEl.hidden = false;
+    });
+    svg.addEventListener('mouseleave', function() {
+        tooltipEl.hidden = true;
+    });
+}
+
+function initLatencyZoomControls(row, panel) {
+    const zoomIn = panel.querySelector('[data-role="latency-zoom-in"]');
+    const zoomOut = panel.querySelector('[data-role="latency-zoom-out"]');
+    const zoomReset = panel.querySelector('[data-role="latency-zoom-reset"]');
+    if (!zoomIn || !zoomOut || !zoomReset) { return; }
+
+    panel.dataset.latencyZoom = '1';
+    zoomOut.disabled = true;
+
+    function applyZoom(newZoom) {
+        const clamped = Math.max(1, Math.min(8, newZoom));
+        panel.dataset.latencyZoom = String(clamped);
+        zoomOut.disabled = clamped <= 1;
+        zoomIn.disabled = clamped >= 8;
+        renderLatencyChart(row, panel._latencyRawSamples || []);
+    }
+
+    zoomIn.addEventListener('click', function() {
+        applyZoom(parseInt(panel.dataset.latencyZoom || '1', 10) * 2);
+    });
+    zoomOut.addEventListener('click', function() {
+        applyZoom(Math.max(1, Math.round(parseInt(panel.dataset.latencyZoom || '1', 10) / 2)));
+    });
+    zoomReset.addEventListener('click', function() {
+        applyZoom(1);
+    });
+}
+
+function initLatencyChartDrag(wrapper) {
+    let dragging = false;
+    let startX = 0;
+    let startScroll = 0;
+    wrapper.addEventListener('mousedown', function(e) {
+        if (e.target.closest('button')) { return; }
+        dragging = true;
+        startX = e.clientX;
+        startScroll = wrapper.scrollLeft;
+        wrapper.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    window.addEventListener('mousemove', function(e) {
+        if (!dragging) { return; }
+        wrapper.scrollLeft = startScroll - (e.clientX - startX);
+    });
+    window.addEventListener('mouseup', function() {
+        if (dragging) {
+            dragging = false;
+            wrapper.style.cursor = '';
+        }
+    });
+}
+
+function renderLatencyChart(row, rawSamples) {
+    const svg = row.querySelector('[data-role="latency-chart"]');
+    const lineEl = row.querySelector('[data-role="latency-line"]');
+    const areaEl = row.querySelector('[data-role="latency-area"]');
+    const summary = row.querySelector('[data-role="latency-summary"]');
+    const minLabel = row.querySelector('[data-role="latency-min"]');
+    const maxLabel = row.querySelector('[data-role="latency-max"]');
+    const timeAxisEl = row.querySelector('[data-role="latency-time-axis"]');
+
+    if (!svg || !lineEl || !areaEl || !summary || !minLabel || !maxLabel) {
+        return;
+    }
+
+    // Apply zoom: scale SVG width so the scroll wrapper can clip and scroll it.
+    const panel = row.querySelector('[data-role="latency-panel"]');
+    const zoomLevel = panel ? Math.max(1, parseInt(panel.dataset.latencyZoom || '1', 10)) : 1;
+
+    // Downsample raw samples based on zoom: more zoom = more visible points
+    const allSamples = (Array.isArray(rawSamples) ? rawSamples : [])
+        .filter(function(s) { return s && s.latencyMs !== null && s.latencyMs !== undefined; });
+    const targetPoints = 90 * zoomLevel;
+    const samples = downsampleLatency(allSamples, targetPoints);
+    const wrapper = row.querySelector('[data-role="latency-chart-wrapper"]');
+    const containerWidth = wrapper ? wrapper.clientWidth : 0;
+    const chartPxWidth = containerWidth > 0 ? containerWidth * zoomLevel : null;
+    if (chartPxWidth) {
+        svg.style.width = chartPxWidth + 'px';
+        if (timeAxisEl) { timeAxisEl.style.width = chartPxWidth + 'px'; }
+    } else {
+        svg.style.width = '';
+        if (timeAxisEl) { timeAxisEl.style.width = ''; }
+    }
+
+    if (samples.length === 0) {
+        lineEl.setAttribute('d', '');
+        areaEl.setAttribute('d', '');
+        var dotsElClear = row.querySelector('[data-role="latency-dots"]');
+        if (dotsElClear) { dotsElClear.innerHTML = ''; }
+        svg._latencySamples = [];
+        if (timeAxisEl) { timeAxisEl.innerHTML = ''; }
+        summary.textContent = 'No latency samples yet';
+        minLabel.textContent = '0 ms';
+        maxLabel.textContent = '0 ms';
+        return;
+    }
+
+    const values = samples.map(function(s) { return s.latencyMs; });
+    const minValue = Math.min.apply(null, values);
+    const maxValue = Math.max.apply(null, values);
+    const latestValue = samples[samples.length - 1].latencyMs;
+    const p95Value = percentile(values, 95);
+
+    summary.textContent = 'Latest ' + formatLatencyMs(latestValue)
+        + ' · p95 ' + formatLatencyMs(p95Value)
+        + ' · ' + samples.length + ' samples';
+    minLabel.textContent = formatLatencyMs(minValue);
+    maxLabel.textContent = formatLatencyMs(maxValue);
+
+    const svgW = 900;
+    const chartH = 180;
+    const topPad = 10;
+    const botPad = 10;
+    const xDen = Math.max(samples.length - 1, 1);
+
+    let chartMin = minValue;
+    let chartMax = maxValue;
+    if (chartMax === chartMin) {
+        chartMax = chartMin + 1;
+    } else {
+        const pad = Math.max((chartMax - chartMin) * 0.08, 1);
+        chartMin = Math.max(0, chartMin - pad);
+        chartMax = chartMax + pad;
+    }
+
+    const points = samples.map(function(s, i) {
+        const x = (i / xDen) * svgW;
+        const norm = (s.latencyMs - chartMin) / (chartMax - chartMin);
+        const y = chartH - botPad - norm * (chartH - topPad - botPad);
+        return { x: x, y: y };
+    });
+
+    const linePath = points.map(function(p, i) {
+        return (i === 0 ? 'M' : 'L') + p.x.toFixed(2) + ',' + p.y.toFixed(2);
+    }).join(' ');
+    lineEl.setAttribute('d', linePath);
+
+    const areaPath = linePath
+        + ' L' + points[points.length - 1].x.toFixed(2) + ',' + (chartH - botPad)
+        + ' L' + points[0].x.toFixed(2) + ',' + (chartH - botPad) + ' Z';
+    areaEl.setAttribute('d', areaPath);
+
+    const dotsEl = row.querySelector('[data-role="latency-dots"]');
+    if (dotsEl) {
+        dotsEl.innerHTML = '';
+        var svgNS = 'http://www.w3.org/2000/svg';
+        points.forEach(function(p, i) {
+            var circle = document.createElementNS(svgNS, 'circle');
+            circle.setAttribute('cx', p.x.toFixed(2));
+            circle.setAttribute('cy', p.y.toFixed(2));
+            circle.setAttribute('r', '3.5');
+            circle.setAttribute('class', 'latency-dot');
+            circle.dataset.idx = String(i);
+            dotsEl.appendChild(circle);
+        });
+    }
+    svg._latencySamples = samples;
+
+    // Time axis: HTML labels below the SVG (inside the scroll wrapper so they scroll together)
+    if (timeAxisEl) {
+        timeAxisEl.innerHTML = '';
+        const hasTimestamps = samples.some(function(s) { return s.checkedAt !== null; });
+        if (hasTimestamps) {
+            const maxLabels = Math.min(7, samples.length);
+            for (let i = 0; i < maxLabels; i++) {
+                const sIdx = samples.length <= 1 ? 0 : Math.round(i * (samples.length - 1) / (maxLabels - 1));
+                const sample = samples[Math.min(sIdx, samples.length - 1)];
+                const leftPct = (sIdx / xDen) * 100;
+                const timeStr = formatCheckedAtShort(sample.checkedAt);
+                if (!timeStr) { continue; }
+                const span = document.createElement('span');
+                span.textContent = timeStr;
+                span.style.left = leftPct.toFixed(2) + '%';
+                if (i === 0) { span.classList.add('axis-label-first'); }
+                if (i === maxLabels - 1) { span.classList.add('axis-label-last'); }
+                timeAxisEl.appendChild(span);
+            }
+        }
+    }
+}
+
+function percentile(values, percentileRank) {
+    if (!Array.isArray(values) || values.length === 0) {
+        return 0;
+    }
+    const sorted = values.slice().sort(function(a, b) { return a - b; });
+    const rank = Math.min(sorted.length - 1, Math.max(0, Math.ceil((percentileRank / 100) * sorted.length) - 1));
+    return sorted[rank];
+}
+
+function formatCheckedAtShort(checkedAt) {
+    if (!checkedAt) { return null; }
+    // 'yyyy-MM-dd HH:mm:ss' -> 'HH:mm:ss'
+    const spaceIdx = checkedAt.indexOf(' ');
+    return spaceIdx >= 0 ? checkedAt.substring(spaceIdx + 1) : checkedAt;
 }
 
 function refreshAllGroupCounters() {

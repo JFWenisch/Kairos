@@ -57,17 +57,15 @@ public class DockerRepositorySyncService {
         RepositoryRef repositoryRef = parseRepositoryRef(sourceResource.getTarget());
         Set<String> discoveredRepositories = discoverRepositories(repositoryRef, sourceResource);
 
-        String groupName = "Dockerrepository: " + repositoryRef.originalInput();
-        ResourceGroup targetGroup = resourceService.findOrCreateGroupByName(groupName);
+        ResourceGroup targetGroup = resourceService.findOrCreateManagedDockerGroup(sourceResource);
 
         List<MonitoredResource> existingResources = resourceRepository
-                .findByGroup_IdAndResourceType(targetGroup.getId(), ResourceType.DOCKER);
+                .findByGroups_IdAndResourceType(targetGroup.getId(), ResourceType.DOCKER);
+        List<MonitoredResource> allDockerResources = resourceRepository.findByResourceType(ResourceType.DOCKER);
 
         Map<String, MonitoredResource> existingByTarget = new HashMap<>();
-        for (MonitoredResource existing : existingResources) {
-            if (existing.getTarget() != null) {
-                existingByTarget.put(existing.getTarget().trim().toLowerCase(Locale.ROOT), existing);
-            }
+        for (MonitoredResource existing : allDockerResources) {
+            putPreferredExisting(existingByTarget, existing, targetGroup.getId());
         }
 
         List<String> sortedRepositories = discoveredRepositories.stream()
@@ -102,16 +100,16 @@ public class DockerRepositorySyncService {
                             .target(imageTarget)
                             .skipTls(sourceResource.isSkipTls())
                             .recursive(false)
-                            .group(targetGroup)
                             .displayOrder(displayOrder)
                             .active(true)
                             .build();
+                    resource.getGroups().add(targetGroup);
                 } else {
                     resource.setName(imageName);
                     resource.setTarget(imageTarget);
                     resource.setResourceType(ResourceType.DOCKER);
                     resource.setSkipTls(sourceResource.isSkipTls());
-                    resource.setGroup(targetGroup);
+                    resource.getGroups().add(targetGroup);
                     resource.setDisplayOrder(displayOrder);
                     resource.setActive(true);
                 }
@@ -126,6 +124,8 @@ public class DockerRepositorySyncService {
                                 saved.getTarget(), ex.getMessage());
                     }
                 }
+
+                existingByTarget.put(targetKey, saved);
 
                 displayOrder++;
             }
@@ -164,6 +164,60 @@ public class DockerRepositorySyncService {
         }
 
         return repositories;
+    }
+
+    private void putPreferredExisting(Map<String, MonitoredResource> existingByTarget,
+                                      MonitoredResource candidate,
+                                      Long preferredGroupId) {
+        String target = candidate.getTarget();
+        if (target == null || target.isBlank()) {
+            return;
+        }
+
+        String key = target.trim().toLowerCase(Locale.ROOT);
+        MonitoredResource current = existingByTarget.get(key);
+        if (current == null) {
+            existingByTarget.put(key, candidate);
+            return;
+        }
+
+        boolean candidateInPreferredGroup = candidate.getGroups().stream()
+                .anyMatch(g -> g.getId() != null && g.getId().equals(preferredGroupId));
+        boolean currentInPreferredGroup = current.getGroups().stream()
+                .anyMatch(g -> g.getId() != null && g.getId().equals(preferredGroupId));
+
+        if (candidateInPreferredGroup && !currentInPreferredGroup) {
+            existingByTarget.put(key, candidate);
+            return;
+        }
+        if (!candidateInPreferredGroup && currentInPreferredGroup) {
+            return;
+        }
+
+        if (isOlder(candidate, current)) {
+            existingByTarget.put(key, candidate);
+        }
+    }
+
+    private boolean isOlder(MonitoredResource left, MonitoredResource right) {
+        if (left.getCreatedAt() != null && right.getCreatedAt() != null) {
+            int compare = left.getCreatedAt().compareTo(right.getCreatedAt());
+            if (compare != 0) {
+                return compare < 0;
+            }
+        } else if (left.getCreatedAt() != null) {
+            return true;
+        } else if (right.getCreatedAt() != null) {
+            return false;
+        }
+
+        if (left.getId() == null) {
+            return false;
+        }
+        if (right.getId() == null) {
+            return true;
+        }
+        return left.getId() < right.getId();
     }
 
     private Set<String> discoverTagsForRepository(RepositoryRef repositoryRef,

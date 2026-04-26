@@ -1,5 +1,391 @@
 # Changelog
 
+## v1.13.6 - 2026-04-26
+
+### [1.13.6](https://github.com/wenisch-tech/Kairos/compare/v1.13.5...v1.13.6) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump actions/github-script from 7 to 8 ([79ae69b](https://github.com/wenisch-tech/Kairos/commit/79ae69bac3ab9c41cc113445d0388484c7bdb089))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.6
+
+
+## v1.13.4 - 2026-04-26
+
+### [1.13.4](https://github.com/wenisch-tech/Kairos/compare/v1.13.3...v1.13.4) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump actions/setup-java from 4 to 5 ([cf2b4d7](https://github.com/wenisch-tech/Kairos/commit/cf2b4d7b7f4fb8db497e8f46b7ad75efdd9b6806))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.4
+
+
+## v1.13.1 - 2026-04-26
+
+### [1.13.1](https://github.com/wenisch-tech/Kairos/compare/v1.13.0...v1.13.1) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump docker/setup-buildx-action from 3 to 4 ([762c0da](https://github.com/wenisch-tech/Kairos/commit/762c0da736a7bb6f00294c598924ab3fe43e069a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.1
+
+
+## v1.13.0 - 2026-04-26
+
+## [1.13.0](https://github.com/wenisch-tech/Kairos/compare/v1.12.10...v1.13.0) (2026-04-26)
+
+
+### Features
+
+* Added support for configuring custom code in head of all pages ([01549c6](https://github.com/wenisch-tech/Kairos/commit/01549c638447882c9c043bc7f81e9e767fbc832d))
+
+
+### Bug Fixes
+
+* minor changes to customHeaderService ([c76803c](https://github.com/wenisch-tech/Kairos/commit/c76803c9b48f6fd741e42ea62ced1a7ab4e72ada))
+
+
+### Documentation
+
+* updated about page ([ecc7373](https://github.com/wenisch-tech/Kairos/commit/ecc7373432326d0386e9c88180c8af1e07ae7650))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.0
+
+
+## v1.12.10 - 2026-04-26
+
+### [1.12.10](https://github.com/wenisch-tech/Kairos/compare/v1.12.9...v1.12.10) (2026-04-26)
+
+
+### Bug Fixes
+
+* image tag is automatically updated during ci ([320d14c](https://github.com/wenisch-tech/Kairos/commit/320d14c2501309427490929e5c423ca4faa5a193))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.10
+
+
+## v1.12.8 - 2026-04-26
+
+### [1.12.8](https://github.com/wenisch-tech/Kairos/compare/v1.12.7...v1.12.8) (2026-04-26)
+
+
+### Documentation
+
+* updated quickstart section in Readme ([fef32c9](https://github.com/wenisch-tech/Kairos/commit/fef32c9d9cb5e9a851cf805aaa3f0e76a5919f18))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.8
+
+
+## v1.12.7 - 2026-04-26
+
+### [1.12.7](https://github.com/wenisch-tech/Kairos/compare/v1.12.6...v1.12.7) (2026-04-26)
+
+
+### Documentation
+
+* Updated PAT allowing upload of docs to website repo ([1f5ce03](https://github.com/wenisch-tech/Kairos/commit/1f5ce0316eacddfeca0b2505a4d6912b5ea72a94))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.7
+
+
+## v1.12.6 - 2026-04-26
+
+### [1.12.6](https://github.com/wenisch-tech/Kairos/compare/v1.12.5...v1.12.6) (2026-04-26)
+
+
+### Documentation
+
+* generated docs are automatically pushed to website ([16352da](https://github.com/wenisch-tech/Kairos/commit/16352da81f2ee30a5b60da0133be6371c78495c7))
+* updated readme ([b466b36](https://github.com/wenisch-tech/Kairos/commit/b466b36ab245bf5e1432adda03c59680afa8bffa))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.6
+
+
+## v1.12.5 - 2026-04-16
+
+### [1.12.5](https://github.com/wenisch-tech/Kairos/compare/v1.12.4...v1.12.5) (2026-04-16)
+
+
+### Bug Fixes
+
+* updated fetching of Resourcesgroups and sorting when using postgresql ([b5dde97](https://github.com/wenisch-tech/Kairos/commit/b5dde976702a522996003de86687e04a4262c026))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.5
+
+
+## v1.12.4 - 2026-04-16
+
+### [1.12.4](https://github.com/wenisch-tech/Kairos/compare/v1.12.3...v1.12.4) (2026-04-16)
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.4
+
+
+## v1.12.3 - 2026-04-15
+
+### [1.12.3](https://github.com/wenisch-tech/Kairos/compare/v1.12.2...v1.12.3) (2026-04-15)
+
+
+### Bug Fixes
+
+* switched to v16 migration to no op-ops, so no problems occur if resource group is not yet existing ([2c07d21](https://github.com/wenisch-tech/Kairos/commit/2c07d21f461c4fc51fe3429903d6bee5afb42315))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.3
+
+
+## v1.11.1 - 2026-04-15
+
+### [1.11.1](https://github.com/wenisch-tech/Kairos/compare/v1.11.0...v1.11.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* udated migration for group visibility to also work on empty database ([aaacd47](https://github.com/wenisch-tech/Kairos/commit/aaacd47df0ef75cb08ace46d131f470517446b15))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.11.1
+
+
+## v1.10.2 - 2026-04-15
+
+### [1.10.2](https://github.com/wenisch-tech/Kairos/compare/v1.10.1...v1.10.2) (2026-04-15)
+
+
+### Documentation
+
+* updated release to include information about attestation and sbom ([5f08849](https://github.com/wenisch-tech/Kairos/commit/5f088491ded154576578973bb9857ecc6b90f3e1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.10.2
+
+
+## v1.10.0 - 2026-04-14
+
+## [1.10.0](https://github.com/wenisch-tech/Kairos/compare/v1.9.0...v1.10.0) (2026-04-14)
+
+
+### Features
+
+* add support for font-color for embedd ([c781fa2](https://github.com/wenisch-tech/Kairos/commit/c781fa252f666abb48ebda50044016b12b7c6b72))
+* Added embed widget feature to display overall status on external sites ([a48af61](https://github.com/wenisch-tech/Kairos/commit/a48af61626f92debc9b6dfa115b1259779fe6183)), closes [#41](https://github.com/wenisch-tech/Kairos/issues/41)
+* added support for switching font-size and dark / light mode for embedd ([63e389d](https://github.com/wenisch-tech/Kairos/commit/63e389da8d2e5d9accc266f26369de017c37efe9))
+* initial commit for embed functionality ([c113569](https://github.com/wenisch-tech/Kairos/commit/c113569910017f6ebbc0b57998dce5d747544d9f))
+
+
+### Code Refactoring
+
+* Moved admin menu to layout component ([e6646b8](https://github.com/wenisch-tech/Kairos/commit/e6646b8ed87a3eeff61ff577a86cc55ae192c7f1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.10.0
+
+
+## v1.9.0 - 2026-04-14
+
+## [1.9.0](https://github.com/wenisch-tech/Kairos/compare/v1.8.2...v1.9.0) (2026-04-14)
+
+
+### Features
+
+* Added cors support and added configuration to add/remove allowed origins ([cb4d560](https://github.com/wenisch-tech/Kairos/commit/cb4d560bb583fff654b2b1e8e4269d430da1c514))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.9.0
+
+
+## v1.8.2 - 2026-04-13
+
+### [1.8.2](https://github.com/wenisch-tech/Kairos/compare/v1.8.1...v1.8.2) (2026-04-13)
+
+
+### Bug Fixes
+
+* Updated Check classes so that in case of Application error (for example unavailable database connection) check is not stored as error. Added migration to cleanup old entries ([03e9fee](https://github.com/wenisch-tech/Kairos/commit/03e9feef8e180e9692bec945f64e8de2f85193cd))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.8.2
+
+
+## v1.8.1 - 2026-04-13
+
+### [1.8.1](https://github.com/wenisch-tech/Kairos/compare/v1.8.0...v1.8.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* fixed license information not being properly displayed in footer ([fb580d8](https://github.com/wenisch-tech/Kairos/commit/fb580d8a75a4c2a84eb95dd4ac7ec05351f005d5))
+* updated license information in openapidoc ([23b3c94](https://github.com/wenisch-tech/Kairos/commit/23b3c94bb635a5f8ce4bab41a7e9f406d7459513))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.8.1
+
+
+## v1.7.1 - 2026-04-13
+
+### [1.7.1](https://github.com/wenisch-tech/Kairos/compare/v1.7.0...v1.7.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* updated test konstruktur ([36e076b](https://github.com/wenisch-tech/Kairos/commit/36e076b46a26d7425987890b362e67d3e2189a76))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.7.1
+
+
+## v1.6.0 - 2026-04-13
+
+## [1.6.0](https://github.com/wenisch-tech/Kairos/compare/v1.5.9...v1.6.0) (2026-04-13)
+
+
+### Features
+
+* Added configurable history retention for checks ([1b83003](https://github.com/wenisch-tech/Kairos/commit/1b83003a776d475581f09793335edcc189a5a1f2))
+* Added configurable history retention for checks ([6be929a](https://github.com/wenisch-tech/Kairos/commit/6be929abed2712e2a36f9c27b20caebbfb1bef24))
+
+
+### Bug Fixes
+
+* update tomcat to 11.0.21 ([48b4ca9](https://github.com/wenisch-tech/Kairos/commit/48b4ca9571cf54cede97b6796cf6b1bccfc77ffc))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.6.0
+
+
+## v1.5.9 - 2026-04-03
+
+### [1.5.9](https://github.com/wenisch-tech/Kairos/compare/v1.5.8...v1.5.9) (2026-04-03)
+
+
+### Bug Fixes
+
+* updated default requests for helm chart ([64e6ade](https://github.com/wenisch-tech/Kairos/commit/64e6ade69bcd06f407803d80168ff2c82fd203e4))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.9
+
+
+## v1.5.8 - 2026-04-03
+
+### [1.5.8](https://github.com/wenisch-tech/Kairos/compare/v1.5.7...v1.5.8) (2026-04-03)
+
+
+### Bug Fixes
+
+* updated and enabled health endpoints ([f3b91db](https://github.com/wenisch-tech/Kairos/commit/f3b91dba4cdaecfc7583df57797a618c0bedf625))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.8
+
+
+## v1.5.7 - 2026-04-03
+
+### [1.5.7](https://github.com/wenisch-tech/Kairos/compare/v1.5.6...v1.5.7) (2026-04-03)
+
+
+### Bug Fixes
+
+* update liveness probes checks ([c79d50d](https://github.com/wenisch-tech/Kairos/commit/c79d50da31e7ed3c3832d9b20b8a1378bbbe42c2))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.7
+
+
+## v1.5.6 - 2026-04-03
+
+### [1.5.6](https://github.com/wenisch-tech/Kairos/compare/v1.5.5...v1.5.6) (2026-04-03)
+
+
+### Bug Fixes
+
+* update repository path in chart ([1952c5c](https://github.com/wenisch-tech/Kairos/commit/1952c5c2bcba541b1a9e6b5dcb69e3c87698066a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.6
+
+
+## v1.5.5 - 2026-04-03
+
+### [1.5.5](https://github.com/wenisch-tech/Kairos/compare/v1.5.4...v1.5.5) (2026-04-03)
+
+
+### Bug Fixes
+
+* fixed missing default value for autoscaling ([b9f74a6](https://github.com/wenisch-tech/Kairos/commit/b9f74a61d77f4fbecab6d8225cc7cd2005bf0ffa))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.5
+
+
+## v1.5.4 - 2026-04-02
+
+### [1.5.4](https://github.com/wenisch-tech/Kairos/compare/v1.5.3...v1.5.4) (2026-04-02)
+
+
+### Bug Fixes
+
+* fixed closing brackets in detail view so tables respect content-width ([cd5c285](https://github.com/wenisch-tech/Kairos/commit/cd5c28540271eb7d8073d84ba1cade40cbc1c07a))
+* minor changes to light-ui view switching background to light-grey and card-header to light-grey ([fe255dd](https://github.com/wenisch-tech/Kairos/commit/fe255dda5f1e46192c0a7434a991d0ae38eba11d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.4
+
+
+## v1.5.3 - 2026-04-02
+
+### [1.5.3](https://github.com/wenisch-tech/Kairos/compare/v1.5.2...v1.5.3) (2026-04-02)
+
+
+### Bug Fixes
+
+* updated migration to ensure checksum ([31036eb](https://github.com/wenisch-tech/Kairos/commit/31036eb77b3fb798745e85d4f36ee7089640f072))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.5.3
+
+
 ## v1.4.8 - 2026-03-30
 
 ### [1.4.8](https://github.com/wenisch-tech/Kairos/compare/v1.4.7...v1.4.8) (2026-03-30)

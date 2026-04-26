@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
 </head>
 <body class="landing-modern outages-modern">
 <nav th:replace="~{layout :: navbar}"></nav>
@@ -71,6 +72,7 @@
                 <div class="outage-board" th:style="'height:' + (${#lists.size(rows) * 34 + 16}) + 'px'">
                     <div class="outage-board-grid"></div>
                     <a th:each="row, rowStat : ${rows}"
+                       th:if="${row.outage.resource != null}"
                        th:href="@{/resources/{id}(id=${row.outage.resource.id})}"
                        class="outage-board-item"
                        th:classappend="${row.outage.active} ? ' outage-bar-active' : ' outage-bar-resolved'"
@@ -78,6 +80,14 @@
                         <span class="outage-board-label" th:text="${row.outage.resource.name}">Resource</span>
                         <span class="outage-board-duration" th:text="${row.duration}">2h 10m</span>
                     </a>
+                    <div th:each="row, rowStat : ${rows}"
+                         th:unless="${row.outage.resource != null}"
+                         class="outage-board-item"
+                         th:classappend="${row.outage.active} ? ' outage-bar-active' : ' outage-bar-resolved'"
+                         th:style="'left:' + ${row.leftPercent} + ';width:' + ${row.widthPercent} + ';top:' + ${(rowStat.index * 34 + 8)} + 'px'">
+                        <span class="outage-board-label fst-italic text-muted">Deleted resource</span>
+                        <span class="outage-board-duration" th:text="${row.duration}">2h 10m</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -104,10 +114,13 @@
                     <tbody>
                     <tr th:each="row : ${rows}">
                         <td>
-                            <a th:href="@{/resources/{id}(id=${row.outage.resource.id})}"
+                            <a th:if="${row.outage.resource != null}"
+                               th:href="@{/resources/{id}(id=${row.outage.resource.id})}"
                                class="text-decoration-none fw-semibold"
                                th:text="${row.outage.resource.name}">Resource</a>
-                            <small class="text-muted ms-2"
+                            <span th:unless="${row.outage.resource != null}"
+                                  class="text-muted fst-italic">Deleted resource</span>
+                            <small th:if="${row.outage.resource != null}" class="text-muted ms-2"
                                    th:text="${row.outage.resource.resourceType}">TYPE</small>
                         </td>
                         <td>
