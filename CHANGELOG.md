@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.13.0 - 2026-04-26
+
+## [1.13.0](https://github.com/wenisch-tech/Kairos/compare/v1.12.10...v1.13.0) (2026-04-26)
+
+
+### Features
+
+* Added support for configuring custom code in head of all pages ([01549c6](https://github.com/wenisch-tech/Kairos/commit/01549c638447882c9c043bc7f81e9e767fbc832d))
+
+
+### Bug Fixes
+
+* minor changes to customHeaderService ([c76803c](https://github.com/wenisch-tech/Kairos/commit/c76803c9b48f6fd741e42ea62ced1a7ab4e72ada))
+
+
+### Documentation
+
+* updated about page ([ecc7373](https://github.com/wenisch-tech/Kairos/commit/ecc7373432326d0386e9c88180c8af1e07ae7650))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.0
+
+
 ## v1.12.10 - 2026-04-26
 
 ### [1.12.10](https://github.com/wenisch-tech/Kairos/compare/v1.12.9...v1.12.10) (2026-04-26)

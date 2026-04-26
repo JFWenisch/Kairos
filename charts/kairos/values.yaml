@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   registry: ghcr.io
   repository: wenisch-tech/kairos
-  tag: 1.12.10
+  tag: 1.13.0
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 nameOverride: ""
@@ -65,10 +65,10 @@ env:
   # Docker socket configuration (if accessing Docker from container)
   DOCKER_HOST: ""
   # Optional: Custom Spring Boot properties
+# SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
 
-  # SPRING_JPA_HIBERNATE_DDL_AUTO: "validate"
+# LOGGING_LEVEL_ROOT: "INFO"
 
-  # LOGGING_LEVEL_ROOT: "INFO"
 # Secrets for sensitive data
 secrets: {}
 # SPRING_DATASOURCE_PASSWORD: "your-password"
