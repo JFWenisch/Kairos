@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: wenisch-tech/kairos-website
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUBTOKEN }}
           path: kairos-website
 
       - name: Download build artifact
