@@ -51,6 +51,11 @@
     </a>
     
     <hr class="border-secondary my-2">
+    <a th:href="@{/admin/custom-headers}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/custom-headers')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-code-square me-2"></i>Custom Headers
+    </a>
     <a th:href="@{/api}"
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-braces me-2"></i>API Docs

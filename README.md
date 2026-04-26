@@ -57,6 +57,7 @@
 - **Prometheus metrics** - `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
 - **H2 (default) or PostgreSQL** - switch databases with a single property change
 - **Automatic schema migrations** - Flyway runs database migrations automatically on startup (existing databases are baselined)
+- **Custom headers** - inject arbitrary HTML or JavaScript into the `<head>` of all pages from the admin panel (analytics tags, custom stylesheets, etc.)
 - **Dark-mode UI** - Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
 
 ---

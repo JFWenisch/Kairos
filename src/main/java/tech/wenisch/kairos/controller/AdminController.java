@@ -1,32 +1,5 @@
 package tech.wenisch.kairos.controller;
 
-import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
-import tech.wenisch.kairos.entity.*;
-import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
-import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
-import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-import tech.wenisch.kairos.service.AnnouncementService;
-import tech.wenisch.kairos.service.ApplicationVersionService;
-import tech.wenisch.kairos.service.ApiKeyService;
-import tech.wenisch.kairos.service.CheckExecutorService;
-import tech.wenisch.kairos.service.ResourceExchangeService;
-import tech.wenisch.kairos.service.ResourceGroupService;
-import tech.wenisch.kairos.service.ResourceService;
-import tech.wenisch.kairos.service.UserService;
-import tech.wenisch.kairos.service.EmbedSettingsService;
-import lombok.RequiredArgsConstructor;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.boot.SpringBootVersion;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,6 +11,51 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.boot.SpringBootVersion;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
+import tech.wenisch.kairos.entity.Announcement;
+import tech.wenisch.kairos.entity.AnnouncementKind;
+import tech.wenisch.kairos.entity.AuthType;
+import tech.wenisch.kairos.entity.CorsAllowedOrigin;
+import tech.wenisch.kairos.entity.EmbedPolicy;
+import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeAuth;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.entity.UserRole;
+import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
+import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
+import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApiKeyService;
+import tech.wenisch.kairos.service.ApplicationVersionService;
+import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.CustomHeaderService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
+import tech.wenisch.kairos.service.ResourceExchangeService;
+import tech.wenisch.kairos.service.ResourceGroupService;
+import tech.wenisch.kairos.service.ResourceService;
+import tech.wenisch.kairos.service.UserService;
 
 @Controller
 @RequestMapping("/admin")
@@ -56,6 +74,7 @@ public class AdminController {
     private final CorsAllowedOriginRepository corsAllowedOriginRepository;
     private final EmbedSettingsService embedSettingsService;
     private final ApplicationVersionService applicationVersionService;
+    private final CustomHeaderService customHeaderService;
 
     @GetMapping
     public String admin() {
@@ -79,6 +98,22 @@ public class AdminController {
         model.addAttribute("javaVersion", System.getProperty("java.version", "unknown"));
         model.addAttribute("buildTimestamp", LocalDateTime.now());
         return "admin/about";
+    }
+
+    @GetMapping("/custom-headers")
+    public String customHeadersPage(Model model) {
+        model.addAttribute("settings", customHeaderService.getSettings());
+        return "admin/custom-headers";
+    }
+
+    @PostMapping("/custom-headers")
+    public String saveCustomHeaders(
+            @RequestParam(value = "content", defaultValue = "") String content,
+            @RequestParam(value = "applyToAdmin", defaultValue = "false") boolean applyToAdmin,
+            RedirectAttributes redirectAttributes) {
+        customHeaderService.saveSettings(content, applyToAdmin);
+        redirectAttributes.addFlashAttribute("successMessage", "Custom header settings saved.");
+        return "redirect:/admin/custom-headers";
     }
 
     @GetMapping("/settings")
