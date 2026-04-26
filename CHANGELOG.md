@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.12.6 - 2026-04-26
+
+### [1.12.6](https://github.com/wenisch-tech/Kairos/compare/v1.12.5...v1.12.6) (2026-04-26)
+
+
+### Documentation
+
+* generated docs are automatically pushed to website ([16352da](https://github.com/wenisch-tech/Kairos/commit/16352da81f2ee30a5b60da0133be6371c78495c7))
+* updated readme ([b466b36](https://github.com/wenisch-tech/Kairos/commit/b466b36ab245bf5e1432adda03c59680afa8bffa))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.6
+
+
 ## v1.12.5 - 2026-04-16
 
 ### [1.12.5](https://github.com/wenisch-tech/Kairos/compare/v1.12.4...v1.12.5) (2026-04-16)
