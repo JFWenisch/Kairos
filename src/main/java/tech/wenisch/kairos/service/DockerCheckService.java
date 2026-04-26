@@ -104,7 +104,7 @@ public class DockerCheckService {
             log.warn("Docker check failed for image {}: {}", image, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
-                    .status(CheckStatus.NOT_AVAILABLE)
+                    .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
                     .message(e.getMessage())
                     .errorCode("DOCKER_ERROR")

@@ -11,6 +11,11 @@ The feature is available under `Admin -> Manage Resources`.
 - Update existing resources during import when the same resource already exists
 - Keep the format stable across future versions through a versioned exchange envelope
 
+The import/export workflow covers monitored resources only.
+
+- Resource groups, their visibility settings (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`), and multi-group assignments are managed separately in **Admin -> Manage Resources**.
+- The YAML exchange format carries a single `groupName` field per resource for compatibility. On export, the first assigned group name is written. On import, the resource is linked to that one group (by name, creating it if needed). Multi-group assignments must be set up manually in the admin panel after import.
+
 ## Admin Workflow
 
 On the `Manage Resources` page you can:
@@ -90,6 +95,7 @@ Preferred fields in exported YAML:
 - `recursive`
 - `active`
 - `createdAt`
+- `groupName` *(first assigned group; single-group import only — see note above)*
 
 Additionally, the importer tolerates some alternate names for compatibility:
 

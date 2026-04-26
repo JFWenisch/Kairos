@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
@@ -34,9 +36,14 @@ public class MonitoredResource {
     @Builder.Default
     private boolean active = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resource_group_id")
-    private ResourceGroup group;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "resource_group_resource",
+        joinColumns = @JoinColumn(name = "resource_id"),
+        inverseJoinColumns = @JoinColumn(name = "resource_group_id")
+    )
+    @Builder.Default
+    private Set<ResourceGroup> groups = new HashSet<>();
 
     @Builder.Default
     private int displayOrder = 0;

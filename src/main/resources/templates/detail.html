@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
     <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
 </head>
 <body class="detail-modern">
 <nav th:replace="~{layout :: navbar}"></nav>
@@ -46,7 +47,7 @@
                     <h1 class="h2 mb-0 detail-title" th:text="${vm.resource.name}">Resource Name</h1>
                     <p class="text-muted mb-0 detail-subline">
                         <span class="badge detail-type-badge me-2" th:text="${vm.resource.resourceType}">TYPE</span>
-                        <code th:text="${vm.resource.target}">target</code>
+                        <code th:if="${showResourceUrl}" th:text="${vm.resource.target}">target</code>
                     </p>
                 </div>
             </div>

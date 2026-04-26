@@ -5,21 +5,25 @@ import tech.wenisch.kairos.dto.ResourceViewModel;
 import tech.wenisch.kairos.dto.TimelineBlockDTO;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
+import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,20 +31,26 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.HttpStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 @Controller
 @RequiredArgsConstructor
 public class HomeController {
+
+    private static final Pattern HEX_COLOR_PATTERN = Pattern.compile("^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$");
 
     private final ResourceService resourceService;
     private final CheckExecutorService checkExecutorService;
@@ -48,22 +58,31 @@ public class HomeController {
     private final ApplicationVersionService applicationVersionService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
+    private final EmbedSettingsService embedSettingsService;
 
     @GetMapping("/")
-    public String index(Model model) {
-        List<MonitoredResource> resources = resourceService.findAllActive();
+    public String index(Authentication authentication, Model model) {
+        if (!isPublicAccessAllowed() && !isAuthenticated(authentication)) {
+            return "redirect:/login";
+        }
+
+        boolean authenticated = isAuthenticated(authentication);
+        List<MonitoredResource> resources = resourceService.findAllActive().stream()
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
 
         List<MonitoredResource> ungroupedResources = new ArrayList<>();
         Map<Long, ResourceGroup> groupsById = new LinkedHashMap<>();
         Map<Long, List<MonitoredResource>> groupedResourceMap = new LinkedHashMap<>();
 
         for (MonitoredResource resource : resources) {
-            ResourceGroup group = resource.getGroup();
-            if (group == null) {
+            if (resource.getGroups().isEmpty()) {
                 ungroupedResources.add(resource);
             } else {
-                groupsById.putIfAbsent(group.getId(), group);
-                groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(resource);
+                for (ResourceGroup group : resource.getGroups()) {
+                    groupsById.putIfAbsent(group.getId(), group);
+                    groupedResourceMap.computeIfAbsent(group.getId(), ignored -> new ArrayList<>()).add(resource);
+                }
             }
         }
 
@@ -76,6 +95,7 @@ public class HomeController {
         model.addAttribute("groupedResources", groupedResources);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", isPublicAddAllowed());
+        model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
         model.addAttribute("resourceTypes", ResourceType.values());
         model.addAttribute("appVersion", applicationVersionService.getVersion());
         return "index";
@@ -146,10 +166,42 @@ public class HomeController {
         return "announcements";
     }
 
+    @GetMapping("/embed/status")
+    public String embedStatus(@RequestParam(name = "refresh", defaultValue = "30") int refreshSeconds,
+                              @RequestParam(name = "mode", required = false) String mode,
+                              @RequestParam(name = "fontSize", defaultValue = "15") int fontSize,
+                              @RequestParam(name = "fontColor", required = false) String fontColor,
+                              Model model) {
+        if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        int sanitizedRefreshSeconds = Math.min(3600, Math.max(10, refreshSeconds));
+        int sanitizedFontSize = Math.min(32, Math.max(6, fontSize));
+        String normalizedMode = "dark".equalsIgnoreCase(mode) ? "dark" : "light";
+        String normalizedFontColor = normalizeHexColor(fontColor);
+        long activeOutages = outageService.countActiveOutages();
+        boolean hasActiveIncidents = activeOutages > 0;
+
+        model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
+        model.addAttribute("mode", normalizedMode);
+        model.addAttribute("fontSize", sanitizedFontSize);
+        model.addAttribute("fontColor", normalizedFontColor);
+        model.addAttribute("hasActiveIncidents", hasActiveIncidents);
+        model.addAttribute("activeOutages", activeOutages);
+        return "embed-status";
+    }
+
     @PostMapping("/resources/{id}/check")
     public String runManualCheck(@PathVariable Long id,
                                  Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
+        MonitoredResource resource = resourceService.findById(id).orElse(null);
+        if (resource == null || !isVisibleByGroupPolicy(resource, isAuthenticated(authentication))) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Resource not found.");
+            return "redirect:/";
+        }
+
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !isPublicCheckNowAllowed()) {
@@ -183,8 +235,14 @@ public class HomeController {
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         model.addAttribute("allowCheckNow", isAdmin || isPublicCheckNowAllowed());
+        model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
+        boolean authenticated = isAuthenticated(authentication);
 
         return resourceService.findById(id).map(resource -> {
+            if (!isVisibleByGroupPolicy(resource, authenticated)) {
+                return "redirect:/";
+            }
+
             int sanitizedPage = Math.max(0, page);
             int sanitizedSize = normalizePageSize(size);
             CheckStatus statusFilter = parseStatus(status);
@@ -414,8 +472,57 @@ public class HomeController {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
     }
 
+    private boolean isPublicAccessAllowed() {
+        List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        if (configs.isEmpty()) {
+            return true;
+        }
+        return configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
+    }
+
     private boolean isPublicCheckNowAllowed() {
         return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+    }
+
+    private boolean isAlwaysDisplayUrlEnabled() {
+        return resourceTypeConfigRepository.findAll().stream().anyMatch(ResourceTypeConfig::isAlwaysDisplayUrl);
+    }
+
+    private boolean shouldShowResourceUrl(Authentication authentication) {
+        return isAlwaysDisplayUrlEnabled() || isAuthenticated(authentication);
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    private boolean isVisibleByGroupPolicy(MonitoredResource resource, boolean authenticated) {
+        if (resource.getGroups().isEmpty()) {
+            return true;
+        }
+        // Most-permissive rule: take the least-restrictive visibility across all groups.
+        ResourceGroupVisibility effective = resource.getGroups().stream()
+                .map(ResourceGroup::getVisibilityOrDefault)
+                .min(Comparator.comparingInt(ResourceGroupVisibility::ordinal))
+                .orElse(ResourceGroupVisibility.PUBLIC);
+        return switch (effective) {
+            case PUBLIC -> true;
+            case AUTHENTICATED -> authenticated;
+            case HIDDEN -> false;
+        };
+    }
+
+    private String normalizeHexColor(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String trimmed = raw.trim();
+        if (!HEX_COLOR_PATTERN.matcher(trimmed).matches()) {
+            return "";
+        }
+        return trimmed.startsWith("#") ? trimmed : "#" + trimmed;
     }
 
     private record OutageRowViewModel(

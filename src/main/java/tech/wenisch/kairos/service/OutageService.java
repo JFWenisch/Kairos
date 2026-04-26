@@ -120,6 +120,14 @@ public class OutageService {
         return outageRepository.findAllByOrderByStartDateDesc();
     }
 
+    public long countActiveOutages() {
+        return outageRepository.countByActiveTrue();
+    }
+
+    public boolean hasActiveOutages() {
+        return countActiveOutages() > 0;
+    }
+
     private Optional<Outage> resolveActiveOutage(MonitoredResource resource) {
         List<Outage> activeOutages = outageRepository.findByResourceAndActiveTrueOrderByStartDateDesc(resource);
         if (activeOutages.isEmpty()) {

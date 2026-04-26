@@ -43,35 +43,37 @@
 - **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
 - **Manual instant checks** - admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
 - **Public "Check Now"** - optionally allow unauthenticated users to trigger an immediate check from the resource detail page
-- **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups
+- **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups; a resource can belong to **multiple groups simultaneously**
+- **Group visibility controls** - per resource group, choose `PUBLIC`, `AUTHENTICATED`, or `HIDDEN`; when a resource is in multiple groups the most-permissive visibility wins
 - **Admin panel** - manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **API keys** - generate and revoke named API keys for machine-to-machine access to the REST API
 - **YAML import / export** - export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** - publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
 - **Public announcements** - active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
+- **Embeddable status widget** - expose a lightweight iframe status badge (green/red indicator with status text) and control embedding centrally via **Admin -> Embed Widget** with policies for disabled, allow-all, or domain allowlist
 - **Public submission mode** - optionally allow unauthenticated users to add resources via the REST API
+- **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
 - **OIDC / OAuth2 login** - plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** - `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
 - **H2 (default) or PostgreSQL** - switch databases with a single property change
 - **Automatic schema migrations** - Flyway runs database migrations automatically on startup (existing databases are baselined)
+- **Custom headers** - inject arbitrary HTML or JavaScript into the `<head>` of all pages from the admin panel (analytics tags, custom stylesheets, etc.)
 - **Dark-mode UI** - Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
 
 ---
 
 ## Quick Start
 
-### Prerequisites
 
-- Java 17+
-- Maven 3.8+ 
-- Network access to target Docker/OCI registries if you want Docker image checks
 
-### Run from source
+### Run with Docker
 
 ```bash
-git clone https://github.com/wenisch-tech/Kairos.git
-cd Kairos
-./mvnw spring-boot:run
+docker run -d \
+  --name kairos \
+  -p 8080:8080 \
+  -v kairos-data:/app/data \
+  ghcr.io/wenisch-tech/kairos:latest
 ```
 
 Open **http://localhost:8080** in your browser.
@@ -84,22 +86,7 @@ Open **http://localhost:8080** in your browser.
 
 > Warning: Change the default password immediately after first login via **Admin -> Users**.
 
-### Run with Docker
 
-```bash
-docker run -d \
-  --name kairos \
-  -p 8080:8080 \
-  -v kairos-data:/app/data \
-  ghcr.io/wenisch-tech/kairos:latest
-```
-
-### Build a JAR
-
-```bash
-./mvnw package -DskipTests
-java -jar target/kairos-0.0.1-SNAPSHOT.jar
-```
 
 ### Run on Kubernetes with Helm
 
@@ -174,41 +161,9 @@ Kairos is configured via standard Spring Boot `application.properties` or enviro
 
 See [docs/configuration.md](docs/configuration.md) for advanced configuration including PostgreSQL setup, Flyway migrations, registry checks, and OIDC.
 
-Database schema changes are applied automatically at startup via Flyway (`spring.flyway.enabled=true`).
-
-### Outage Configuration
-
-Outage thresholds are configured per resource type in the UI under **Admin -> Resource Types**:
-
-- **Outage threshold**: number of consecutive unsuccessful checks required to open an outage
-- **Recovery threshold**: number of consecutive successful checks required to close an outage
-
-Defaults for new resource type configs:
-
-- Outage threshold: `3`
-- Recovery threshold: `2`
-
-Behavior notes:
-
-- Kairos keeps only one active outage per resource.
-- The public outages page is available at `/outages`.
-- Resource pages and dashboard cards/rows show active outage indicators with live elapsed duration.
 
 ## Documentation
-
-- [docs/index.md](docs/index.md) - documentation index
-- GitHub Pages docs site (auto-published from `docs/`): https://wenisch-tech.github.io/Kairos/
-- [docs/quickstart.md](docs/quickstart.md) - quick setup paths (source, Docker, Helm)
-- [docs/api.md](docs/api.md) - REST API endpoints, payloads and examples
-- [docs/authentication.md](docs/authentication.md) - resource check authentication and credential matching
-- [docs/configuration.md](docs/configuration.md) - runtime configuration, database setup and OIDC
-- [docs/configuration-scheduling.md](docs/configuration-scheduling.md) - intervals, parallelism, and outage threshold behavior
-- [docs/importexport.md](docs/importexport.md) - YAML import/export workflow, format and compatibility notes
-- [docs/docker-pullability.md](docs/docker-pullability.md) - socketless Docker/OCI pullability validation behavior
-- [docs/announcements.md](docs/announcements.md) - announcement features, permissions and lifecycle
-- [docs/troubleshooting.md](docs/troubleshooting.md) - common issues, diagnosis steps and fixes
-
-See [docs/importexport.md](docs/importexport.md) for details about the admin resource import/export workflow and YAML schema compatibility.
+Official Documentation including advanced configuration and information is generated via the markdown files in [docs/](docs/index.md)  folder and published to https://kairos.wenisch.tech . 
 
 ---
 
@@ -252,6 +207,20 @@ A health endpoint is also available at `/actuator/health`.
 
 ## Development
 
+### Prerequisites
+
+- Java 17+
+- Maven 3.8+ 
+- Network access to target Docker/OCI registries if you want Docker image checks
+
+### Run from source
+
+```bash
+git clone https://github.com/wenisch-tech/Kairos.git
+cd Kairos
+./mvnw spring-boot:run
+```
+
 ```bash
 # Run tests
 ./mvnw test
@@ -260,8 +229,15 @@ A health endpoint is also available at `/actuator/health`.
 ./mvnw spring-boot:run
 ```
 
+### Build a JAR
+
+```bash
+./mvnw package -DskipTests
+java -jar target/kairos-0.0.1-SNAPSHOT.jar
+```
+
 ---
 
 ## License
 Licensed under 
-[AGPL v3.0](LICENSE.md) by Jean-Fabian Wenisch / wenisch.tech
+[AGPL v3.0](LICENSE.md) by  [Jean-Fabian Wenisch](https://github.com/jfwenisch) / wenisch.tech [wenisch.tech](https://wenisch.tech) 

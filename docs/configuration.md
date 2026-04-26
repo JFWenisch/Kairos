@@ -12,7 +12,8 @@ For easier navigation, each major topic is documented on a dedicated page.
 - [Outage Thresholds and Lifecycle](configuration-scheduling.md#outage-detection-and-recovery)
 - [Observability](configuration-observability.md)
 - [Runtime (Tomcat)](configuration-runtime.md)
-- [Security](configuration-security.md)
+- [Security (General Settings, public access, URL visibility, CORS)](configuration-security.md)
+- [Resource group visibility (PUBLIC, AUTHENTICATED, HIDDEN)](configuration-security.md#resource-group-visibility)
 
 ## Related Operational Guides
 

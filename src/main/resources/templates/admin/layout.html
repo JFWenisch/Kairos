@@ -12,6 +12,70 @@
     <link rel="stylesheet" th:href="@{/css/kairos.css}">
 </head>
 <body>
+<div th:fragment="adminSidebar" class="d-flex flex-column">
+    <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
+    <a th:href="@{/admin/settings}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/settings')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-sliders me-2"></i>General Settings
+    </a>
+    <a th:href="@{/admin/announcements}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/announcements')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-megaphone me-2"></i>Announcements
+    </a>
+    <a th:href="@{/admin/resources}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/resources')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-hdd-network me-2"></i>Manage Resources
+    </a>
+    <a th:href="@{/admin/resource-types}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/resource-types')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-grid-3x3-gap me-2"></i>Resource Types
+    </a>
+    <a th:href="@{/admin/embed}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/embed')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-badge-ad me-2"></i>Embed Widget
+    </a>
+    <a th:href="@{/admin/users}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/users')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-people me-2"></i>Users
+    </a>
+    <a th:href="@{/admin/api-keys}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/api-keys')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-key me-2"></i>API Keys
+    </a>
+    
+    <hr class="border-secondary my-2">
+    <a th:href="@{/admin/custom-headers}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/custom-headers')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-code-square me-2"></i>Custom Headers
+    </a>
+    <a th:href="@{/api}"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-braces me-2"></i>API Docs
+    </a>
+    <a th:href="@{/admin/about}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/about')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-info-circle me-2"></i>About
+    </a>
+    <div class="mt-auto pt-2">
+        <hr class="border-secondary my-2">
+        <div class="px-2" style="font-size:.75rem">
+            <a th:href="'https://github.com/wenisch-tech/Kairos/releases/tag/v' + ${appVersion}"
+               th:text="'v' + ${appVersion}"
+               target="_blank" rel="noopener"
+               class="text-muted text-decoration-none">version</a>
+        </div>
+    </div>
+</div>
+
 <div th:fragment="adminLayout(title, content)">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
         <div class="container-fluid">
@@ -42,45 +106,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
-                <div class="d-flex flex-column">
-                    <h6 class="text-uppercase text-muted fw-bold mb-3 px-2">Admin Panel</h6>
-                    <a th:href="@{/admin/settings}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/settings')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-sliders me-2"></i>General Settings
-                    </a>
-                    <a th:href="@{/admin/announcements}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/announcements')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-megaphone me-2"></i>Announcements
-                    </a>
-                    <a th:href="@{/admin/resources}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/admin/resources')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-hdd-network me-2"></i>Manage Resources
-                    </a>
-                    <a th:href="@{/admin/resource-types}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/resource-types')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-grid-3x3-gap me-2"></i>Resource Types
-                    </a>
-                    <a th:href="@{/admin/users}"
-                       th:classappend="${#httpServletRequest.requestURI.contains('/users')} ? 'active' : ''"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-people me-2"></i>Users
-                    </a>
-                    
-                          <a th:href="@{/admin/api-keys}"
-                              th:classappend="${#httpServletRequest.requestURI.contains('/api-keys')} ? 'active' : ''"
-                              class="nav-link px-2 py-2 rounded mb-1">
-                                <i class="bi bi-key me-2"></i>API Keys
-                          </a>
-                    <hr class="border-secondary my-2">
-                    <a th:href="@{/api}"
-                       class="nav-link px-2 py-2 rounded mb-1">
-                        <i class="bi bi-braces me-2"></i>API Docs
-                    </a>
-                </div>
+                <div th:replace="~{admin/layout :: adminSidebar}"></div>
             </div>
 
             <div class="col-md-10 py-4 px-4">

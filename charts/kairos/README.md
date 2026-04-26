@@ -1,6 +1,34 @@
 # Kairos Helm Chart
 
-This Helm chart deploys Kairos, a self-hosted uptime and availability monitoring application, to a Kubernetes cluster.
+**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, stores a full check history, and presents the results on a clean status dashboard — with Prometheus metrics included.
+
+This Helm chart deploys Kairos to a Kubernetes cluster.
+
+## Features
+
+- **HTTP monitoring** — periodic HTTP GET checks with configurable interval and parallelism
+- **Latency tracking** — per-check latency with DNS, TCP, and TLS breakdown; interactive trend chart on the resource detail page
+- **Docker image monitoring** — validates image pullability via the OCI/Docker Registry HTTP API (no Docker socket required)
+- **Docker repository discovery** — provide a repository prefix and Kairos auto-creates resources for discovered images
+- **Authentication support** — per-resource-type Basic Auth credentials with wildcard URL pattern matching
+- **Status dashboard** — 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and full check history per resource
+- **Outage tracking** — per-resource outage lifecycle with active outage indicators and live "since" counters
+- **Resource groups** — organise resources into named groups with per-group visibility controls (`PUBLIC`, `AUTHENTICATED`, `HIDDEN`)
+- **Announcement system** — publish rich-text announcements with severity levels and optional auto-expiry
+- **Embeddable status widget** — lightweight iframe status badge with domain allowlist control
+- **API keys** — generate and revoke named API keys for machine-to-machine access
+- **YAML import / export** — versioned, forward-compatible resource exchange format
+- **OIDC / OAuth2 login** — plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
+- **Prometheus metrics** — `kairos_resource_status` gauge per resource at `/actuator/prometheus`
+
+
+## More Information
+
+| Resource | Link |
+|---|---|
+| Official Website | [kairos.wenisch.tech](https://kairos.wenisch.tech) |
+| Documentation | [kairos.wenisch.tech/docs](https://kairos.wenisch.tech/docs) |
+| GitHub Repository | [github.com/wenisch-tech/Kairos](https://github.com/wenisch-tech/Kairos) |
 
 ## Prerequisites
 

@@ -16,7 +16,7 @@ public class Outage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resource_id", nullable = false)
+    @JoinColumn(name = "resource_id", nullable = true)
     private MonitoredResource resource;
 
     @Column(nullable = false)
