@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.13.4 - 2026-04-26
+
+### [1.13.4](https://github.com/wenisch-tech/Kairos/compare/v1.13.3...v1.13.4) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump actions/setup-java from 4 to 5 ([cf2b4d7](https://github.com/wenisch-tech/Kairos/commit/cf2b4d7b7f4fb8db497e8f46b7ad75efdd9b6806))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.4
+
+
 ## v1.13.1 - 2026-04-26
 
 ### [1.13.1](https://github.com/wenisch-tech/Kairos/compare/v1.13.0...v1.13.1) (2026-04-26)
