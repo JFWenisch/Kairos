@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.8 - 2026-04-26
+
+### [1.12.8](https://github.com/wenisch-tech/Kairos/compare/v1.12.7...v1.12.8) (2026-04-26)
+
+
+### Documentation
+
+* updated quickstart section in Readme ([fef32c9](https://github.com/wenisch-tech/Kairos/commit/fef32c9d9cb5e9a851cf805aaa3f0e76a5919f18))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.8
+
+
 ## v1.12.7 - 2026-04-26
 
 ### [1.12.7](https://github.com/wenisch-tech/Kairos/compare/v1.12.6...v1.12.7) (2026-04-26)
