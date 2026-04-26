@@ -1,8 +1,9 @@
 package tech.wenisch.kairos.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
 import tech.wenisch.kairos.entity.CustomHeaderSettings;
 import tech.wenisch.kairos.repository.CustomHeaderSettingsRepository;
 
