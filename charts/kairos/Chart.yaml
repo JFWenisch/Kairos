@@ -10,16 +10,18 @@ keywords:
   - availability
   - docker
   - http
-home: https://github.com/wenisch-tech/Kairos
+home: https://kairos.wenisch.tech
 icon: https://raw.githubusercontent.com/wenisch-tech/Kairos/main/src/main/resources/static/img/kairos.png
 sources:
   - https://github.com/wenisch-tech/Kairos
 maintainers:
   - name: JFWenisch
     url: https://github.com/JFWenisch
+  - name: Wenisch Technologies
+    url: https://wenisch.tech
 annotations:
   artifacthub.io/category: monitoring-logging
-  artifacthub.io/license: GPL-3.0
+  artifacthub.io/license: AGPL-3.0
   artifacthub.io/prerelease: "false"
   artifacthub.io/signKey: |
     fingerprint: keyless (Sigstore/Cosign via GitHub Actions OIDC)
@@ -28,10 +30,12 @@ annotations:
     - name: kairos
       image: ghcr.io/wenisch-tech/kairos:latest
   artifacthub.io/links: |
+    - name: Official Website
+      url: https://kairos.wenisch.tech
+    - name: Documentation
+      url: https://kairos.wenisch.tech/docs
     - name: GitHub Repository
       url: https://github.com/wenisch-tech/Kairos
-    - name: Documentation
-      url: https://github.com/wenisch-tech/Kairos/tree/main/docs
     - name: Changelog
       url: https://github.com/wenisch-tech/Kairos/blob/main/CHANGELOG.md
     - name: Container Registry

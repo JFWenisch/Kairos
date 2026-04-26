@@ -22,5 +22,6 @@ This site is built automatically from the Markdown files in this folder and publ
 ## Project Links
 
 - Repository: https://github.com/wenisch-tech/Kairos
+- Documentations: https://kairos.wenisch.tech/docs
 - Container image: https://github.com/wenisch-tech/Kairos/pkgs/container/kairos
 - Helm chart: https://artifacthub.io/packages/helm/wenisch-tech/kairos
