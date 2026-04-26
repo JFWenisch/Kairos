@@ -63,18 +63,16 @@
 
 ## Quick Start
 
-### Prerequisites
 
-- Java 17+
-- Maven 3.8+ 
-- Network access to target Docker/OCI registries if you want Docker image checks
 
-### Run from source
+### Run with Docker
 
 ```bash
-git clone https://github.com/wenisch-tech/Kairos.git
-cd Kairos
-./mvnw spring-boot:run
+docker run -d \
+  --name kairos \
+  -p 8080:8080 \
+  -v kairos-data:/app/data \
+  ghcr.io/wenisch-tech/kairos:latest
 ```
 
 Open **http://localhost:8080** in your browser.
@@ -87,22 +85,7 @@ Open **http://localhost:8080** in your browser.
 
 > Warning: Change the default password immediately after first login via **Admin -> Users**.
 
-### Run with Docker
 
-```bash
-docker run -d \
-  --name kairos \
-  -p 8080:8080 \
-  -v kairos-data:/app/data \
-  ghcr.io/wenisch-tech/kairos:latest
-```
-
-### Build a JAR
-
-```bash
-./mvnw package -DskipTests
-java -jar target/kairos-0.0.1-SNAPSHOT.jar
-```
 
 ### Run on Kubernetes with Helm
 
@@ -223,12 +206,33 @@ A health endpoint is also available at `/actuator/health`.
 
 ## Development
 
+### Prerequisites
+
+- Java 17+
+- Maven 3.8+ 
+- Network access to target Docker/OCI registries if you want Docker image checks
+
+### Run from source
+
+```bash
+git clone https://github.com/wenisch-tech/Kairos.git
+cd Kairos
+./mvnw spring-boot:run
+```
+
 ```bash
 # Run tests
 ./mvnw test
 
 # Run with H2 console enabled (default - open http://localhost:8080/h2-console)
 ./mvnw spring-boot:run
+```
+
+### Build a JAR
+
+```bash
+./mvnw package -DskipTests
+java -jar target/kairos-0.0.1-SNAPSHOT.jar
 ```
 
 ---
