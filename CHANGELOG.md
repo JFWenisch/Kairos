@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.12.10 - 2026-04-26
+
+### [1.12.10](https://github.com/wenisch-tech/Kairos/compare/v1.12.9...v1.12.10) (2026-04-26)
+
+
+### Bug Fixes
+
+* image tag is automatically updated during ci ([320d14c](https://github.com/wenisch-tech/Kairos/commit/320d14c2501309427490929e5c423ca4faa5a193))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.12.10
+
+
 ## v1.12.8 - 2026-04-26
 
 ### [1.12.8](https://github.com/wenisch-tech/Kairos/compare/v1.12.7...v1.12.8) (2026-04-26)
