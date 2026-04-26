@@ -21,6 +21,8 @@ public interface CheckResultRepository extends JpaRepository<CheckResult, Long> 
     List<CheckResult> findByResourceInAndCheckedAtAfterOrderByCheckedAtAsc(List<MonitoredResource> resources, LocalDateTime after);
     Page<CheckResult> findByResourceOrderByCheckedAtDesc(MonitoredResource resource, Pageable pageable);
 
+    long deleteByCheckedAtBefore(LocalDateTime cutoff);
+
         @Query("""
             select cr from CheckResult cr
             where cr.resource = :resource

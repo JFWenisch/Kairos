@@ -12,10 +12,15 @@ import org.springframework.data.domain.PageRequest;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.OutageRepository;
 import tech.wenisch.kairos.repository.ResourceGroupRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,13 +43,24 @@ class ResourceServiceTest {
     private CheckResultRepository checkResultRepository;
 
     @Mock
+    private OutageRepository outageRepository;
+
+    @Mock
     private ResourceGroupRepository resourceGroupRepository;
+
+    @Mock
+    private ResourceTypeConfigRepository resourceTypeConfigRepository;
 
     private ResourceService resourceService;
 
     @BeforeEach
     void setUp() {
-        resourceService = new ResourceService(resourceRepository, checkResultRepository, resourceGroupRepository);
+        resourceService = new ResourceService(
+                resourceRepository,
+                checkResultRepository,
+                outageRepository,
+                resourceGroupRepository,
+                resourceTypeConfigRepository);
     }
 
     @Test
@@ -83,16 +99,75 @@ class ResourceServiceTest {
         MonitoredResource resource = MonitoredResource.builder().id(7L).name("to-delete").active(true).build();
         CheckResult resultOne = CheckResult.builder().id(1L).resource(resource).build();
         CheckResult resultTwo = CheckResult.builder().id(2L).resource(resource).build();
+        Outage outage = Outage.builder().id(10L).resource(resource).active(true).build();
 
         when(resourceRepository.findById(7L)).thenReturn(Optional.of(resource));
+        when(resourceTypeConfigRepository.findAll()).thenReturn(List.of(ResourceTypeConfig.builder()
+                .deleteOutagesOnResourceDelete(true)
+                .build()));
+        when(outageRepository.findByResourceOrderByStartDateDesc(resource)).thenReturn(List.of(outage));
         when(checkResultRepository.findByResourceOrderByCheckedAtDesc(resource)).thenReturn(List.of(resultOne, resultTwo));
 
         resourceService.delete(7L);
 
+        verify(outageRepository).deleteAll(List.of(outage));
         verify(checkResultRepository).delete(resultOne);
         verify(checkResultRepository).delete(resultTwo);
         verify(resourceRepository).delete(resource);
     }
+
+        @Test
+        void deleteDockerRepositoryAlsoDeletesManagedDockerResourcesAndGroup() {
+        MonitoredResource dockerRepository = MonitoredResource.builder()
+            .id(50L)
+            .name("registry")
+            .resourceType(ResourceType.DOCKERREPOSITORY)
+            .target("https://registry.example.com/registry/images/")
+            .active(true)
+            .build();
+
+        ResourceGroup managedGroup = ResourceGroup.builder()
+            .id(15L)
+            .name("registry")
+            .build();
+
+        MonitoredResource managedDocker = MonitoredResource.builder()
+            .id(51L)
+            .name("alpine")
+            .resourceType(ResourceType.DOCKER)
+            .target("registry.example.com/images/alpine:latest")
+            .active(true)
+            .build();
+        managedDocker.getGroups().add(managedGroup);
+
+        CheckResult managedHistory = CheckResult.builder().id(100L).resource(managedDocker).build();
+        CheckResult repositoryHistory = CheckResult.builder().id(101L).resource(dockerRepository).build();
+        Outage managedOutage = Outage.builder().id(201L).resource(managedDocker).build();
+        Outage repositoryOutage = Outage.builder().id(202L).resource(dockerRepository).build();
+
+        when(resourceRepository.findById(50L)).thenReturn(Optional.of(dockerRepository));
+        when(resourceTypeConfigRepository.findAll()).thenReturn(List.of(ResourceTypeConfig.builder()
+            .deleteOutagesOnResourceDelete(true)
+            .build()));
+        when(resourceGroupRepository.findByNameIgnoreCase("registry")).thenReturn(Optional.of(managedGroup));
+        when(resourceGroupRepository.findByNameIgnoreCase("Dockerrepository: https://registry.example.com/registry/images/")).thenReturn(Optional.empty());
+        when(resourceRepository.findByGroups_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
+        when(resourceRepository.findByGroups_Id(15L)).thenReturn(List.of());
+        when(outageRepository.findByResourceOrderByStartDateDesc(managedDocker)).thenReturn(List.of(managedOutage));
+        when(outageRepository.findByResourceOrderByStartDateDesc(dockerRepository)).thenReturn(List.of(repositoryOutage));
+        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(managedDocker)).thenReturn(List.of(managedHistory));
+        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(dockerRepository)).thenReturn(List.of(repositoryHistory));
+
+        resourceService.delete(50L);
+
+        verify(outageRepository).deleteAll(List.of(managedOutage));
+        verify(outageRepository).deleteAll(List.of(repositoryOutage));
+        verify(checkResultRepository).delete(managedHistory);
+        verify(resourceRepository).delete(managedDocker);
+        verify(resourceGroupRepository).delete(managedGroup);
+        verify(checkResultRepository).delete(repositoryHistory);
+        verify(resourceRepository).delete(dockerRepository);
+        }
 
     @Test
     void getHistoryPageReturnsEmptyWhenResourceMissing() {
@@ -175,25 +250,29 @@ class ResourceServiceTest {
         when(checkResultRepository.findByResourceAndCheckedAtAfterOrderByCheckedAtAsc(eq(resource), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
-        List<String> blocks = resourceService.getTimelineBlocks(resource);
+        var blocks = resourceService.getTimelineBlocks(resource);
 
         assertThat(blocks).hasSize(90);
-        assertThat(blocks).allMatch("unknown"::equals);
+        assertThat(blocks).allMatch(block -> "unknown".equals(block.status()));
+        assertThat(blocks).allMatch(block -> block.timestamp() != null);
     }
 
     @Test
     void clearGroupAssignmentUnsetsGroupAndSavesAll() {
         ResourceGroup group = ResourceGroup.builder().id(1L).name("backend").build();
-        MonitoredResource one = MonitoredResource.builder().id(1L).group(group).build();
-        MonitoredResource two = MonitoredResource.builder().id(2L).group(group).build();
+        MonitoredResource one = MonitoredResource.builder().id(1L).build();
+        one.getGroups().add(group);
+        MonitoredResource two = MonitoredResource.builder().id(2L).build();
+        two.getGroups().add(group);
 
-        when(resourceRepository.findByGroup_Id(1L)).thenReturn(List.of(one, two));
+        when(resourceRepository.findByGroups_Id(1L)).thenReturn(List.of(one, two));
+        when(resourceGroupRepository.findById(1L)).thenReturn(Optional.of(group));
 
         int count = resourceService.clearGroupAssignment(1L);
 
         assertThat(count).isEqualTo(2);
-        assertThat(one.getGroup()).isNull();
-        assertThat(two.getGroup()).isNull();
+        assertThat(one.getGroups()).doesNotContain(group);
+        assertThat(two.getGroups()).doesNotContain(group);
         verify(resourceRepository).saveAll(List.of(one, two));
     }
 

@@ -52,6 +52,7 @@ public class DockerCheckService {
     private final CheckResultRepository checkResultRepository;
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final OutageService outageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = createDefaultHttpClient();
@@ -59,6 +60,7 @@ public class DockerCheckService {
 
     public CheckResult check(MonitoredResource resource) {
         String image = resource.getTarget();
+        long checkStartedNanos = System.nanoTime();
         try {
             DockerImageRef imageRef = parseImageRef(image);
 
@@ -91,8 +93,10 @@ public class DockerCheckService {
                     .status(CheckStatus.AVAILABLE)
                     .checkedAt(LocalDateTime.now())
                     .message("Manifest and " + blobDigests.size() + " blobs downloadable")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
 
@@ -100,12 +104,14 @@ public class DockerCheckService {
             log.warn("Docker check failed for image {}: {}", image, e.getMessage());
             CheckResult result = CheckResult.builder()
                     .resource(resource)
-                    .status(CheckStatus.NOT_AVAILABLE)
+                    .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
                     .message(e.getMessage())
                     .errorCode("DOCKER_ERROR")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
             CheckResult saved = checkResultRepository.save(result);
+            outageService.evaluate(resource);
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         }
@@ -531,6 +537,10 @@ public class DockerCheckService {
         } catch (GeneralSecurityException ex) {
             throw new IllegalStateException("Failed to initialize insecure HTTP client", ex);
         }
+    }
+
+    private Long elapsedMillis(long startedNanos) {
+        return Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
     }
 
     private record ManifestResponse(String contentType, String body) {

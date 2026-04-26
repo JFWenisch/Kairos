@@ -1,35 +1,61 @@
 package tech.wenisch.kairos.controller;
 
-import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
-import tech.wenisch.kairos.entity.*;
-import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
-import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-import tech.wenisch.kairos.service.AnnouncementService;
-import tech.wenisch.kairos.service.ApiKeyService;
-import tech.wenisch.kairos.service.ResourceExchangeService;
-import tech.wenisch.kairos.service.ResourceGroupService;
-import tech.wenisch.kairos.service.ResourceService;
-import tech.wenisch.kairos.service.UserService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.boot.SpringBootVersion;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import tech.wenisch.kairos.dto.AdminResourceGroupViewModel;
+import tech.wenisch.kairos.entity.Announcement;
+import tech.wenisch.kairos.entity.AnnouncementKind;
+import tech.wenisch.kairos.entity.AuthType;
+import tech.wenisch.kairos.entity.CorsAllowedOrigin;
+import tech.wenisch.kairos.entity.EmbedPolicy;
+import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeAuth;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.entity.UserRole;
+import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
+import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
+import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApiKeyService;
+import tech.wenisch.kairos.service.ApplicationVersionService;
+import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.CustomHeaderService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
+import tech.wenisch.kairos.service.ResourceExchangeService;
+import tech.wenisch.kairos.service.ResourceGroupService;
+import tech.wenisch.kairos.service.ResourceService;
+import tech.wenisch.kairos.service.UserService;
 
 @Controller
 @RequestMapping("/admin")
@@ -40,38 +66,174 @@ public class AdminController {
     private final UserService userService;
     private final AnnouncementService announcementService;
     private final ApiKeyService apiKeyService;
+    private final CheckExecutorService checkExecutorService;
     private final ResourceExchangeService resourceExchangeService;
     private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
+    private final CorsAllowedOriginRepository corsAllowedOriginRepository;
+    private final EmbedSettingsService embedSettingsService;
+    private final ApplicationVersionService applicationVersionService;
+    private final CustomHeaderService customHeaderService;
 
     @GetMapping
     public String admin() {
         return "redirect:/admin/settings";
     }
 
+    @ModelAttribute("currentRequestUri")
+    public String currentRequestUri(HttpServletRequest request) {
+        return request != null ? request.getRequestURI() : "";
+    }
+
+    @ModelAttribute("appVersion")
+    public String appVersion() {
+        return applicationVersionService.getVersion();
+    }
+
+    @GetMapping("/about")
+    public String about(Model model) {
+        model.addAttribute("appVersion", applicationVersionService.getVersion());
+        model.addAttribute("springBootVersion", SpringBootVersion.getVersion());
+        model.addAttribute("javaVersion", System.getProperty("java.version", "unknown"));
+        model.addAttribute("buildTimestamp", LocalDateTime.now());
+        return "admin/about";
+    }
+
+    @GetMapping("/custom-headers")
+    public String customHeadersPage(Model model) {
+        model.addAttribute("settings", customHeaderService.getSettings());
+        return "admin/custom-headers";
+    }
+
+    @PostMapping("/custom-headers")
+    public String saveCustomHeaders(
+            @RequestParam(value = "content", defaultValue = "") String content,
+            @RequestParam(value = "applyToAdmin", defaultValue = "false") boolean applyToAdmin,
+            RedirectAttributes redirectAttributes) {
+        customHeaderService.saveSettings(content, applyToAdmin);
+        redirectAttributes.addFlashAttribute("successMessage", "Custom header settings saved.");
+        return "redirect:/admin/custom-headers";
+    }
+
     @GetMapping("/settings")
     public String settings(Model model) {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
+        boolean allowPublicAccess = configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
         boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
         boolean allowPublicCheckNow = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+        boolean alwaysDisplayUrl = configs.stream().anyMatch(ResourceTypeConfig::isAlwaysDisplayUrl);
+        boolean checkHistoryRetentionEnabled = configs.stream().anyMatch(ResourceTypeConfig::isCheckHistoryRetentionEnabled);
+        int checkHistoryRetentionIntervalMinutes = configs.stream()
+                .map(ResourceTypeConfig::getCheckHistoryRetentionIntervalMinutes)
+                .findFirst()
+                .orElse(60);
+        int checkHistoryRetentionDays = configs.stream()
+                .map(ResourceTypeConfig::getCheckHistoryRetentionDays)
+                .findFirst()
+                .orElse(31);
+        boolean deleteOutagesOnResourceDelete = configs.stream().anyMatch(ResourceTypeConfig::isDeleteOutagesOnResourceDelete);
+        model.addAttribute("allowPublicAccess", allowPublicAccess);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
+        model.addAttribute("alwaysDisplayUrl", alwaysDisplayUrl);
+        model.addAttribute("checkHistoryRetentionEnabled", checkHistoryRetentionEnabled);
+        model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
+        model.addAttribute("checkHistoryRetentionDays", checkHistoryRetentionDays);
+        model.addAttribute("deleteOutagesOnResourceDelete", deleteOutagesOnResourceDelete);
+        model.addAttribute("corsAllowedOrigins", corsAllowedOriginRepository.findAll());
         model.addAttribute("configs", configs);
         return "admin/settings";
     }
 
     @PostMapping("/settings")
-    public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAdd,
+    public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAccess,
+                               @RequestParam(defaultValue = "false") boolean allowPublicAdd,
                                @RequestParam(defaultValue = "false") boolean allowPublicCheckNow,
+                               @RequestParam(defaultValue = "false") boolean alwaysDisplayUrl,
+                               @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
+                               @RequestParam(defaultValue = "60") int checkHistoryRetentionIntervalMinutes,
+                               @RequestParam(defaultValue = "31") int checkHistoryRetentionDays,
+                               @RequestParam(defaultValue = "false") boolean deleteOutagesOnResourceDelete,
                                RedirectAttributes redirectAttributes) {
+        int sanitizedRetentionIntervalMinutes = Math.max(1, checkHistoryRetentionIntervalMinutes);
+        int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
+            config.setAllowPublicAccess(allowPublicAccess);
             config.setAllowPublicAdd(allowPublicAdd);
             config.setAllowPublicCheckNow(allowPublicCheckNow);
+            config.setAlwaysDisplayUrl(alwaysDisplayUrl);
+            config.setCheckHistoryRetentionEnabled(checkHistoryRetentionEnabled);
+            config.setCheckHistoryRetentionIntervalMinutes(sanitizedRetentionIntervalMinutes);
+            config.setCheckHistoryRetentionDays(sanitizedRetentionDays);
+            config.setDeleteOutagesOnResourceDelete(deleteOutagesOnResourceDelete);
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");
+        return "redirect:/admin/settings";
+    }
+
+    @GetMapping("/embed")
+    public String embedSettings(Model model) {
+        model.addAttribute("embedPolicy", embedSettingsService.getPolicy().name());
+        model.addAttribute("embedAllowedOrigins", embedSettingsService.listAllowedOrigins());
+        return "admin/embed";
+    }
+
+    @PostMapping("/embed/policy")
+    public String saveEmbedPolicy(@RequestParam(defaultValue = "ALLOW_ALL") String embedPolicy,
+                                  RedirectAttributes redirectAttributes) {
+        EmbedPolicy policy = EmbedPolicy.fromValue(embedPolicy);
+        embedSettingsService.setPolicyForAllResourceTypes(policy);
+        redirectAttributes.addFlashAttribute("successMessage", "Embed policy updated.");
+        return "redirect:/admin/embed";
+    }
+
+    @PostMapping("/embed/origins/add")
+    public String addEmbedOrigin(@RequestParam String origin,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            boolean added = embedSettingsService.addAllowedOrigin(origin);
+            if (added) {
+                redirectAttributes.addFlashAttribute("successMessage", "Embed origin added.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Origin already exists.");
+            }
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/embed";
+    }
+
+    @PostMapping("/embed/origins/remove/{id}")
+    public String removeEmbedOrigin(@PathVariable Long id,
+                                    RedirectAttributes redirectAttributes) {
+        embedSettingsService.removeAllowedOrigin(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Embed origin removed.");
+        return "redirect:/admin/embed";
+    }
+
+    @PostMapping("/settings/cors/add")
+    public String addCorsOrigin(@RequestParam String origin, RedirectAttributes redirectAttributes) {
+        origin = origin.trim();
+        if (origin.isBlank() || (!origin.startsWith("http://") && !origin.startsWith("https://"))) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid origin. Use format: https://example.com");
+            return "redirect:/admin/settings";
+        }
+        if (corsAllowedOriginRepository.existsByOrigin(origin)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Origin already exists: " + origin);
+        } else {
+            corsAllowedOriginRepository.save(CorsAllowedOrigin.builder().origin(origin).build());
+            redirectAttributes.addFlashAttribute("successMessage", "CORS origin added: " + origin);
+        }
+        return "redirect:/admin/settings";
+    }
+
+    @PostMapping("/settings/cors/remove/{id}")
+    public String removeCorsOrigin(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        corsAllowedOriginRepository.deleteById(id);
+        redirectAttributes.addFlashAttribute("successMessage", "CORS origin removed.");
         return "redirect:/admin/settings";
     }
 
@@ -82,6 +244,7 @@ public class AdminController {
 
         model.addAttribute("resources", resources);
         model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
+        model.addAttribute("groupVisibilityOptions", ResourceGroupVisibility.values());
         model.addAttribute("adminResourceGroups", buildAdminResourceGroups(resources, groups));
         model.addAttribute("resourceTypes", ResourceType.values());
         return "admin/resources";
@@ -123,9 +286,13 @@ public class AdminController {
                 continue;
             }
 
-            Long resourceGroupId = resource.getGroup() != null ? resource.getGroup().getId() : null;
-            if (!Objects.equals(resourceGroupId, groupId)) {
-                resource.setGroup(targetGroup);
+            boolean alreadyInGroup = targetGroup == null
+                    ? resource.getGroups().isEmpty()
+                    : resource.getGroups().stream().anyMatch(g -> Objects.equals(g.getId(), groupId));
+            if (!alreadyInGroup) {
+                if (targetGroup != null) {
+                    resource.getGroups().add(targetGroup);
+                }
                 reassigned++;
             }
 
@@ -145,6 +312,7 @@ public class AdminController {
 
     @PostMapping("/resource-groups/add")
     public String addResourceGroup(@RequestParam String name,
+                                   @RequestParam(defaultValue = "PUBLIC") ResourceGroupVisibility visibility,
                                    @RequestParam(defaultValue = "0") int displayOrder,
                                    RedirectAttributes redirectAttributes) {
         if (name == null || name.isBlank()) {
@@ -154,6 +322,7 @@ public class AdminController {
 
         ResourceGroup group = ResourceGroup.builder()
                 .name(name.trim())
+            .visibility(visibility == null ? ResourceGroupVisibility.PUBLIC : visibility)
                 .displayOrder(displayOrder)
                 .build();
         resourceGroupService.save(group);
@@ -164,10 +333,12 @@ public class AdminController {
     @PostMapping("/resource-groups/update/{id}")
     public String updateResourceGroup(@PathVariable Long id,
                                       @RequestParam String name,
+                                      @RequestParam(defaultValue = "PUBLIC") ResourceGroupVisibility visibility,
                                       @RequestParam(defaultValue = "0") int displayOrder,
                                       RedirectAttributes redirectAttributes) {
         resourceGroupService.findById(id).ifPresent(group -> {
             group.setName(name);
+            group.setVisibility(visibility == null ? ResourceGroupVisibility.PUBLIC : visibility);
             group.setDisplayOrder(displayOrder);
             resourceGroupService.save(group);
             redirectAttributes.addFlashAttribute("successMessage", "Group updated: " + group.getName());
@@ -222,7 +393,8 @@ public class AdminController {
                               @RequestParam ResourceType resourceType,
                               @RequestParam String target,
                               @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
-                              @RequestParam(required = false) Long groupId,
+                      @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
+                              @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
                               @RequestParam(defaultValue = "0") int displayOrder,
                               RedirectAttributes redirectAttributes) {
         MonitoredResource resource = MonitoredResource.builder()
@@ -230,26 +402,72 @@ public class AdminController {
                 .resourceType(resourceType)
                 .target(target)
                 .skipTls(skipTls)
+                .recursive(recursive)
                 .active(true)
                 .displayOrder(displayOrder)
-                .group(resolveGroup(groupId))
                 .build();
-        resourceService.save(resource);
+        resolveGroups(groupIds).forEach(resource.getGroups()::add);
+        MonitoredResource saved = resourceService.save(resource);
+        checkExecutorService.runImmediateCheck(saved);
         redirectAttributes.addFlashAttribute("successMessage", "Resource added: " + name);
         return "redirect:/admin/resources";
     }
 
     @PostMapping("/resources/update/{id}")
     public String updateResourceGrouping(@PathVariable Long id,
-                                         @RequestParam(required = false) Long groupId,
+                                         @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
                                          @RequestParam(defaultValue = "0") int displayOrder,
                                          RedirectAttributes redirectAttributes) {
         resourceService.findById(id).ifPresent(resource -> {
-            resource.setGroup(resolveGroup(groupId));
+            resource.getGroups().clear();
+            resolveGroups(groupIds).forEach(resource.getGroups()::add);
             resource.setDisplayOrder(displayOrder);
             resourceService.save(resource);
-            redirectAttributes.addFlashAttribute("successMessage", "Resource order updated: " + resource.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
         });
+        return "redirect:/admin/resources";
+    }
+
+    @GetMapping("/resources/edit/{id}")
+    public String editResource(@PathVariable Long id,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        return resourceService.findById(id)
+                .map(resource -> {
+                    model.addAttribute("resource", resource);
+                    model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
+                    model.addAttribute("resourceTypes", ResourceType.values());
+                    return "admin/resource-edit";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Resource not found.");
+                    return "redirect:/admin/resources";
+                });
+    }
+
+    @PostMapping("/resources/edit/{id}")
+    public String updateResource(@PathVariable Long id,
+                                 @RequestParam String name,
+                                 @RequestParam ResourceType resourceType,
+                                 @RequestParam String target,
+                                 @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                                 @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
+                                 @RequestParam(name = "groupIds", required = false) List<Long> groupIds,
+                                 @RequestParam(defaultValue = "0") int displayOrder,
+                                 RedirectAttributes redirectAttributes) {
+        resourceService.findById(id).ifPresentOrElse(resource -> {
+            resource.setName(name == null ? "" : name.trim());
+            resource.setResourceType(resourceType);
+            resource.setTarget(target == null ? "" : target.trim());
+            resource.setSkipTls(skipTls);
+            resource.setRecursive(recursive);
+            resource.getGroups().clear();
+            resolveGroups(groupIds).forEach(resource.getGroups()::add);
+            resource.setDisplayOrder(displayOrder);
+            MonitoredResource saved = resourceService.save(resource);
+            checkExecutorService.runImmediateCheck(saved);
+            redirectAttributes.addFlashAttribute("successMessage", "Resource updated: " + resource.getName());
+        }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Resource not found."));
         return "redirect:/admin/resources";
     }
 
@@ -272,10 +490,14 @@ public class AdminController {
     public String updateResourceType(@RequestParam Long id,
                                      @RequestParam int checkIntervalMinutes,
                                      @RequestParam int parallelism,
+                                     @RequestParam(defaultValue = "3") int outageThreshold,
+                                     @RequestParam(defaultValue = "2") int recoveryThreshold,
                                      RedirectAttributes redirectAttributes) {
         resourceTypeConfigRepository.findById(id).ifPresent(config -> {
             config.setCheckIntervalMinutes(checkIntervalMinutes);
             config.setParallelism(parallelism);
+            config.setOutageThreshold(Math.max(1, outageThreshold));
+            config.setRecoveryThreshold(Math.max(1, recoveryThreshold));
             resourceTypeConfigRepository.save(config);
         });
         redirectAttributes.addFlashAttribute("successMessage", "Configuration updated");
@@ -467,17 +689,41 @@ public class AdminController {
         return resourceGroupService.findById(groupId).orElse(null);
     }
 
+    private Set<ResourceGroup> resolveGroups(List<Long> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        Set<ResourceGroup> groups = new HashSet<>();
+        for (Long gid : groupIds) {
+            ResourceGroup g = resolveGroup(gid);
+            if (g != null) {
+                groups.add(g);
+            }
+        }
+        return groups;
+    }
+
     private List<AdminResourceGroupViewModel> buildAdminResourceGroups(List<MonitoredResource> resources,
                                                                         List<ResourceGroup> groups) {
         Map<Long, List<MonitoredResource>> byGroupId = new LinkedHashMap<>();
+        Map<String, MonitoredResource> dockerRepositoryByManagedGroupName = new LinkedHashMap<>();
         List<MonitoredResource> ungrouped = new ArrayList<>();
 
         for (MonitoredResource resource : resources) {
-            if (resource.getGroup() == null) {
+            if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
+                for (String managedGroupName : resourceService.managedGroupNames(resource)) {
+                    dockerRepositoryByManagedGroupName.put(managedGroupName, resource);
+                }
+                continue;
+            }
+
+            if (resource.getGroups().isEmpty()) {
                 ungrouped.add(resource);
                 continue;
             }
-            byGroupId.computeIfAbsent(resource.getGroup().getId(), ignored -> new ArrayList<>()).add(resource);
+            for (ResourceGroup g : resource.getGroups()) {
+                byGroupId.computeIfAbsent(g.getId(), ignored -> new ArrayList<>()).add(resource);
+            }
         }
 
         List<AdminResourceGroupViewModel> result = new ArrayList<>();
@@ -495,6 +741,7 @@ public class AdminController {
                     .groupName(group.getName())
                     .ungrouped(false)
                     .resources(groupedResources)
+                    .dockerRepositoryResource(dockerRepositoryByManagedGroupName.get(group.getName()))
                     .build());
         }
 

@@ -3,14 +3,12 @@ package tech.wenisch.kairos.service;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +29,8 @@ public class CheckExecutorService {
 
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
+    private final DockerRepositorySyncService dockerRepositorySyncService;
     private final ResourceStatusStreamService resourceStatusStreamService;
-    private final CheckResultRepository checkResultRepository;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
 
@@ -43,14 +41,14 @@ public class CheckExecutorService {
     public CheckExecutorService(
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
+            DockerRepositorySyncService dockerRepositorySyncService,
             ResourceStatusStreamService resourceStatusStreamService,
-            CheckResultRepository checkResultRepository,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
+        this.dockerRepositorySyncService = dockerRepositorySyncService;
         this.resourceStatusStreamService = resourceStatusStreamService;
-        this.checkResultRepository = checkResultRepository;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
     }
@@ -172,14 +170,26 @@ public class CheckExecutorService {
 
     private void executeCheck(MonitoredResource resource, ResourceType type) {
         try {
-            resourceStatusStreamService.publishResourceChecking(resource);
             if (type == ResourceType.HTTP) {
+                publishCheckingState(resource);
                 httpCheckService.check(resource);
             } else if (type == ResourceType.DOCKER) {
+                publishCheckingState(resource);
                 dockerCheckService.check(resource);
+            } else if (type == ResourceType.DOCKERREPOSITORY) {
+                dockerRepositorySyncService.sync(resource);
             }
         } catch (Exception e) {
             log.error("Error checking resource {}: {}", resource.getName(), e.getMessage(), e);
+        }
+    }
+
+    private void publishCheckingState(MonitoredResource resource) {
+        try {
+            resourceStatusStreamService.publishResourceChecking(resource);
+        } catch (Throwable ex) {
+            log.trace("Ignoring transient SSE failure while marking resource '{}' as checking: {}",
+                    resource.getName(), ex.getMessage());
         }
     }
 
