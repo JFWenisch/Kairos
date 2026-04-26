@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.13.1 - 2026-04-26
+
+### [1.13.1](https://github.com/wenisch-tech/Kairos/compare/v1.13.0...v1.13.1) (2026-04-26)
+
+
+### Build Systems
+
+* **deps:** bump docker/setup-buildx-action from 3 to 4 ([762c0da](https://github.com/wenisch-tech/Kairos/commit/762c0da736a7bb6f00294c598924ab3fe43e069a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.1
+
+
 ## v1.13.0 - 2026-04-26
 
 ## [1.13.0](https://github.com/wenisch-tech/Kairos/compare/v1.12.10...v1.13.0) (2026-04-26)
