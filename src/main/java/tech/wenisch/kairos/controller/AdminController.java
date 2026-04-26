@@ -67,6 +67,11 @@ public class AdminController {
         return request != null ? request.getRequestURI() : "";
     }
 
+    @ModelAttribute("appVersion")
+    public String appVersion() {
+        return applicationVersionService.getVersion();
+    }
+
     @GetMapping("/about")
     public String about(Model model) {
         model.addAttribute("appVersion", applicationVersionService.getVersion());

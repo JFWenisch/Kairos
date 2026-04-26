@@ -39,39 +39,93 @@
         <div class="col-md-10 py-4 px-4">
             <h2 class="h4 mb-4"><i class="bi bi-info-circle me-2"></i>About Kairos</h2>
 
-            <div class="card mb-4">
-                <div class="card-header">Application</div>
-                <div class="card-body">
-                    <p class="mb-2"><strong>Name:</strong> Kairos - Availability Monitor</p>
-                    <p class="mb-2"><strong>Version:</strong> <span th:text="${appVersion}">unknown</span></p>
-                    <p class="mb-2"><strong>Spring Boot:</strong> <span th:text="${springBootVersion}">unknown</span></p>
-                    <p class="mb-0"><strong>Java:</strong> <span th:text="${javaVersion}">unknown</span></p>
+            <div class="card mb-3" style="font-size:.875rem">
+                <div class="card-header py-2">Application</div>
+                <div class="card-body py-3">
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <span class="text-muted">Name</span><br>
+                            <strong>Kairos – Availability Monitor</strong>
+                        </div>
+                        <div class="col-sm-2">
+                            <span class="text-muted">Version</span><br>
+                            <strong th:text="${appVersion}">unknown</strong>
+                        </div>
+                        <div class="col-sm-2">
+                            <span class="text-muted">Spring Boot</span><br>
+                            <strong th:text="${springBootVersion}">unknown</strong>
+                        </div>
+                        <div class="col-sm-2">
+                            <span class="text-muted">Java</span><br>
+                            <strong th:text="${javaVersion}">unknown</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header">Author</div>
-                <div class="card-body">
-                    <p class="mb-2"><strong>Author:</strong> Jean-Fabian Wenisch</p>
-                    <p class="mb-0"><strong>Website:</strong> <a href="https://wenisch.tech" target="_blank" rel="noopener">https://wenisch.tech</a></p>
+            <div class="card mb-3" style="font-size:.875rem">
+                <div class="card-header py-2">Links</div>
+                <div class="card-body py-3">
+                    <div class="row g-2">
+                        <div class="col-sm-4">
+                            <span class="text-muted">Official Website</span><br>
+                            <a href="https://kairos.wenisch.tech" target="_blank" rel="noopener"><i class="bi bi-globe me-1"></i>kairos.wenisch.tech</a>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted">Documentation</span><br>
+                            <a href="https://kairos.wenisch.tech/docs" target="_blank" rel="noopener"><i class="bi bi-book me-1"></i>kairos.wenisch.tech/docs</a>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted">Source Code</span><br>
+                            <a href="https://github.com/wenisch-tech/Kairos" target="_blank" rel="noopener"><i class="bi bi-github me-1"></i>github.com/wenisch-tech/Kairos</a>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                        <div class="col-sm-4">
+                            <span class="text-muted">Issues &amp; Feedback</span><br>
+                            <a href="https://github.com/wenisch-tech/Kairos/issues" target="_blank" rel="noopener"><i class="bi bi-bug me-1"></i>github.com/wenisch-tech/Kairos/issues</a>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted">Container Image</span><br>
+                            <a href="https://github.com/wenisch-tech/Kairos/pkgs/container/kairos" target="_blank" rel="noopener"><i class="bi bi-box me-1"></i>ghcr.io/wenisch-tech/kairos</a>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted">Releases</span><br>
+                            <a href="https://github.com/wenisch-tech/Kairos/releases" target="_blank" rel="noopener"><i class="bi bi-tag me-1"></i>github.com/wenisch-tech/Kairos/releases</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header">Project</div>
-                <div class="card-body">
-                    <p class="mb-2"><strong>Repository:</strong> <a href="https://github.com/wenisch-tech/Kairos" target="_blank" rel="noopener">github.com/wenisch-tech/Kairos</a></p>
-                    <p class="mb-2"><strong>Issues:</strong> <a href="https://github.com/wenisch-tech/Kairos/issues" target="_blank" rel="noopener">github.com/wenisch-tech/Kairos/issues</a></p>
-                    <p class="mb-0"><strong>Container:</strong> <a href="https://github.com/wenisch-tech/Kairos/pkgs/container/kairos" target="_blank" rel="noopener">ghcr.io/wenisch-tech/kairos</a></p>
+            <div class="card mb-3" style="font-size:.875rem">
+                <div class="card-header py-2">Author</div>
+                <div class="card-body py-3">
+                    <div class="row g-2">
+                        <div class="col-sm-4">
+                            <span class="text-muted">Author</span><br>
+                            <strong>Jean-Fabian Wenisch</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="text-muted">Website</span><br>
+                            <a href="https://wenisch.tech" target="_blank" rel="noopener">wenisch.tech</a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">License</div>
-                <div class="card-body">
-                    <p class="mb-2"><strong>License:</strong> GNU AGPL v3.0</p>
-                    <p class="mb-2"><strong>License File:</strong> <a href="https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md" target="_blank" rel="noopener">LICENSE.md</a></p>
-                    <p class="mb-0 text-muted">Use and distribution are subject to the terms of the AGPL v3.0.</p>
+            <div class="card" style="font-size:.875rem">
+                <div class="card-header py-2">License</div>
+                <div class="card-body py-3">
+                    <div class="row g-2">
+                        <div class="col-sm-4">
+                            <span class="text-muted">License</span><br>
+                            <a href="https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md" target="_blank" rel="noopener">GNU AGPL v3.0</a>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="text-muted">&nbsp;</span><br>
+                            <span class="text-muted">Use and distribution are subject to the terms of the AGPL v3.0.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

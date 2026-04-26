@@ -60,6 +60,15 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-info-circle me-2"></i>About
     </a>
+    <div class="mt-auto pt-2">
+        <hr class="border-secondary my-2">
+        <div class="px-2" style="font-size:.75rem">
+            <a th:href="'https://github.com/wenisch-tech/Kairos/releases/tag/v' + ${appVersion}"
+               th:text="'v' + ${appVersion}"
+               target="_blank" rel="noopener"
+               class="text-muted text-decoration-none">version</a>
+        </div>
+    </div>
 </div>
 
 <div th:fragment="adminLayout(title, content)">

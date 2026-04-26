@@ -1,5 +1,6 @@
 package tech.wenisch.kairos.config;
 
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -46,11 +47,16 @@ public class OpenApiConfig {
 
                                 Obtain a session by `POST`-ing credentials to `/login`,
                                 or use an API key JWT created in **Admin -> API Keys** as `Authorization: Bearer <token>`.
+
+                                ### Links
+                                - [Official Website](https://kairos.wenisch.tech)
+                                - [Documentation](https://kairos.wenisch.tech/docs)
+                                - [Source Code](https://github.com/wenisch-tech/Kairos)
                                 """)
                         .version("1.0.0")
                         .contact(new Contact()
-                                .name("Jean-Fabian Wenisch")
-                                .url("https://github.com/wenisch-tech/Kairos"))
+                                .name("Official Website")
+                                .url("https://kairos.wenisch.tech"))
                         .license(new License()
                                 .name("GNU AGPL v3.0")
                                 .url("https://github.com/wenisch-tech/Kairos/blob/main/LICENSE.md")))
@@ -65,6 +71,9 @@ public class OpenApiConfig {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
                                 .description("Bearer JWT API key token created in Admin -> API Keys")))
+                .externalDocs(new ExternalDocumentation()
+                        .description("Documentation")
+                        .url("https://kairos.wenisch.tech/docs"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(cookieScheme)
                         .addList(apiKeyScheme));
