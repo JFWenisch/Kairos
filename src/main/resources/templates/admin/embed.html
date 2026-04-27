@@ -53,6 +53,20 @@
                 <div class="card-body">
                     <div class="row g-3 mb-3">
                         <div class="col-md-3">
+                            <label for="embedScope" class="form-label">Widget scope</label>
+                            <select id="embedScope" class="form-select" onchange="updateEmbedGenerator()">
+                                <option value="">All resources</option>
+                                <option th:each="group : ${resourceGroups}" th:value="${group.id}" th:text="${group.name}">Group</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label d-block">Scope label</label>
+                            <div class="form-check form-switch pt-1">
+                                <input id="embedShowScope" class="form-check-input" type="checkbox" onchange="updateEmbedGenerator()">
+                                <label class="form-check-label" for="embedShowScope">Display widget scope</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <label for="embedMode" class="form-label">Mode</label>
                             <select id="embedMode" class="form-select" onchange="updateEmbedGenerator()">
                                 <option value="light" selected>Light</option>
@@ -92,9 +106,10 @@
                             id="embedPreviewIframe"
                             th:src="@{/embed/status(refresh=30,mode='light',fontSize=15)}"
                             title="Kairos Service Status Preview"
+                            allowtransparency="true"
                             width="360"
                             height="56"
-                            style="border:0;overflow:hidden;"
+                            style="border:0;overflow:hidden;background:transparent;"
                             loading="lazy"></iframe>
                 </div>
             </div>
@@ -170,6 +185,19 @@
 <script th:inline="javascript">
     const embedPath = /*[[@{/embed/status}]]*/ '/embed/status';
 
+    function getCurrentThemeMode() {
+        const value = document.documentElement.getAttribute('data-bs-theme');
+        return value === 'light' ? 'light' : 'dark';
+    }
+
+    function syncEmbedModeToTheme() {
+        const modeElement = document.getElementById('embedMode');
+        if (!modeElement) {
+            return;
+        }
+        modeElement.value = getCurrentThemeMode();
+    }
+
     function sanitizeNumber(value, min, max, fallbackValue) {
         const parsed = Number.parseInt(value, 10);
         if (Number.isNaN(parsed)) {
@@ -187,19 +215,167 @@
         return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(withHash) ? withHash : '';
     }
 
+    function rgbToHex(colorValue) {
+        if (!colorValue) {
+            return '';
+        }
+
+        const normalized = String(colorValue).trim().toLowerCase();
+        if (!normalized || normalized === 'transparent') {
+            return '';
+        }
+
+        if (normalized.startsWith('#')) {
+            return normalizeHexColor(normalized);
+        }
+
+        if (!normalized.startsWith('rgb')) {
+            return '';
+        }
+
+        const parts = normalized
+            .replace('rgba(', '')
+            .replace('rgb(', '')
+            .replace(')', '')
+            .split(',')
+            .map(part => part.trim());
+
+        if (parts.length < 3) {
+            return '';
+        }
+
+        if (parts.length >= 4 && Number.parseFloat(parts[3]) === 0) {
+            return '';
+        }
+
+        const r = Number.parseInt(parts[0], 10);
+        const g = Number.parseInt(parts[1], 10);
+        const b = Number.parseInt(parts[2], 10);
+
+        if ([r, g, b].some(value => Number.isNaN(value))) {
+            return '';
+        }
+
+        return `#${[r, g, b].map(value => Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0')).join('')}`;
+    }
+
+    function findAncestorBackgroundHex(startElement) {
+        let current = startElement;
+        while (current) {
+            const computed = window.getComputedStyle(current).backgroundColor;
+            const hex = rgbToHex(computed);
+            if (hex) {
+                return hex;
+            }
+            current = current.parentElement;
+        }
+        return '';
+    }
+
+    function findAncestorTextColorHex(startElement) {
+        let current = startElement;
+        while (current) {
+            const computed = window.getComputedStyle(current).color;
+            const hex = rgbToHex(computed);
+            if (hex) {
+                return hex;
+            }
+            current = current.parentElement;
+        }
+        return '';
+    }
+
+    function buildAutoBackgroundEmbedSnippet(baseSrc) {
+        const serializedSrc = JSON.stringify(baseSrc);
+        return [
+            '<div class="kairos-status-embed" style="display:inline-block;"></div>',
+            '<script>',
+            '(function(){',
+            '  var container = document.currentScript.previousElementSibling;',
+            '  if (!container) { return; }',
+            '  function normalizeHex(value) {',
+            '    if (!value) { return ""; }',
+            '    var raw = String(value).trim();',
+            '    if (!raw) { return ""; }',
+            '    var withHash = raw.charAt(0) === "#" ? raw : ("#" + raw);',
+            '    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(withHash) ? withHash : "";',
+            '  }',
+            '  function rgbToHex(colorValue) {',
+            '    if (!colorValue) { return ""; }',
+            '    var normalized = String(colorValue).trim().toLowerCase();',
+            '    if (!normalized || normalized === "transparent") { return ""; }',
+            '    if (normalized.charAt(0) === "#") { return normalizeHex(normalized); }',
+            '    if (normalized.indexOf("rgb") !== 0) { return ""; }',
+            '    var parts = normalized.replace("rgba(", "").replace("rgb(", "").replace(")", "").split(",").map(function(part) { return part.trim(); });',
+            '    if (parts.length < 3) { return ""; }',
+            '    if (parts.length >= 4 && parseFloat(parts[3]) === 0) { return ""; }',
+            '    var rgb = [parseInt(parts[0], 10), parseInt(parts[1], 10), parseInt(parts[2], 10)];',
+            '    if (rgb.some(function(value) { return Number.isNaN(value); })) { return ""; }',
+            '    return "#" + rgb.map(function(value) {',
+            '      var safe = Math.max(0, Math.min(255, value));',
+            '      return safe.toString(16).padStart(2, "0");',
+            '    }).join("");',
+            '  }',
+            '  function findAncestorBackgroundHex(startNode) {',
+            '    var node = startNode;',
+            '    while (node) {',
+            '      var computed = window.getComputedStyle(node).backgroundColor;',
+            '      var hex = rgbToHex(computed);',
+            '      if (hex) { return hex; }',
+            '      node = node.parentElement;',
+            '    }',
+            '    return "";',
+            '  }',
+            '  function findAncestorTextColorHex(startNode) {',
+            '    var node = startNode;',
+            '    while (node) {',
+            '      var computed = window.getComputedStyle(node).color;',
+            '      var hex = rgbToHex(computed);',
+            '      if (hex) { return hex; }',
+            '      node = node.parentElement;',
+            '    }',
+            '    return "";',
+            '  }',
+            '  var iframe = document.createElement("iframe");',
+            '  iframe.title = "Kairos Service Status";',
+            '  iframe.setAttribute("allowtransparency", "true");',
+            '  iframe.width = "360";',
+            '  iframe.height = "56";',
+            '  iframe.loading = "lazy";',
+            '  iframe.style.border = "0";',
+            '  iframe.style.overflow = "hidden";',
+            '  iframe.style.background = "transparent";',
+            '  var url = new URL(' + serializedSrc + ');',
+            '  var detectedBg = findAncestorBackgroundHex(container);',
+            '  if (detectedBg) { url.searchParams.set("bgColor", detectedBg); }',
+            '  if (!url.searchParams.get("fontColor")) {',
+            '    var detectedTextColor = findAncestorTextColorHex(container);',
+            '    if (detectedTextColor) { url.searchParams.set("fontColor", detectedTextColor); }',
+            '  }',
+            '  iframe.src = url.toString();',
+            '  container.appendChild(iframe);',
+            '})();',
+            '<\/script>'
+        ].join('\n');
+    }
+
     function updateEmbedGenerator() {
         const modeElement = document.getElementById('embedMode');
+        const scopeElement = document.getElementById('embedScope');
+        const showScopeElement = document.getElementById('embedShowScope');
         const fontSizeElement = document.getElementById('embedFontSize');
         const fontColorElement = document.getElementById('embedFontColor');
         const refreshElement = document.getElementById('embedRefresh');
         const snippetElement = document.getElementById('embedSnippetCode');
         const previewElement = document.getElementById('embedPreviewIframe');
 
-        if (!modeElement || !fontSizeElement || !fontColorElement || !refreshElement || !snippetElement || !previewElement) {
+        if (!modeElement || !scopeElement || !showScopeElement || !fontSizeElement || !fontColorElement || !refreshElement || !snippetElement || !previewElement) {
             return;
         }
 
         const mode = modeElement.value === 'dark' ? 'dark' : 'light';
+        const groupId = (scopeElement.value || '').trim();
+        const showScope = showScopeElement.checked;
         const fontSize = sanitizeNumber(fontSizeElement.value, 6, 32, 15);
         const fontColor = normalizeHexColor(fontColorElement.value);
         const refresh = sanitizeNumber(refreshElement.value, 10, 3600, 30);
@@ -212,15 +388,32 @@
             mode,
             fontSize: String(fontSize)
         });
+        if (groupId) {
+            params.set('groupId', groupId);
+        }
+        if (showScope) {
+            params.set('showScope', 'true');
+        }
         if (fontColor) {
             params.set('fontColor', fontColor);
         }
 
         const embedBaseUrl = new URL(embedPath, window.location.origin).toString();
         const src = `${embedBaseUrl}?${params.toString()}`;
-        previewElement.src = src;
+        const previewBg = findAncestorBackgroundHex(previewElement.parentElement);
+        const previewUrl = new URL(src);
+        if (previewBg) {
+            previewUrl.searchParams.set('bgColor', previewBg);
+        }
+        if (!fontColor) {
+            const previewTextColor = findAncestorTextColorHex(previewElement.parentElement);
+            if (previewTextColor) {
+                previewUrl.searchParams.set('fontColor', previewTextColor);
+            }
+        }
+        previewElement.src = previewUrl.toString();
 
-        snippetElement.textContent = `<iframe src="${src}" title="Kairos Service Status" width="360" height="56" style="border:0;overflow:hidden;" loading="lazy"></iframe>`;
+        snippetElement.textContent = buildAutoBackgroundEmbedSnippet(src);
     }
 
     function copyEmbedSnippet() {
@@ -239,7 +432,13 @@
             });
     }
 
+    syncEmbedModeToTheme();
     updateEmbedGenerator();
+
+    window.addEventListener('kairos:themechange', function() {
+        syncEmbedModeToTheme();
+        updateEmbedGenerator();
+    });
 </script>
 </body>
 </html>

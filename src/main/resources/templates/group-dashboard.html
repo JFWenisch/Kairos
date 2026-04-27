@@ -28,6 +28,32 @@
             <h1 class="h3 mb-2">
                 <i class="bi bi-diagram-3 me-2"></i><span th:text="${group.name}">Group Name</span>
             </h1>
+            <span class="group-embed-tools mb-2">
+                <div class="group-embed-container">
+                    <iframe class="group-embed-preview"
+                            th:attr="data-embed-base-src=@{/embed/status(groupId=${group.id},refresh=30,fontSize=12)}"
+                            th:src="@{/embed/status(groupId=${group.id},refresh=30,fontSize=12)}"
+                            title="Group widget preview"
+                            allowtransparency="true"
+                            width="300"
+                            height="34"
+                            style="border:0;overflow:hidden;background:transparent;"
+                            loading="lazy"></iframe>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary group-embed-info"
+                        data-bs-toggle="popover"
+                        data-bs-trigger="hover focus"
+                        data-bs-placement="bottom"
+                        data-bs-html="true"
+                        data-bs-content="This embed widget is a small status component you can place on another page. For cross-origin usage, CORS/embed access must be configured by an admin in Settings -> Admin -> Embed Widget. See <a href='https://kairos.wenisch.tech/docs/embed/' target='_blank' rel='noopener noreferrer'>embed docs</a>."
+                        aria-label="Embed information">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary group-embed-copy"
+                        th:attr="data-copy-group-embed='true',data-embed-base-src=@{/embed/status(groupId=${group.id},refresh=30,fontSize=15)},data-embed-src=@{/embed/status(groupId=${group.id},refresh=30,fontSize=15)}">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+            </span>
             <p class="text-muted mb-0">Live status for this group, refreshed automatically as checks run.</p>
         </div>
         <div class="dashboard-meta">

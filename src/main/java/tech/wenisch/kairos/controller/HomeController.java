@@ -203,6 +203,10 @@ public class HomeController {
                               @RequestParam(name = "mode", required = false) String mode,
                               @RequestParam(name = "fontSize", defaultValue = "15") int fontSize,
                               @RequestParam(name = "fontColor", required = false) String fontColor,
+                              @RequestParam(name = "bgColor", required = false) String bgColor,
+                              @RequestParam(name = "showScope", defaultValue = "false") boolean showScope,
+                              @RequestParam(name = "groupId", required = false) Long groupId,
+                              Authentication authentication,
                               Model model) {
         if (embedSettingsService.getPolicy() == EmbedPolicy.DISABLED) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -212,15 +216,61 @@ public class HomeController {
         int sanitizedFontSize = Math.min(32, Math.max(6, fontSize));
         String normalizedMode = "dark".equalsIgnoreCase(mode) ? "dark" : "light";
         String normalizedFontColor = normalizeHexColor(fontColor);
-        long activeOutages = outageService.countActiveOutages();
+        String normalizedBackgroundColor = normalizeHexColor(bgColor);
+        if ((normalizedBackgroundColor == null || normalizedBackgroundColor.isBlank()) && "dark".equals(normalizedMode)) {
+            // Use a lighter shade that matches the translucent wrapper surface in dark mode.
+            normalizedBackgroundColor = "#252930";
+        }
+        boolean authenticated = isAuthenticated(authentication);
+
+        long activeOutages;
+        String embedTargetUrl;
+        String statusScopeLabel;
+
+        if (groupId == null) {
+            activeOutages = outageService.countActiveOutages();
+            embedTargetUrl = "/";
+            statusScopeLabel = "All resources";
+        } else {
+            ResourceGroup group = resourceGroupService.findById(groupId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            if (!isGroupVisibleByPolicy(group, authenticated)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
+
+            List<MonitoredResource> groupResources = resourceService.findAllActive().stream()
+                    .filter(resource -> resource.getGroups().stream().anyMatch(g -> g.getId().equals(groupId)))
+                    .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                    .toList();
+
+            java.util.Set<Long> groupResourceIds = groupResources.stream()
+                    .map(MonitoredResource::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            activeOutages = outageService.findAll().stream()
+                    .filter(Outage::isActive)
+                    .map(Outage::getResource)
+                    .filter(java.util.Objects::nonNull)
+                    .map(MonitoredResource::getId)
+                    .filter(groupResourceIds::contains)
+                    .count();
+
+            embedTargetUrl = "/groups/" + groupId;
+            statusScopeLabel = group.getName();
+        }
+
         boolean hasActiveIncidents = activeOutages > 0;
 
         model.addAttribute("refreshSeconds", sanitizedRefreshSeconds);
         model.addAttribute("mode", normalizedMode);
         model.addAttribute("fontSize", sanitizedFontSize);
         model.addAttribute("fontColor", normalizedFontColor);
+        model.addAttribute("backgroundColor", normalizedBackgroundColor);
         model.addAttribute("hasActiveIncidents", hasActiveIncidents);
         model.addAttribute("activeOutages", activeOutages);
+        model.addAttribute("embedTargetUrl", embedTargetUrl);
+        model.addAttribute("statusScopeLabel", statusScopeLabel);
+        model.addAttribute("showScope", showScope);
         return "embed-status";
     }
 

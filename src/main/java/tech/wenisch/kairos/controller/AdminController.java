@@ -178,6 +178,7 @@ public class AdminController {
     public String embedSettings(Model model) {
         model.addAttribute("embedPolicy", embedSettingsService.getPolicy().name());
         model.addAttribute("embedAllowedOrigins", embedSettingsService.listAllowedOrigins());
+        model.addAttribute("resourceGroups", resourceGroupService.findAllOrdered());
         return "admin/embed";
     }
 

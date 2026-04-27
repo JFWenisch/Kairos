@@ -1,9 +1,45 @@
+function readThemeCookie() {
+    const pairs = document.cookie.split(';').map(function(entry) {
+        return entry.trim();
+    });
+    const themeEntry = pairs.find(function(entry) {
+        return entry.startsWith('theme=');
+    });
+    if (!themeEntry) {
+        return '';
+    }
+    const value = decodeURIComponent(themeEntry.slice('theme='.length));
+    return value === 'light' || value === 'dark' ? value : '';
+}
+
+function detectPreferredTheme() {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'light' || stored === 'dark') {
+        return stored;
+    }
+    const fromCookie = readThemeCookie();
+    if (fromCookie) {
+        return fromCookie;
+    }
+    const attrTheme = document.documentElement.getAttribute('data-bs-theme');
+    return attrTheme === 'light' ? 'light' : 'dark';
+}
+
+function applyTheme(theme) {
+    const normalized = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-bs-theme', normalized);
+    localStorage.setItem('theme', normalized);
+    document.cookie = 'theme=' + encodeURIComponent(normalized) + '; path=/; max-age=31536000; samesite=lax';
+    window.dispatchEvent(new CustomEvent('kairos:themechange', {
+        detail: { theme: normalized }
+    }));
+    return normalized;
+}
+
 function toggleDarkMode() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-bs-theme');
+    const current = detectPreferredTheme();
     const next = current === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-bs-theme', next);
-    localStorage.setItem('theme', next);
+    applyTheme(next);
 }
 
 function formatDateTime(date) {
@@ -190,10 +226,12 @@ function initializeOutageSinceCounters() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const saved = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-bs-theme', saved);
+    applyTheme(detectPreferredTheme());
+    initializeBootstrapPopovers();
     initializeResourceNameFilter();
     initializeSnapshotStatusFilters();
+    syncGroupEmbedWidgetsToTheme();
+    initializeGroupEmbedCopyButtons();
     initializeViewModeSwitcher();
     initializeResourceCardLinks();
     initializeOutageSinceCounters();
@@ -203,6 +241,181 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshAllGroupCounters();
     initAdminResourceSorting();
 });
+
+function initializeBootstrapPopovers() {
+    if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {
+        return;
+    }
+
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(element) {
+        if (!bootstrap.Popover.getInstance(element)) {
+            new bootstrap.Popover(element, {
+                html: true,
+                trigger: 'hover focus'
+            });
+        }
+    });
+}
+
+function applyModeToEmbedSrc(baseSrc, mode) {
+    if (!baseSrc) {
+        return '';
+    }
+    const url = new URL(baseSrc, window.location.origin);
+    url.searchParams.set('mode', mode === 'light' ? 'light' : 'dark');
+    return url.pathname + url.search;
+}
+
+function syncGroupEmbedWidgetsToTheme() {
+    const theme = detectPreferredTheme();
+    const mode = theme === 'light' ? 'light' : 'dark';
+
+    document.querySelectorAll('.group-embed-preview[data-embed-base-src]').forEach(function(iframe) {
+        const baseSrc = iframe.getAttribute('data-embed-base-src');
+        const themedSrc = applyModeToEmbedSrc(baseSrc, mode);
+        if (!themedSrc) {
+            return;
+        }
+        if (iframe.getAttribute('src') !== themedSrc) {
+            iframe.setAttribute('src', themedSrc);
+        }
+    });
+
+    document.querySelectorAll('[data-copy-group-embed="true"][data-embed-base-src]').forEach(function(button) {
+        const baseSrc = button.getAttribute('data-embed-base-src');
+        const themedSrc = applyModeToEmbedSrc(baseSrc, mode);
+        if (themedSrc) {
+            button.setAttribute('data-embed-src', themedSrc);
+        }
+    });
+
+    document.querySelectorAll('.dashboard-embed-preview[data-embed-base-src]').forEach(function(iframe) {
+        const baseSrc = iframe.getAttribute('data-embed-base-src');
+        const themedSrc = applyModeToEmbedSrc(baseSrc, mode);
+        if (!themedSrc) {
+            return;
+        }
+        if (iframe.getAttribute('src') !== themedSrc) {
+            iframe.setAttribute('src', themedSrc);
+        }
+    });
+
+    document.querySelectorAll('[data-copy-dashboard-embed="true"][data-embed-base-src]').forEach(function(button) {
+        const baseSrc = button.getAttribute('data-embed-base-src');
+        const themedSrc = applyModeToEmbedSrc(baseSrc, mode);
+        if (themedSrc) {
+            button.setAttribute('data-embed-src', themedSrc);
+        }
+    });
+}
+
+window.addEventListener('kairos:themechange', function() {
+    syncGroupEmbedWidgetsToTheme();
+});
+
+function initializeGroupEmbedCopyButtons() {
+    const buttons = document.querySelectorAll('[data-copy-group-embed="true"],[data-copy-dashboard-embed="true"]');
+    if (buttons.length === 0) {
+        return;
+    }
+
+    buttons.forEach(function(button) {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const embedSrc = button.getAttribute('data-embed-src');
+            if (!embedSrc) {
+                return;
+            }
+
+            const absoluteSrc = new URL(embedSrc, window.location.origin).toString();
+            const snippet = [
+                '<div class="kairos-status-embed" style="display:inline-block;"></div>',
+                '<script>',
+                '(function(){',
+                '  var container = document.currentScript.previousElementSibling;',
+                '  if (!container) { return; }',
+                '  function normalizeHex(value) {',
+                '    if (!value) { return ""; }',
+                '    var raw = String(value).trim();',
+                '    if (!raw) { return ""; }',
+                '    var withHash = raw.charAt(0) === "#" ? raw : ("#" + raw);',
+                '    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(withHash) ? withHash : "";',
+                '  }',
+                '  function rgbToHex(colorValue) {',
+                '    if (!colorValue) { return ""; }',
+                '    var normalized = String(colorValue).trim().toLowerCase();',
+                '    if (!normalized || normalized === "transparent") { return ""; }',
+                '    if (normalized.charAt(0) === "#") { return normalizeHex(normalized); }',
+                '    if (normalized.indexOf("rgb") !== 0) { return ""; }',
+                '    var parts = normalized.replace("rgba(", "").replace("rgb(", "").replace(")", "").split(",").map(function(part) { return part.trim(); });',
+                '    if (parts.length < 3) { return ""; }',
+                '    if (parts.length >= 4 && parseFloat(parts[3]) === 0) { return ""; }',
+                '    var rgb = [parseInt(parts[0], 10), parseInt(parts[1], 10), parseInt(parts[2], 10)];',
+                '    if (rgb.some(function(value) { return Number.isNaN(value); })) { return ""; }',
+                '    return "#" + rgb.map(function(value) {',
+                '      var safe = Math.max(0, Math.min(255, value));',
+                '      return safe.toString(16).padStart(2, "0");',
+                '    }).join("");',
+                '  }',
+                '  function findAncestorBackgroundHex(startNode) {',
+                '    var node = startNode;',
+                '    while (node) {',
+                '      var computed = window.getComputedStyle(node).backgroundColor;',
+                '      var hex = rgbToHex(computed);',
+                '      if (hex) { return hex; }',
+                '      node = node.parentElement;',
+                '    }',
+                '    return "";',
+                '  }',
+                '  function findAncestorTextColorHex(startNode) {',
+                '    var node = startNode;',
+                '    while (node) {',
+                '      var computed = window.getComputedStyle(node).color;',
+                '      var hex = rgbToHex(computed);',
+                '      if (hex) { return hex; }',
+                '      node = node.parentElement;',
+                '    }',
+                '    return "";',
+                '  }',
+                '  var iframe = document.createElement("iframe");',
+                '  iframe.title = "Kairos Service Status";',
+                '  iframe.setAttribute("allowtransparency", "true");',
+                '  iframe.width = "360";',
+                '  iframe.height = "56";',
+                '  iframe.loading = "lazy";',
+                '  iframe.style.border = "0";',
+                '  iframe.style.overflow = "hidden";',
+                '  iframe.style.background = "transparent";',
+                '  var url = new URL(' + JSON.stringify(absoluteSrc) + ');',
+                '  var detectedBg = findAncestorBackgroundHex(container);',
+                '  if (detectedBg) { url.searchParams.set("bgColor", detectedBg); }',
+                '  if (!url.searchParams.get("fontColor")) {',
+                '    var detectedTextColor = findAncestorTextColorHex(container);',
+                '    if (detectedTextColor) { url.searchParams.set("fontColor", detectedTextColor); }',
+                '  }',
+                '  iframe.src = url.toString();',
+                '  container.appendChild(iframe);',
+                '})();',
+                '<\/script>'
+            ].join('\n');
+
+            navigator.clipboard.writeText(snippet).then(function() {
+                const icon = button.querySelector('i');
+                if (!icon) {
+                    return;
+                }
+                icon.classList.remove('bi-clipboard');
+                icon.classList.add('bi-check2');
+                window.setTimeout(function() {
+                    icon.classList.remove('bi-check2');
+                    icon.classList.add('bi-clipboard');
+                }, 1400);
+            });
+        });
+    });
+}
 
 function initResourceStatusStream() {
     const hasLiveResourceView = document.querySelector('.resource-row[data-resource-id], .resource-detail[data-resource-id]');
