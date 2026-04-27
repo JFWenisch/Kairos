@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.13.9 - 2026-04-27
+
+### [1.13.9](https://github.com/wenisch-tech/Kairos/compare/v1.13.8...v1.13.9) (2026-04-27)
+
+
+### Bug Fixes
+
+* minor update to UI ensuring announcements are displayed at the top of the landingpage ([b425696](https://github.com/wenisch-tech/Kairos/commit/b425696cebe261bc261aa34f18f06279a26bac36))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.13.9
+
+
 ## v1.13.8 - 2026-04-26
 
 ### [1.13.8](https://github.com/wenisch-tech/Kairos/compare/v1.13.7...v1.13.8) (2026-04-26)
