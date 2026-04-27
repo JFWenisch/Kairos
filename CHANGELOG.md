@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.15.0 - 2026-04-27
+
+## [1.15.0](https://github.com/wenisch-tech/Kairos/compare/v1.14.0...v1.15.0) (2026-04-27)
+
+
+### Features
+
+* added support for group embedd and directly display on the respective group dashboards ([75b7ee7](https://github.com/wenisch-tech/Kairos/commit/75b7ee7a3afcf3efc46e284a3ef23de77c0444e8))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.15.0
+
+
 ## v1.14.0 - 2026-04-27
 
 ## [1.14.0](https://github.com/wenisch-tech/Kairos/compare/v1.13.9...v1.14.0) (2026-04-27)
