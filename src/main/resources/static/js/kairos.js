@@ -192,6 +192,7 @@ function initializeOutageSinceCounters() {
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
+    initializeResourceNameFilter();
     initializeSnapshotStatusFilters();
     initializeViewModeSwitcher();
     initializeResourceCardLinks();
@@ -572,6 +573,7 @@ function parseUpdatePayload(raw) {
 }
 
 var activeResourceStatusFilter = 'all';
+var activeResourceNameFilter = '';
 
 function normalizeResourceFilterStatus(filter) {
     if (filter === 'available' || filter === 'not-available' || filter === 'unknown') {
@@ -580,8 +582,54 @@ function normalizeResourceFilterStatus(filter) {
     return 'all';
 }
 
+function normalizeResourceNameFilter(value) {
+    if (typeof value !== 'string') {
+        return '';
+    }
+    return value.trim().toLowerCase();
+}
+
+function resolveResourceContainerName(container) {
+    if (!container) {
+        return '';
+    }
+
+    const directName = container.getAttribute('data-resource-name');
+    if (typeof directName === 'string' && directName.trim().length > 0) {
+        return directName.trim().toLowerCase();
+    }
+
+    const nameElement = container.querySelector('.card-title, a.fw-semibold, .fw-semibold');
+    if (!nameElement || typeof nameElement.textContent !== 'string') {
+        return '';
+    }
+
+    return nameElement.textContent.trim().toLowerCase();
+}
+
+function initializeResourceNameFilter() {
+    const input = document.querySelector('[data-role="resource-name-filter"]');
+    if (!input) {
+        return;
+    }
+
+    input.addEventListener('input', function() {
+        activeResourceNameFilter = normalizeResourceNameFilter(input.value);
+        applyResourceStatusFilter();
+    });
+
+    input.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && input.value.length > 0) {
+            input.value = '';
+            activeResourceNameFilter = '';
+            applyResourceStatusFilter();
+        }
+    });
+}
+
 function applyResourceStatusFilter() {
-    const filter = normalizeResourceFilterStatus(activeResourceStatusFilter);
+    const statusFilter = normalizeResourceFilterStatus(activeResourceStatusFilter);
+    const nameFilter = normalizeResourceNameFilter(activeResourceNameFilter);
     const resourceContainers = document.querySelectorAll('[data-resource-id][data-group-id]');
 
     if (resourceContainers.length === 0) {
@@ -590,7 +638,10 @@ function applyResourceStatusFilter() {
 
     resourceContainers.forEach(function(container) {
         const resourceStatus = normalizeStatus(container.getAttribute('data-resource-status'));
-        const matches = filter === 'all' || resourceStatus === filter;
+        const resourceName = resolveResourceContainerName(container);
+        const matchesStatus = statusFilter === 'all' || resourceStatus === statusFilter;
+        const matchesName = nameFilter.length === 0 || resourceName.includes(nameFilter);
+        const matches = matchesStatus && matchesName;
         container.hidden = !matches;
     });
 

@@ -468,6 +468,26 @@
     gap: 0.75rem;
 }
 
+.resource-filter-search {
+    width: min(100%, 320px);
+}
+
+.resource-filter-search .input-group-text {
+    border-color: var(--landing-border-soft);
+    color: var(--landing-muted);
+    background-color: var(--landing-surface-soft);
+}
+
+.resource-filter-search .form-control {
+    border-color: var(--landing-border-soft);
+    background-color: var(--landing-surface-soft);
+    color: var(--landing-text);
+}
+
+.resource-filter-search .form-control::placeholder {
+    color: var(--landing-muted);
+}
+
 .snapshot-item {
     border: 1px solid var(--landing-border-soft);
     border-radius: 0.85rem;

@@ -116,6 +116,18 @@
                 <strong data-role="snapshot-unknown">—</strong>
             </div>
         </div>
+        <div class="d-flex justify-content-end mt-2">
+            <div class="resource-filter-search">
+                <label class="visually-hidden" for="resource-name-filter">Filter resources by name</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input id="resource-name-filter" type="text" class="form-control"
+                           data-role="resource-name-filter"
+                           placeholder="Filter by resource name"
+                           aria-label="Filter resources by name">
+                </div>
+            </div>
+        </div>
     </div>
 
     <div th:if="${#lists.isEmpty(ungroupedResources) and #lists.isEmpty(groupedResources)}" class="text-center py-5">
