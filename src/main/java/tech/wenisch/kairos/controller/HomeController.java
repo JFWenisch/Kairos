@@ -290,6 +290,7 @@ public class HomeController {
             double uptime24h = resourceService.getUptimePercentage(resource, 24);
             double uptime7d = resourceService.getUptimePercentage(resource, 168);
             double uptime30d = resourceService.getUptimePercentage(resource, 720);
+                List<CheckResult> fullHistory = resourceService.getFullHistory(id);
             Page<CheckResult> historyPage = resourceService.getHistoryPage(
                     id,
                     sanitizedPage,
@@ -299,7 +300,8 @@ public class HomeController {
                     message
             );
 
-            List<Outage> filteredOutages = outageService.findByResource(resource).stream()
+                List<Outage> allOutages = outageService.findByResource(resource);
+                List<Outage> filteredOutages = allOutages.stream()
                     .filter(outage -> matchesStatus(outage, normalizedOutageStatus))
                     .filter(outage -> overlaps(outage, outageRangeStart, now))
                     .toList();
@@ -334,11 +336,23 @@ public class HomeController {
                     .build();
 
             var activeOutage = outageService.findActiveOutage(resource);
+                String detailSummaryText = buildDetailSummary(
+                    resource,
+                    currentStatus,
+                    uptime24h,
+                    uptime7d,
+                    uptime30d,
+                    timelineBlocks,
+                    fullHistory,
+                    allOutages,
+                    activeOutage.orElse(null)
+                );
 
             model.addAttribute("vm", viewModel);
             model.addAttribute("uptime24h", uptime24h);
             model.addAttribute("uptime7d", uptime7d);
             model.addAttribute("uptime30d", uptime30d);
+            model.addAttribute("detailSummaryText", detailSummaryText);
             model.addAttribute("activeOutage", activeOutage.orElse(null));
             activeOutage.ifPresent(outage ->
                     model.addAttribute("activeOutageDuration", formatDuration(outage.getStartDate(), LocalDateTime.now())));
@@ -350,6 +364,7 @@ public class HomeController {
             model.addAttribute("historySize", sanitizedSize);
             model.addAttribute("historyFrom", historyPage.getTotalElements() == 0 ? 0 : (long) historyPage.getNumber() * historyPage.getSize() + 1);
             model.addAttribute("historyTo", historyPage.getTotalElements() == 0 ? 0 : Math.min((long) (historyPage.getNumber() + 1) * historyPage.getSize(), historyPage.getTotalElements()));
+            model.addAttribute("groupStatusSummaries", buildGroupStatusSummaries(resource, authenticated));
 
             model.addAttribute("resourceOutages", outagePageContent);
             model.addAttribute("resourceOutagePage", resourceOutagePage);
@@ -555,6 +570,41 @@ public class HomeController {
         };
     }
 
+    private Map<Long, GroupStatusSummary> buildGroupStatusSummaries(MonitoredResource detailResource, boolean authenticated) {
+        if (detailResource.getGroups().isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, long[]> counters = new LinkedHashMap<>();
+        detailResource.getGroups().forEach(group -> counters.put(group.getId(), new long[]{0, 0, 0}));
+
+        List<MonitoredResource> visibleResources = resourceService.findAllActive().stream()
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
+
+        for (MonitoredResource resource : visibleResources) {
+            String status = resourceService.getCurrentStatus(resource);
+            for (ResourceGroup group : resource.getGroups()) {
+                long[] values = counters.get(group.getId());
+                if (values == null) {
+                    continue;
+                }
+
+                if ("available".equals(status)) {
+                    values[0] += 1;
+                } else if ("not-available".equals(status)) {
+                    values[1] += 1;
+                } else {
+                    values[2] += 1;
+                }
+            }
+        }
+
+        Map<Long, GroupStatusSummary> summaries = new LinkedHashMap<>();
+        counters.forEach((groupId, values) -> summaries.put(groupId, new GroupStatusSummary(values[0], values[1], values[2])));
+        return summaries;
+    }
+
     private String normalizeHexColor(String raw) {
         if (raw == null || raw.isBlank()) {
             return "";
@@ -564,6 +614,122 @@ public class HomeController {
             return "";
         }
         return trimmed.startsWith("#") ? trimmed : "#" + trimmed;
+    }
+
+    private String buildDetailSummary(MonitoredResource resource,
+                                      String currentStatus,
+                                      double uptime24h,
+                          double uptime7d,
+                          double uptime30d,
+                                      List<TimelineBlockDTO> timelineBlocks,
+                                      List<CheckResult> fullHistory,
+                          List<Outage> allOutages,
+                                      Outage activeOutage) {
+        LocalDateTime now = LocalDateTime.now();
+        java.time.format.DateTimeFormatter summaryTimestampFormat = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String createdAtText = resource.getCreatedAt() == null
+                ? "an unknown date"
+            : resource.getCreatedAt().format(summaryTimestampFormat);
+        String ageText = resource.getCreatedAt() == null
+                ? "for an unknown duration"
+                : formatDuration(resource.getCreatedAt(), now);
+
+        long totalChecks = fullHistory.size();
+        long availableChecks = fullHistory.stream().filter(result -> result.getStatus() == CheckStatus.AVAILABLE).count();
+        long downChecks = fullHistory.stream().filter(result -> result.getStatus() == CheckStatus.NOT_AVAILABLE).count();
+        long unknownChecks = fullHistory.stream().filter(result -> result.getStatus() == CheckStatus.UNKNOWN).count();
+        long relevantChecks = fullHistory.stream().filter(result -> result.getStatus() != CheckStatus.UNKNOWN).count();
+        double lifetimeAvailability = relevantChecks == 0 ? 0.0 : ((double) availableChecks / (double) relevantChecks) * 100.0;
+
+        LocalDateTime lastCheckAt = fullHistory.stream()
+            .map(CheckResult::getCheckedAt)
+            .filter(java.util.Objects::nonNull)
+            .max(LocalDateTime::compareTo)
+            .orElse(null);
+
+        Long latestLatencyMs = fullHistory.stream()
+            .filter(result -> result.getCheckedAt() != null)
+            .max(Comparator.comparing(CheckResult::getCheckedAt))
+            .map(CheckResult::getLatencyMs)
+            .orElse(null);
+
+        List<Long> latencyCandidates = fullHistory.stream()
+                .map(CheckResult::getLatencyMs)
+                .filter(latency -> latency != null && latency >= 0)
+                .toList();
+        if (latencyCandidates.isEmpty()) {
+            latencyCandidates = timelineBlocks.stream()
+                    .map(TimelineBlockDTO::latencyMs)
+                    .filter(latency -> latency != null && latency >= 0)
+                    .toList();
+        }
+
+        String averageLatencyText;
+        if (latencyCandidates.isEmpty()) {
+            averageLatencyText = "no latency data yet";
+        } else {
+            double averageLatency = latencyCandidates.stream().mapToLong(Long::longValue).average().orElse(0.0);
+            averageLatencyText = String.format(Locale.US, "%.0f ms", averageLatency);
+        }
+
+        String latencyPercentileText = "n/a";
+        if (!latencyCandidates.isEmpty()) {
+            List<Long> sortedLatencies = latencyCandidates.stream().sorted().toList();
+            int percentileIndex = (int) Math.ceil(0.95 * sortedLatencies.size()) - 1;
+            int safePercentileIndex = Math.min(sortedLatencies.size() - 1, Math.max(0, percentileIndex));
+            latencyPercentileText = sortedLatencies.get(safePercentileIndex) + " ms";
+        }
+
+        long activeOutageCount = allOutages.stream().filter(Outage::isActive).count();
+        long resolvedOutageCount = allOutages.stream().filter(outage -> !outage.isActive()).count();
+        long longestOutageMinutes = allOutages.stream()
+                .mapToLong(outage -> {
+                    LocalDateTime endDate = outage.getEndDate() != null ? outage.getEndDate() : now;
+                    return Math.max(0L, Duration.between(outage.getStartDate(), endDate).toMinutes());
+                })
+                .max()
+                .orElse(0L);
+
+        String lastCheckText = lastCheckAt == null ? "no completed checks yet" : lastCheckAt.format(summaryTimestampFormat);
+        String latestLatencyText = latestLatencyMs == null || latestLatencyMs < 0 ? "n/a" : latestLatencyMs + " ms";
+
+        String statusText = switch (normalizeStatusLabel(currentStatus)) {
+            case "available" -> "available";
+            case "not-available" -> "currently down";
+            default -> "in an unknown state";
+        };
+
+        String outageText = activeOutage == null
+                ? "No active outage is currently detected."
+                : "An active outage is ongoing since "
+                + activeOutage.getStartDate().format(summaryTimestampFormat)
+                + ".";
+
+        return "This resource was added on " + createdAtText + " and has been monitored " + ageText + ". "
+                + "It is " + statusText + " right now, with a lifetime availability of "
+                + String.format(Locale.US, "%.1f", lifetimeAvailability) + "% across " + relevantChecks + " evaluated checks"
+                + " (" + totalChecks + " total checks, " + unknownChecks + " unknown, " + downChecks + " down). "
+                + "Availability trends are "
+                + String.format(Locale.US, "%.1f", uptime24h) + "% over 24h, "
+                + String.format(Locale.US, "%.1f", uptime7d) + "% over 7d, and "
+                + String.format(Locale.US, "%.1f", uptime30d) + "% over 30d. "
+                + "Latency currently sits at " + latestLatencyText + ", averages " + averageLatencyText + ", and p95 is " + latencyPercentileText + ". "
+                + "Last check was recorded at " + lastCheckText + ". "
+                + "Outage history includes " + allOutages.size() + " incidents ("
+                + activeOutageCount + " active, " + resolvedOutageCount + " resolved), with the longest lasting about "
+                + longestOutageMinutes + " minutes. "
+                + outageText;
+    }
+
+    private String normalizeStatusLabel(String status) {
+        if (status == null) {
+            return "unknown";
+        }
+        return switch (status.trim().toLowerCase(Locale.ROOT)) {
+            case "available" -> "available";
+            case "not-available" -> "not-available";
+            default -> "unknown";
+        };
     }
 
     private record OutageRowViewModel(
@@ -579,4 +745,11 @@ public class HomeController {
             String label
     ) {
     }
+
+        private record GroupStatusSummary(
+            long available,
+            long down,
+            long unknown
+        ) {
+        }
 }

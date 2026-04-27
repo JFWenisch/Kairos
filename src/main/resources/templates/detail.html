@@ -41,14 +41,39 @@
     <div class="row mb-4">
         <div class="col">
             <div class="d-flex align-items-center detail-hero">
-                <span data-role="status-dot" th:class="'status-dot-lg me-3 status-' + ${vm.currentStatus}"></span>
                 <div>
                     <p class="detail-kicker mb-2">RESOURCE DETAIL</p>
-                    <h1 class="h2 mb-0 detail-title" th:text="${vm.resource.name}">Resource Name</h1>
+                    <h1 class="h2 mb-0 detail-title d-flex align-items-center gap-2">
+                        <span data-role="status-dot" th:class="'status-dot me-1 status-' + ${vm.currentStatus}"></span>
+                        <span class="badge detail-type-badge d-inline-flex align-items-center gap-1">
+                            <i class="bi" aria-hidden="true"
+                               th:classappend="${vm.resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${vm.resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                            <span th:text="${vm.resource.resourceType}">TYPE</span>
+                        </span>
+                        <span th:text="${vm.resource.name}">Resource Name</span>
+                    </h1>
                     <p class="text-muted mb-0 detail-subline">
-                        <span class="badge detail-type-badge me-2" th:text="${vm.resource.resourceType}">TYPE</span>
                         <code th:if="${showResourceUrl}" th:text="${vm.resource.target}">target</code>
                     </p>
+                    <div th:if="${!#lists.isEmpty(vm.resource.groups)}" class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                        <small class="text-muted d-inline-flex align-items-center gap-1">Is part of:</small>
+                        <span class="detail-group-item" th:each="group : ${vm.resource.groups}"
+                              th:with="summary=${groupStatusSummaries[group.id]}">
+                            <a class="badge detail-group-badge text-decoration-none d-inline-flex align-items-center gap-1"
+                               th:href="@{/groups/{id}(id=${group.id})}">
+                                <i class="bi bi-diagram-3" aria-hidden="true"></i>
+                                <span th:text="${group.name}">Group</span>
+                                <span class="detail-group-status d-inline-flex align-items-center gap-1 ms-1">
+                                    <span class="detail-group-counter detail-group-counter-available" th:text="${summary != null ? summary.available : 0}">0</span>
+                                    <span class="detail-group-counter detail-group-counter-down" th:text="${summary != null ? summary.down : 0}">0</span>
+                                    <span class="detail-group-counter detail-group-counter-unknown" th:text="${summary != null ? summary.unknown : 0}">0</span>
+                                </span>
+                            </a>
+                        </span>
+                    </div>
+                    <div class="detail-summary mt-3" th:if="${detailSummaryText != null && !detailSummaryText.isBlank()}">
+                        <p class="mb-0" th:text="${detailSummaryText}">Resource summary text</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -747,7 +747,7 @@
     padding: 1.1rem 1.25rem;
     border: 1px solid var(--detail-border-soft);
     border-radius: 1rem;
-    background: linear-gradient(135deg, var(--detail-surface), transparent);
+    background: linear-gradient(135deg, rgba(13, 202, 240, 0.09), transparent);
 }
 
 .detail-kicker {
@@ -766,9 +766,87 @@
 }
 
 .detail-type-badge {
-    background-color: rgba(108, 117, 125, 0.25) !important;
+    background-color: transparent !important;
     border: 1px solid var(--detail-border-soft);
     color: inherit;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.45rem;
+}
+
+.detail-type-badge .bi {
+    font-size: 0.72rem;
+}
+
+.detail-group-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.detail-group-badge {
+    background-color: transparent !important;
+    border: 1px solid var(--detail-border-soft);
+    color: inherit;
+    padding: 0.36rem 0.55rem;
+    gap: 0.35rem;
+}
+
+.detail-group-badge:hover {
+    border-color: rgba(13, 202, 240, 0.45);
+    background-color: rgba(13, 202, 240, 0.08) !important;
+}
+
+.detail-group-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.detail-group-counter {
+    min-width: 1.5rem;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    line-height: 1;
+    padding: 0.22rem 0.34rem;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.detail-group-counter-available {
+    color: #6be39c;
+    border-color: rgba(107, 227, 156, 0.35);
+    background-color: rgba(107, 227, 156, 0.12);
+}
+
+.detail-group-counter-down {
+    color: #ff838e;
+    border-color: rgba(255, 131, 142, 0.35);
+    background-color: rgba(255, 131, 142, 0.12);
+}
+
+.detail-group-counter-unknown {
+    color: #c6c8cb;
+    border-color: rgba(198, 200, 203, 0.35);
+    background-color: rgba(198, 200, 203, 0.12);
+}
+
+.detail-summary {
+    padding: 0;
+}
+
+.detail-summary-label {
+    display: inline-block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(13, 202, 240, 0.95);
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.detail-summary p {
+    color: var(--detail-muted);
+    line-height: 1.45;
 }
 
 .detail-stat-card {
