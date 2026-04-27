@@ -647,14 +647,14 @@ function applyResourceStatusFilter() {
 
     const ungroupedTimelinePanel = document.querySelector('.resource-panel');
     if (ungroupedTimelinePanel) {
-        const visibleUngroupedRows = ungroupedTimelinePanel.querySelector('.resource-row[data-group-id="ungrouped"]:not([hidden])');
-        ungroupedTimelinePanel.hidden = !visibleUngroupedRows;
+        const visibleRows = ungroupedTimelinePanel.querySelector('.resource-row[data-resource-id]:not([hidden])');
+        ungroupedTimelinePanel.hidden = !visibleRows;
     }
 
     const ungroupedCardsGrid = document.querySelector('.resource-cards-grid-ungrouped');
     if (ungroupedCardsGrid) {
-        const visibleUngroupedCards = ungroupedCardsGrid.querySelector('[data-resource-id][data-group-id="ungrouped"]:not([hidden])');
-        ungroupedCardsGrid.hidden = !visibleUngroupedCards;
+        const visibleCards = ungroupedCardsGrid.querySelector('[data-resource-id]:not([hidden])');
+        ungroupedCardsGrid.hidden = !visibleCards;
     }
 
     document.querySelectorAll('#groupedResourceAccordion .accordion-item[data-group-id]').forEach(function(groupItem) {

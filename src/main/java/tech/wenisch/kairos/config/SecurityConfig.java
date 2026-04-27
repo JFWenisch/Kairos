@@ -88,6 +88,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
             .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
             .requestMatchers("/embed/**").permitAll()
+            .requestMatchers("/groups/**").permitAll()
             .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api")
             .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(

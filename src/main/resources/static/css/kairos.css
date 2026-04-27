@@ -570,6 +570,15 @@
     min-width: 2rem;
 }
 
+.group-open-link {
+    color: inherit;
+}
+
+.group-open-link:hover {
+    color: var(--landing-text);
+    text-decoration: underline !important;
+}
+
 .resource-sort-item {
     user-select: none;
 }

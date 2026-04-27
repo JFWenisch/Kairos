@@ -18,6 +18,7 @@ import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.OutageService;
+import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -59,6 +60,7 @@ public class HomeController {
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final OutageService outageService;
     private final EmbedSettingsService embedSettingsService;
+    private final ResourceGroupService resourceGroupService;
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
@@ -125,6 +127,36 @@ public class HomeController {
         model.addAttribute("ticks", ticks);
         model.addAttribute("now", now);
         return "outages";
+    }
+
+    @GetMapping("/groups/{id}")
+    public String groupDashboard(@PathVariable Long id, Authentication authentication, Model model) {
+        ResourceGroup group = resourceGroupService.findById(id).orElse(null);
+        if (group == null) {
+            return "redirect:/";
+        }
+
+        boolean authenticated = isAuthenticated(authentication);
+        ResourceGroupVisibility groupVisibility = group.getVisibilityOrDefault();
+        if (groupVisibility == ResourceGroupVisibility.AUTHENTICATED && !authenticated) {
+            return "redirect:/login";
+        }
+
+        if (groupVisibility == ResourceGroupVisibility.HIDDEN || !isGroupVisibleByPolicy(group, authenticated)) {
+            return "redirect:/";
+        }
+
+        List<MonitoredResource> groupResources = resourceService.findAllActive().stream()
+                .filter(resource -> resource.getGroups().stream().anyMatch(g -> g.getId().equals(id)))
+                .filter(resource -> isVisibleByGroupPolicy(resource, authenticated))
+                .toList();
+
+        model.addAttribute("group", group);
+        model.addAttribute("totalResourceCount", groupResources.size());
+        model.addAttribute("groupResources", groupResources);
+        model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
+        model.addAttribute("appVersion", applicationVersionService.getVersion());
+        return "group-dashboard";
     }
 
     @PostMapping("/resources/submit")
@@ -508,6 +540,15 @@ public class HomeController {
                 .min(Comparator.comparingInt(ResourceGroupVisibility::ordinal))
                 .orElse(ResourceGroupVisibility.PUBLIC);
         return switch (effective) {
+            case PUBLIC -> true;
+            case AUTHENTICATED -> authenticated;
+            case HIDDEN -> false;
+        };
+    }
+
+    private boolean isGroupVisibleByPolicy(ResourceGroup group, boolean authenticated) {
+        ResourceGroupVisibility visibility = group.getVisibilityOrDefault();
+        return switch (visibility) {
             case PUBLIC -> true;
             case AUTHENTICATED -> authenticated;
             case HIDDEN -> false;
