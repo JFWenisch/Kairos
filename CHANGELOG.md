@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.14.0 - 2026-04-27
+
+## [1.14.0](https://github.com/wenisch-tech/Kairos/compare/v1.13.9...v1.14.0) (2026-04-27)
+
+
+### Features
+
+* added filtering on landingpage based on status ([0cf4b4b](https://github.com/wenisch-tech/Kairos/commit/0cf4b4bfd76e809b726def02b7f8c987953c3a32))
+* added group view allowing distinct view for resources in a certain group ([e1e82c4](https://github.com/wenisch-tech/Kairos/commit/e1e82c43918cb93617ffa98f84a6af46907d5095))
+* Added optional filtering by resourcename to landingpage ([4121b0d](https://github.com/wenisch-tech/Kairos/commit/4121b0de74a4cc14070cb62f1823db2d2583a679))
+* Groups of resources are now displayed on resourcedetailpage, also a summary is displayed for the resource ([81060bb](https://github.com/wenisch-tech/Kairos/commit/81060bbf847175e89df142230b9796a6a609d208))
+
+
+### Bug Fixes
+
+* added Icon fo resourcetypes and groups ([8904eeb](https://github.com/wenisch-tech/Kairos/commit/8904eeba8282bf0e4ed8bfbcbc1279e7b4cd0cb8))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.14.0
+
+
 ## v1.13.9 - 2026-04-27
 
 ### [1.13.9](https://github.com/wenisch-tech/Kairos/compare/v1.13.8...v1.13.9) (2026-04-27)
