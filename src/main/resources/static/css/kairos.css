@@ -476,6 +476,24 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.snapshot-item:hover {
+    border-color: rgba(13, 202, 240, 0.45);
+    background-color: rgba(13, 202, 240, 0.08);
+}
+
+.snapshot-item:focus-visible {
+    outline: 2px solid rgba(13, 202, 240, 0.85);
+    outline-offset: 2px;
+}
+
+.snapshot-item.active {
+    border-color: rgba(13, 202, 240, 0.65);
+    background-color: rgba(13, 202, 240, 0.12);
+    box-shadow: 0 0 0 1px rgba(13, 202, 240, 0.2) inset;
 }
 
 .snapshot-item small {

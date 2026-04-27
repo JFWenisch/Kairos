@@ -98,20 +98,20 @@
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h2 class="h5 mb-0"><i class="bi bi-activity me-2"></i>Resource Status</h2>
         </div>
-        <div class="status-snapshot">
-            <div class="snapshot-item">
+        <div class="status-snapshot" data-role="status-filter-container">
+            <div class="snapshot-item active" data-status-filter="all" role="button" tabindex="0" aria-pressed="true" aria-label="Show all resources">
                 <small>Total</small>
                 <strong th:text="${totalResourceCount}" data-role="snapshot-total">0</strong>
             </div>
-            <div class="snapshot-item snapshot-ok">
+            <div class="snapshot-item snapshot-ok" data-status-filter="available" role="button" tabindex="0" aria-pressed="false" aria-label="Show only available resources">
                 <small>Available</small>
                 <strong data-role="snapshot-available">—</strong>
             </div>
-            <div class="snapshot-item snapshot-down">
+            <div class="snapshot-item snapshot-down" data-status-filter="not-available" role="button" tabindex="0" aria-pressed="false" aria-label="Show only down resources">
                 <small>Down</small>
                 <strong data-role="snapshot-down">—</strong>
             </div>
-            <div class="snapshot-item snapshot-unknown">
+            <div class="snapshot-item snapshot-unknown" data-status-filter="unknown" role="button" tabindex="0" aria-pressed="false" aria-label="Show only unknown resources">
                 <small>Unknown</small>
                 <strong data-role="snapshot-unknown">—</strong>
             </div>
@@ -281,7 +281,7 @@
     </div>
 
     <div th:unless="${#lists.isEmpty(groupedResources)}" data-view="cards" style="display: none;">
-        <div th:each="groupShell : ${groupedResources}" class="mb-4">
+        <div th:each="groupShell : ${groupedResources}" class="mb-4 resource-cards-group" th:attr="data-group-id=${groupShell.group.id}">
             <h5 class="mb-3" th:text="${groupShell.group.name}">Group Name</h5>
             <div class="row resource-cards-grid resource-cards-grid-grouped g-3">
                 <div th:each="resource : ${groupShell.resources}" class="col-sm-6 col-lg-4 col-xl-3"

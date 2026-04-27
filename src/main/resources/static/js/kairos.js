@@ -192,6 +192,7 @@ function initializeOutageSinceCounters() {
 document.addEventListener('DOMContentLoaded', function() {
     const saved = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
+    initializeSnapshotStatusFilters();
     initializeViewModeSwitcher();
     initializeResourceCardLinks();
     initializeOutageSinceCounters();
@@ -570,6 +571,119 @@ function parseUpdatePayload(raw) {
     }
 }
 
+var activeResourceStatusFilter = 'all';
+
+function normalizeResourceFilterStatus(filter) {
+    if (filter === 'available' || filter === 'not-available' || filter === 'unknown') {
+        return filter;
+    }
+    return 'all';
+}
+
+function applyResourceStatusFilter() {
+    const filter = normalizeResourceFilterStatus(activeResourceStatusFilter);
+    const resourceContainers = document.querySelectorAll('[data-resource-id][data-group-id]');
+
+    if (resourceContainers.length === 0) {
+        return;
+    }
+
+    resourceContainers.forEach(function(container) {
+        const resourceStatus = normalizeStatus(container.getAttribute('data-resource-status'));
+        const matches = filter === 'all' || resourceStatus === filter;
+        container.hidden = !matches;
+    });
+
+    const ungroupedTimelinePanel = document.querySelector('.resource-panel');
+    if (ungroupedTimelinePanel) {
+        const visibleUngroupedRows = ungroupedTimelinePanel.querySelector('.resource-row[data-group-id="ungrouped"]:not([hidden])');
+        ungroupedTimelinePanel.hidden = !visibleUngroupedRows;
+    }
+
+    const ungroupedCardsGrid = document.querySelector('.resource-cards-grid-ungrouped');
+    if (ungroupedCardsGrid) {
+        const visibleUngroupedCards = ungroupedCardsGrid.querySelector('[data-resource-id][data-group-id="ungrouped"]:not([hidden])');
+        ungroupedCardsGrid.hidden = !visibleUngroupedCards;
+    }
+
+    document.querySelectorAll('#groupedResourceAccordion .accordion-item[data-group-id]').forEach(function(groupItem) {
+        const groupId = groupItem.getAttribute('data-group-id');
+        const visibleRows = groupItem.querySelector('.resource-row[data-group-id="' + groupId + '"]:not([hidden])');
+        groupItem.hidden = !visibleRows;
+    });
+
+    const groupedAccordion = document.querySelector('#groupedResourceAccordion');
+    if (groupedAccordion) {
+        const hasVisibleGroup = groupedAccordion.querySelector('.accordion-item[data-group-id]:not([hidden])');
+        groupedAccordion.hidden = !hasVisibleGroup;
+    }
+
+    document.querySelectorAll('.resource-cards-group[data-group-id]').forEach(function(groupContainer) {
+        const groupId = groupContainer.getAttribute('data-group-id');
+        const visibleCards = groupContainer.querySelector('[data-resource-id][data-group-id="' + groupId + '"]:not([hidden])');
+        groupContainer.hidden = !visibleCards;
+    });
+}
+
+function updateSnapshotFilterUi() {
+    const filterButtons = document.querySelectorAll('[data-role="status-filter-container"] [data-status-filter]');
+    if (filterButtons.length === 0) {
+        return;
+    }
+
+    const activeFilter = normalizeResourceFilterStatus(activeResourceStatusFilter);
+    filterButtons.forEach(function(button) {
+        const buttonFilter = normalizeResourceFilterStatus(button.getAttribute('data-status-filter'));
+        const isActive = buttonFilter === activeFilter;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+}
+
+function initializeSnapshotStatusFilters() {
+    const filterButtons = document.querySelectorAll('[data-role="status-filter-container"] [data-status-filter]');
+    if (filterButtons.length === 0) {
+        return;
+    }
+
+    filterButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            activeResourceStatusFilter = normalizeResourceFilterStatus(button.getAttribute('data-status-filter'));
+            updateSnapshotFilterUi();
+            applyResourceStatusFilter();
+        });
+
+        button.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                button.click();
+            }
+        });
+    });
+
+    updateSnapshotFilterUi();
+    applyResourceStatusFilter();
+}
+
+function collectUniqueResourceStatuses() {
+    const statusesByResourceId = new Map();
+    const containers = document.querySelectorAll('[data-resource-id][data-group-id]');
+
+    containers.forEach(function(container) {
+        const resourceId = container.getAttribute('data-resource-id');
+        if (!resourceId) {
+            return;
+        }
+
+        const status = normalizeStatus(container.getAttribute('data-resource-status'));
+        if (!statusesByResourceId.has(resourceId)) {
+            statusesByResourceId.set(resourceId, status);
+        }
+    });
+
+    return statusesByResourceId;
+}
+
 function updateResourceRow(update) {
     if (!update || update.resourceId === undefined || update.resourceId === null) {
         return;
@@ -581,9 +695,11 @@ function updateResourceRow(update) {
     }
 
     containers.forEach(function(container) {
+        const normalizedStatus = normalizeStatus(update.currentStatus);
         setRowChecking(container, false);
-        updateStatusDot(container, update.currentStatus);
-        updateCardStatus(container, update.currentStatus);
+        container.setAttribute('data-resource-status', normalizedStatus);
+        updateStatusDot(container, normalizedStatus);
+        updateCardStatus(container, normalizedStatus);
         updateTimeline(container, update.timelineBlocks);
         updateUptime(container, update.uptimePercentage);
         updateOutageBadge(container, update.activeOutageSince || null);
@@ -591,6 +707,8 @@ function updateResourceRow(update) {
         container.classList.remove('resource-loading');
     });
 
+    updateSnapshotCounts();
+    applyResourceStatusFilter();
     refreshAllGroupCounters();
 }
 
@@ -819,13 +937,10 @@ function updateOutageBadge(row, activeOutageSince) {
     }
 }
 
-function updateSnapshotCounts(updates) {
-    if (!Array.isArray(updates)) {
-        return;
-    }
+function updateSnapshotCounts() {
+    const statusesByResourceId = collectUniqueResourceStatuses();
     var available = 0, down = 0, unknown = 0;
-    updates.forEach(function(u) {
-        var s = normalizeStatus(u && u.currentStatus);
+    statusesByResourceId.forEach(function(s) {
         if (s === 'available') { available++; }
         else if (s === 'not-available') { down++; }
         else { unknown++; }
@@ -837,6 +952,9 @@ function updateSnapshotCounts(updates) {
     if (el) { el.textContent = String(down); }
     el = document.querySelector('[data-role="snapshot-unknown"]');
     if (el) { el.textContent = String(unknown); }
+
+    el = document.querySelector('[data-role="snapshot-total"]');
+    if (el) { el.textContent = String(statusesByResourceId.size); }
 }
 
 function updateUptime(row, uptimePercentage) {
