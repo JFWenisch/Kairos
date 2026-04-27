@@ -155,7 +155,11 @@
                                    class="text-decoration-none fw-semibold"
                                    th:text="${resource.name}">Resource Name</a>
                                 <div class="resource-subline">
-                                    <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
+                                    <small class="resource-type d-inline-flex align-items-center gap-1">
+                                        <i class="bi" aria-hidden="true"
+                                           th:classappend="${resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                                        <span th:text="${resource.resourceType}">TYPE</span>
+                                    </small>
                                      <small th:if="${showResourceUrl}" class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                            th:text="${resource.target}">target</small>
                                 </div>
@@ -197,7 +201,11 @@
                 <div class="card-body d-flex flex-column">
                     <div class="resource-card-top mb-2">
                         <div class="resource-title-line">
-                            <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
+                            <small class="resource-type d-inline-flex align-items-center gap-1">
+                                <i class="bi" aria-hidden="true"
+                                   th:classappend="${resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                                <span th:text="${resource.resourceType}">TYPE</span>
+                            </small>
                         </div>
                         <small class="resource-card-state" data-role="card-status">unknown</small>
                     </div>
@@ -232,7 +240,9 @@
                 <button class="accordion-button" type="button" data-bs-toggle="collapse"
                         th:attr="data-bs-target='#group-collapse-' + ${groupShell.group.id},aria-controls='group-collapse-' + ${groupShell.group.id}">
                   <span class="group-header-content">
-                    <span class="fw-semibold me-3" th:text="${groupShell.group.name}">Group Name</span>
+                    <span class="fw-semibold me-3">
+                        <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i><span th:text="${groupShell.group.name}">Group Name</span>
+                    </span>
                     <span class="group-status-summary ms-auto">
                         <span class="badge text-bg-success me-1" th:attr="data-group-counter='available',data-group-id=${groupShell.group.id}">0</span>
                         <span class="badge text-bg-danger me-1" th:attr="data-group-counter='not-available',data-group-id=${groupShell.group.id}">0</span>
@@ -256,7 +266,11 @@
                                            class="text-decoration-none fw-semibold"
                                            th:text="${resource.name}">Resource Name</a>
                                         <div class="resource-subline">
-                                            <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
+                                            <small class="resource-type d-inline-flex align-items-center gap-1">
+                                                <i class="bi" aria-hidden="true"
+                                                   th:classappend="${resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                                                <span th:text="${resource.resourceType}">TYPE</span>
+                                            </small>
                                               <small th:if="${showResourceUrl}" class="text-muted ms-2 text-truncate d-inline-block" style="max-width:150px;"
                                                    th:text="${resource.target}">target</small>
                                         </div>
@@ -294,7 +308,7 @@
 
     <div th:unless="${#lists.isEmpty(groupedResources)}" data-view="cards" style="display: none;">
         <div th:each="groupShell : ${groupedResources}" class="mb-4 resource-cards-group" th:attr="data-group-id=${groupShell.group.id}">
-            <h5 class="mb-3" th:text="${groupShell.group.name}">Group Name</h5>
+            <h5 class="mb-3"><i class="bi bi-diagram-3 me-2" aria-hidden="true"></i><span th:text="${groupShell.group.name}">Group Name</span></h5>
             <div class="row resource-cards-grid resource-cards-grid-grouped g-3">
                 <div th:each="resource : ${groupShell.resources}" class="col-sm-6 col-lg-4 col-xl-3"
                      th:attr="data-resource-id=${resource.id},data-group-id=${groupShell.group.id}">
@@ -303,7 +317,11 @@
                         <div class="card-body d-flex flex-column">
                             <div class="resource-card-top mb-2">
                                 <div class="resource-title-line">
-                                    <small class="resource-type" th:text="${resource.resourceType}">TYPE</small>
+                                    <small class="resource-type d-inline-flex align-items-center gap-1">
+                                        <i class="bi" aria-hidden="true"
+                                           th:classappend="${resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                                        <span th:text="${resource.resourceType}">TYPE</span>
+                                    </small>
                                 </div>
                                 <small class="resource-card-state" data-role="card-status">unknown</small>
                             </div>
