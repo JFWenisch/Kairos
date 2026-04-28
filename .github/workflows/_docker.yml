@@ -217,7 +217,7 @@ jobs:
       - name: Attest build provenance
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: attest_build_provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ inputs.image }}
           subject-digest: ${{ steps.sign.outputs.digest }}
