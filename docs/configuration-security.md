@@ -1,6 +1,21 @@
-# Configuration: Security
+# Security Concepts
 
-This page groups security-relevant runtime settings and operational notes.
+This page groups security-relevant runtime settings and operational notes, from access control to browser-facing protections.
+
+## Security Model at a Glance
+
+```mermaid
+flowchart LR
+	U[Unauthenticated user] --> G{Allow public access?}
+	G -- No --> L[Redirect to login]
+	G -- Yes --> P[Public pages and public APIs]
+	A[Authenticated user] --> R[Role-based access]
+	R --> ADM[/admin/** requires ADMIN]
+	R --> PUB[Dashboard and detail pages]
+	B[Browser client on other origin] --> C{Origin allow-listed?}
+	C -- Yes --> API[/api/** with CORS headers]
+	C -- No --> BLOCK[Browser blocks cross-origin call]
+```
 
 ## Access Control
 

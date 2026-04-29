@@ -43,6 +43,44 @@ Operational notes:
 - Resource detail pages include active outage banner and outage history table
 - Dashboard rows/cards show active outage indicators with live elapsed time
 
+## Retention Jobs
+
+Kairos runs retention in dedicated background jobs. Both jobs are configured in **Admin -> General Settings** and run independently from check execution.
+
+### Check History Retention
+
+- Controls: `checkHistoryRetentionEnabled`, `checkHistoryRetentionIntervalMinutes`, `checkHistoryRetentionDays`
+- Default interval: 60 minutes
+- Default retention: 31 days
+- Deletion reference: `check_result.checked_at`
+
+### Outage Retention
+
+- Controls: `outageRetentionEnabled`, `outageRetentionIntervalHours`, `outageRetentionDays`
+- Default interval: 12 hours
+- Default retention: 31 days
+- Deletion reference: `outage.endDate`
+- Only closed outages are removed; active outages are never deleted by retention.
+
+### Retention Flow
+
+```mermaid
+flowchart TD
+	A[Scheduler tick] --> B{Retention job enabled?}
+	B -- No --> Z[Skip run]
+	B -- Yes --> C{Interval elapsed?}
+	C -- No --> Z
+	C -- Yes --> D[Compute cutoff now - retentionDays]
+	D --> E[Delete matching historical records]
+	E --> F[Log cleanup result]
+```
+
+### Safety Notes
+
+- Set retention values according to compliance and incident review requirements.
+- Outage retention uses end date to preserve full incident duration before deletion.
+- If you need long-term analytics, export data before lowering retention days.
+
 ## DOCKERREPOSITORY Behavior
 
 `DOCKERREPOSITORY` runs do not create direct check entries.

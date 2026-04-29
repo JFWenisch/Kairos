@@ -23,32 +23,38 @@ extra_css:
   - assets/stylesheets/extra.css
 nav:
   - Home: index.md
-  - Quick Start: quickstart.md
+  - Getting Started:
+      - Installation and Quickstart: quickstart.md
+      - Additional Parameters: additional-parameters.md
   - Configuration:
       - Overview: configuration.md
-      - Core Runtime:
-          - Database: configuration-database.md
+      - Scheduling and Retention: configuration-scheduling.md
+      - Runtime and Database:
           - Runtime (Tomcat): configuration-runtime.md
-          - Security: configuration-security.md
-      - Platform Integrations:
+          - Database: configuration-database.md
+      - Integrations:
           - OIDC / OAuth2: configuration-oidc.md
           - Authentication: authentication.md
-          - REST API: api.md
-      - Monitoring and Operations:
-          - Check Scheduling: configuration-scheduling.md
-          - Observability: configuration-observability.md
-          - Docker Pullability: docker-pullability.md
-          - Embed Status Widget: embed.md
-          - Import / Export: importexport.md
-          - Announcements: announcements.md
-          - Custom Headers: custom-headers.md
+      - Security Concepts: configuration-security.md
+      - Observability: configuration-observability.md
+      - Custom Headers: custom-headers.md
+  - Operations:
+      - REST API: api.md
+      - Docker Pullability: docker-pullability.md
+      - Import / Export: importexport.md
+      - Embed Status Widget: embed.md
+      - Announcements: announcements.md
   - Troubleshooting: troubleshooting.md
 markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
+  - pymdownx.superfences
   - tables
   - toc:
       permalink: true
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - assets/javascripts/mermaid-init.js
 plugins:
   - search

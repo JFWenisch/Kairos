@@ -23,6 +23,19 @@ Protected endpoints support two authentication methods:
 1. **Session cookie** (`JSESSIONID`) from `/login`
 2. **API key JWT** (`Authorization: Bearer <token>`) created in **Admin → API Keys**
 
+### Authentication Decision Flow
+
+```mermaid
+flowchart TD
+  A[API request to /api/**] --> B{Endpoint requires auth?}
+  B -- No --> P[Process request]
+  B -- Yes --> C{Session cookie or API key present?}
+  C -- No --> U[401 Unauthorized]
+  C -- Yes --> D{Has required role?}
+  D -- No --> F[403 Forbidden]
+  D -- Yes --> P
+```
+
 ### Session-based authentication
 
 Log in via the browser login form or programmatically:
@@ -85,6 +98,17 @@ Resource visibility note:
 When a browser application hosted on a **different origin** (domain, port, or scheme) calls the Kairos API, the browser enforces the [same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) and blocks the request unless the server responds with the appropriate CORS headers.
 
 > Note: CORS is a **browser-only restriction**. Server-to-server calls (e.g. `curl`, backend services) are never affected and always work without CORS configuration.
+
+### Cross-Origin Request Flow
+
+```mermaid
+flowchart LR
+  B[Browser app on different origin] --> O{Origin allow-listed?}
+  O -- No --> X[Browser blocks request]
+  O -- Yes --> A[OPTIONS preflight]
+  A --> C[Allowed CORS headers returned]
+  C --> R[Actual API request proceeds]
+```
 
 ### How to allow an origin
 

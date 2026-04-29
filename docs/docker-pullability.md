@@ -23,6 +23,24 @@ For each Docker resource, Kairos performs the following over HTTPS:
 
 If any blob probe is denied (for example `401` or `403`), the check is marked as failed.
 
+```mermaid
+flowchart TD
+	A[Resolve image reference] --> B[Fetch manifest]
+	B --> C{Bearer challenge?}
+	C -- Yes --> D[Request token and retry]
+	C -- No --> E[Continue]
+	D --> E
+	E --> F{Manifest list/index?}
+	F -- Yes --> G[Select concrete platform manifest]
+	F -- No --> H[Use manifest directly]
+	G --> I[Extract layer and config digests]
+	H --> I
+	I --> J[Probe blobs with Range bytes=0-0]
+	J --> K{Any blob denied?}
+	K -- Yes --> L[NOT_AVAILABLE]
+	K -- No --> M[AVAILABLE]
+```
+
 ## Authentication behavior
 
 - A configured Docker credential is sent as `Authorization: Basic ...`.

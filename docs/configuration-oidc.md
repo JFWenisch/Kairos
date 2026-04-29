@@ -4,6 +4,22 @@ Kairos supports OpenID Connect in addition to local login.
 
 When OIDC is enabled, the login page shows a second button for OIDC login.
 
+## Login Flow
+
+```mermaid
+sequenceDiagram
+	participant U as User Browser
+	participant K as Kairos
+	participant I as OIDC Provider
+	U->>K: Click OIDC login
+	K->>I: Redirect to authorization endpoint
+	I->>U: Login and consent
+	U->>K: Redirect back with auth code
+	K->>I: Exchange code for tokens
+	I-->>K: ID token and user info
+	K-->>U: Create session and redirect to app
+```
+
 ## Required Environment Variables
 
 | Variable | Required | Description |

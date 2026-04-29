@@ -1,19 +1,24 @@
-# Advanced Configuration
+# Configuration Overview
 
-This page is the entry point for advanced runtime configuration.
+This section groups settings by operational concern so teams can move from baseline setup to advanced hardening in a predictable order.
 
-For easier navigation, each major topic is documented on a dedicated page.
+## Recommended Reading Order
 
-## Configuration Topics
+1. [Scheduling and Retention](configuration-scheduling.md)
+2. [Runtime (Tomcat)](configuration-runtime.md)
+3. [Database](configuration-database.md)
+4. [Security Concepts](configuration-security.md)
+5. [OIDC / OAuth2](configuration-oidc.md)
+6. [Observability](configuration-observability.md)
+7. [Custom Headers](custom-headers.md)
 
-- [Database](configuration-database.md)
-- [OIDC / OAuth2](configuration-oidc.md)
-- [Check Scheduling](configuration-scheduling.md)
-- [Outage Thresholds and Lifecycle](configuration-scheduling.md#outage-detection-and-recovery)
-- [Observability](configuration-observability.md)
-- [Runtime (Tomcat)](configuration-runtime.md)
-- [Security (General Settings, public access, URL visibility, CORS)](configuration-security.md)
-- [Resource group visibility (PUBLIC, AUTHENTICATED, HIDDEN)](configuration-security.md#resource-group-visibility)
+## What This Covers
+
+- Runtime behavior and lifecycle management for checks and outages
+- Data retention for check history and closed outages
+- Persistence settings for H2 and PostgreSQL
+- Security controls for public access, group visibility, CORS, API keys, and OIDC
+- Operational diagnostics through logs and metrics
 
 ## Related Operational Guides
 
@@ -21,5 +26,6 @@ For easier navigation, each major topic is documented on a dedicated page.
 - [REST API reference](api.md)
 - [Import / Export](importexport.md)
 - [Docker pullability](docker-pullability.md)
+- [Embed status widget](embed.md)
 - [Announcements](announcements.md)
 - [Troubleshooting](troubleshooting.md)

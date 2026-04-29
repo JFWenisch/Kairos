@@ -43,6 +43,17 @@ The URL pattern is matched against the full resource target string (e.g. `https:
 
 When multiple credentials could match a target, the first one found is used. Order the credentials from most specific (no wildcard) to least specific (broad wildcard) to ensure the right credential is selected.
 
+```mermaid
+flowchart TD
+  A[Check starts for resource target] --> B[Load credentials for resource type]
+  B --> C[Evaluate pattern matches in configured order]
+  C --> D{Any match found?}
+  D -- No --> E[Run check without auth header]
+  D -- Yes --> F[Select first match]
+  F --> G[Attach Basic Authorization]
+  G --> H[Execute check request]
+```
+
 ---
 
 ## Managing Credentials in the Admin Panel

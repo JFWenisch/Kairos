@@ -49,6 +49,19 @@ Notes:
 - If `active until` is empty, the announcement remains active until manually changed.
 - Automatic deactivation is handled by a scheduled backend task.
 
+```mermaid
+flowchart TD
+  A[Admin creates announcement] --> B{Active set to true?}
+  B -- No --> D[Stored as inactive]
+  B -- Yes --> C[Visible on dashboard and announcements page]
+  C --> E{Active until set?}
+  E -- No --> F[Remains active until manual change]
+  E -- Yes --> G[Scheduler checks expiry]
+  G --> H{Current time >= active until?}
+  H -- Yes --> I[Auto-set inactive]
+  H -- No --> C
+```
+
 ## Typical workflow
 
 1. Open `Admin -> Announcements`.

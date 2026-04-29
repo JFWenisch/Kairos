@@ -24,6 +24,17 @@ On the `Manage Resources` page you can:
 - Click `Import YAML` to upload a `.yaml` or `.yml` file
 - Review the flash message after import to see how many resources were created, updated, or skipped
 
+```mermaid
+flowchart TD
+  A[Admin uploads YAML] --> B[Parse envelope and schemaVersion]
+  B --> C[Validate each entry]
+  C --> D{resourceType + target exists?}
+  D -- Yes --> E[Update existing resource]
+  D -- No --> F[Create new resource]
+  E --> G[Summarize created updated skipped]
+  F --> G
+```
+
 ## Exchange Format
 
 Current exports use a versioned envelope:
