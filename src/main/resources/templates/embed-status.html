@@ -17,11 +17,13 @@
         html,
         body {
             min-height: 100%;
+            overflow: hidden;
             background-color: var(--widget-bg, transparent) !important;
         }
 
         body {
             margin: 0;
+            overflow: hidden;
             background-color: var(--widget-bg, transparent) !important;
         }
 
@@ -36,10 +38,11 @@
         .status-widget {
             display: inline-flex;
             align-items: center;
-            gap: 0.65rem;
-            padding: 0.35rem 0.2rem;
-            line-height: 1.2;
+            gap: 0.5rem;
+            padding: 0.18rem 0.14rem;
+            line-height: 1.1;
             white-space: nowrap;
+            max-width: 100%;
         }
 
         .status-link {

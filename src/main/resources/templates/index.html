@@ -39,34 +39,6 @@
         <div>
             <p class="dashboard-kicker mb-2">KAIROS AVAILABILITY MONITORING</p>
             <h1 class="h3 mb-2"><i class="bi bi-activity me-2"></i>Status Dashboard</h1>
-            <span class="dashboard-embed-tools mb-2">
-                <div class="dashboard-embed-container">
-                    <iframe class="dashboard-embed-preview"
-                            data-embed-base-src="/embed/status?refresh=30&amp;fontSize=12"
-                            src="/embed/status?refresh=30&amp;fontSize=12"
-                            title="Dashboard service status preview"
-                            allowtransparency="true"
-                            width="300"
-                            height="34"
-                            style="border:0;overflow:hidden;background:transparent;"
-                            loading="lazy"></iframe>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary dashboard-embed-info"
-                        data-bs-toggle="popover"
-                        data-bs-trigger="hover focus"
-                        data-bs-placement="bottom"
-                        data-bs-html="true"
-                        data-bs-content="This embed widget is a small status component you can place on another page. For cross-origin usage, CORS/embed access must be configured by an admin in Settings -> Admin -> Embed Widget. See <a href='https://kairos.wenisch.tech/docs/embed/' target='_blank' rel='noopener noreferrer'>embed docs</a>."
-                        aria-label="Embed information">
-                    <i class="bi bi-info-circle"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary dashboard-embed-copy"
-                        data-copy-dashboard-embed="true"
-                        data-embed-base-src="/embed/status?refresh=30&amp;fontSize=15"
-                        data-embed-src="/embed/status?refresh=30&amp;fontSize=15">
-                    <i class="bi bi-clipboard"></i>
-                </button>
-            </span>
             <p class="text-muted mb-0">Live status, refreshed automatically as checks run.</p>
         </div>
         <div class="dashboard-meta">
@@ -384,6 +356,35 @@
     </div>
 
     <div class="landing-footer-meta mt-auto pt-3">
+        <div class="dashboard-embed-tools landing-embed-tools small mb-1">
+            <div class="dashboard-embed-container">
+                <iframe class="dashboard-embed-preview"
+                        data-embed-base-src="/embed/status?refresh=30&amp;fontSize=9"
+                        src="/embed/status?refresh=30&amp;fontSize=9"
+                        title="Dashboard service status preview"
+                        allowtransparency="true"
+                        scrolling="no"
+                        width="200"
+                        height="24"
+                        style="border:0;overflow:hidden;background:transparent;"
+                        loading="lazy"></iframe>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary dashboard-embed-info"
+                    data-bs-toggle="popover"
+                    data-bs-trigger="hover focus"
+                    data-bs-placement="bottom"
+                    data-bs-html="true"
+                    data-bs-content="This embed widget is a small status component you can place on another page. For cross-origin usage, CORS/embed access must be configured by an admin in Settings -> Admin -> Embed Widget. See <a href='https://kairos.wenisch.tech/docs/embed/' target='_blank' rel='noopener noreferrer'>embed docs</a>."
+                    aria-label="Embed information">
+                <i class="bi bi-info-circle"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary dashboard-embed-copy"
+                    data-copy-dashboard-embed="true"
+                    data-embed-base-src="/embed/status?refresh=30&amp;fontSize=10"
+                    data-embed-src="/embed/status?refresh=30&amp;fontSize=10">
+                <i class="bi bi-clipboard"></i>
+            </button>
+        </div>
         <p class="landing-license-note mb-1">
             <a href="https://github.com/wenisch-tech/Kairos" target="_blank" rel="noopener noreferrer">Kairos</a>
             is open-source software made in Germany and licensed under the GNU AGPL v3.

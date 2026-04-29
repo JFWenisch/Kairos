@@ -729,6 +729,68 @@
     gap: 0.5rem;
 }
 
+.landing-embed-tools {
+    grid-column: 2;
+    justify-self: center;
+    align-self: center;
+    justify-content: center;
+    color: rgba(170, 178, 188, 0.82);
+    gap: 0.2rem;
+}
+
+.landing-embed-tools .dashboard-embed-container {
+    background: linear-gradient(135deg, var(--landing-surface), transparent);
+    border: 1px solid var(--landing-border-soft);
+    padding: 0.05rem 0.08rem;
+    height: 26px;
+    border-radius: 0.4rem;
+    backdrop-filter: blur(2px);
+}
+
+.landing-embed-tools .dashboard-embed-info,
+.landing-embed-tools .dashboard-embed-copy {
+    color: #1f2937;
+    border-color: #d0d7de;
+    background-color: transparent !important;
+    padding: 0.08rem 0.24rem;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.landing-embed-tools .dashboard-embed-info:hover,
+.landing-embed-tools .dashboard-embed-copy:hover {
+    color: #111827;
+    border-color: #b9c4cf;
+    background-color: transparent !important;
+}
+
+.landing-embed-tools .dashboard-embed-info:focus,
+.landing-embed-tools .dashboard-embed-copy:focus,
+.landing-embed-tools .dashboard-embed-info:active,
+.landing-embed-tools .dashboard-embed-copy:active {
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .landing-embed-tools .dashboard-embed-container {
+    background: linear-gradient(135deg, var(--landing-surface), transparent);
+    border: 1px solid var(--landing-border-soft);
+    backdrop-filter: blur(2px);
+}
+
+[data-bs-theme="dark"] .landing-embed-tools .dashboard-embed-info,
+[data-bs-theme="dark"] .landing-embed-tools .dashboard-embed-copy {
+    color: #f4f4f5;
+    border-color: #f4f4f5;
+    background-color: transparent !important;
+}
+
+[data-bs-theme="dark"] .landing-embed-tools .dashboard-embed-info:hover,
+[data-bs-theme="dark"] .landing-embed-tools .dashboard-embed-copy:hover {
+    color: #ffffff;
+    border-color: #ffffff;
+    background-color: transparent !important;
+}
+
 .landing-credit {
     grid-column: 3;
     justify-self: end;
@@ -956,6 +1018,11 @@
     .landing-license-note {
         margin-top: 0.75rem;
         margin-bottom: 0.25rem !important;
+    }
+
+    .landing-embed-tools {
+        grid-column: auto;
+        justify-self: auto;
     }
 }
 
