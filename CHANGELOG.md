@@ -1,5 +1,25 @@
 # Changelog
 
+## v2.0.0 - 2026-04-29
+
+## [2.0.0](https://github.com/wenisch-tech/Kairos/compare/v1.16.0...v2.0.0) (2026-04-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* DOCKERREPOSITORY is no longer a valid monitored resource type. The resourceType field now supports only HTTP and DOCKER. Discovery sources must be managed via Admin -> Resource Discovery, not via monitored resource creation in the API.
+
+Co-authored-by: Copilot <copilot@github.com>
+
+### Features
+
+* replace DOCKERREPOSITORY with Resource Discovery Services ([7add0ac](https://github.com/wenisch-tech/Kairos/commit/7add0ac7b007b20d093bc8051e6f79cf07e4e45a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.0.0
+
+
 ## v1.16.0 - 2026-04-29
 
 ## [1.16.0](https://github.com/wenisch-tech/Kairos/compare/v1.15.0...v1.16.0) (2026-04-29)
