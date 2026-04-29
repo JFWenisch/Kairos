@@ -129,17 +129,22 @@
                             <span th:text="${groupVm.groupName}">Group</span>
                         </h3>
                         <div class="d-flex align-items-center gap-2">
-                            <div th:if="${groupVm.dockerRepositoryResource != null}" class="d-flex align-items-center gap-2">
-                                <span class="badge text-bg-info">Dockerrepository</span>
+                            <div th:if="${groupVm.resourceDiscovery != null}" class="d-flex align-items-center gap-2">
+                                <span class="badge text-bg-info">Discovery Service</span>
                                 <a class="btn btn-outline-secondary btn-sm"
-                                   th:href="@{/admin/resources/edit/{id}(id=${groupVm.dockerRepositoryResource.id})}"
-                                   title="Edit Dockerrepository">
+                                   th:href="@{/admin/resource-discovery/edit/{id}(id=${groupVm.resourceDiscovery.id})}"
+                                   title="Edit Discovery Service">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form th:action="@{/admin/resources/delete/{id}(id=${groupVm.dockerRepositoryResource.id})}" method="post" class="d-inline"
-                                      onsubmit="return confirm('Delete this Dockerrepository and all managed Docker resources?')">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete Dockerrepository">
+                                <form th:action="@{/admin/resource-discovery/delete/{id}(id=${groupVm.resourceDiscovery.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this discovery service and all managed Docker resources?')">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete Discovery Service">
                                         <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/resource-discovery/sync/{id}(id=${groupVm.resourceDiscovery.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm" title="Sync now">
+                                        <i class="bi bi-arrow-repeat"></i>
                                     </button>
                                 </form>
                             </div>
@@ -275,7 +280,7 @@
                         <label class="form-label">Target</label>
                         <input type="text" class="form-control" name="target" required
                                placeholder="https://example.com, nginx:latest, or ghcr.io/jfwenisch">
-                        <div class="form-text">URL, Docker image name, or Dockerrepository prefix.</div>
+                           <div class="form-text">URL or Docker image name.</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Groups</label>
@@ -299,9 +304,9 @@
                     <div class="form-check mt-3">
                         <input class="form-check-input" type="checkbox" id="recursive" name="recursive" value="true">
                         <label class="form-check-label" for="recursive">
-                            Recursive (Dockerrepository only)
+                            Recursive
                         </label>
-                        <div class="form-text">When enabled, includes nested repositories below the given prefix.</div>
+                        <div class="form-text">Used by resource types that support recursive checks.</div>
                     </div>
                 </div>
                 <div class="modal-footer">

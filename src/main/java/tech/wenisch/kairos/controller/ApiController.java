@@ -245,9 +245,6 @@ public class ApiController {
             resource.getGroups().add(group);
         }
         MonitoredResource saved = resourceService.save(resource);
-        if (saved.getResourceType() == tech.wenisch.kairos.entity.ResourceType.DOCKERREPOSITORY) {
-            checkExecutorService.runImmediateCheck(saved);
-        }
         return ResponseEntity.ok(saved);
     }
 

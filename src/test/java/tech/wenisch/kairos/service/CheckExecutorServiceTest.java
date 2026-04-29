@@ -6,10 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.wenisch.kairos.entity.DiscoveryServiceType;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.DiscoveryServiceConfigRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.ResourceDiscoveryRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 import java.util.List;
@@ -44,6 +47,12 @@ class CheckExecutorServiceTest {
     @Mock
     private ResourceTypeConfigRepository configRepository;
 
+    @Mock
+    private ResourceDiscoveryRepository resourceDiscoveryRepository;
+
+    @Mock
+    private DiscoveryServiceConfigRepository discoveryConfigRepository;
+
     private CheckExecutorService checkExecutorService;
 
     @BeforeEach
@@ -54,7 +63,9 @@ class CheckExecutorServiceTest {
                 dockerRepositorySyncService,
                 resourceStatusStreamService,
                 resourceRepository,
-                configRepository
+                configRepository,
+                resourceDiscoveryRepository,
+                discoveryConfigRepository
         );
     }
 
@@ -137,7 +148,7 @@ class CheckExecutorServiceTest {
     void dispatchSkipsTypesWithoutConfig() {
         when(configRepository.findByTypeName("HTTP")).thenReturn(Optional.empty());
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
-        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
+        when(discoveryConfigRepository.findByTypeName(DiscoveryServiceType.DOCKER_REPOSITORY.name())).thenReturn(Optional.empty());
 
         checkExecutorService.dispatch();
 
@@ -161,7 +172,7 @@ class CheckExecutorServiceTest {
                         .parallelism(1)
                         .build()));
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
-        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
+        when(discoveryConfigRepository.findByTypeName(DiscoveryServiceType.DOCKER_REPOSITORY.name())).thenReturn(Optional.empty());
         when(resourceRepository.findByResourceTypeAndActiveTrue(ResourceType.HTTP)).thenReturn(List.of(resource));
 
         checkExecutorService.dispatch();
@@ -175,13 +186,13 @@ class CheckExecutorServiceTest {
     void runChecksOnStartupDelegatesToDispatch() {
         when(configRepository.findByTypeName("HTTP")).thenReturn(Optional.empty());
         when(configRepository.findByTypeName("DOCKER")).thenReturn(Optional.empty());
-        when(configRepository.findByTypeName("DOCKERREPOSITORY")).thenReturn(Optional.empty());
+        when(discoveryConfigRepository.findByTypeName(DiscoveryServiceType.DOCKER_REPOSITORY.name())).thenReturn(Optional.empty());
 
         checkExecutorService.runChecksOnStartup();
 
         verify(configRepository).findByTypeName(eq("HTTP"));
         verify(configRepository).findByTypeName(eq("DOCKER"));
-        verify(configRepository).findByTypeName(eq("DOCKERREPOSITORY"));
+        verify(discoveryConfigRepository).findByTypeName(eq(DiscoveryServiceType.DOCKER_REPOSITORY.name()));
     }
 
     @Test

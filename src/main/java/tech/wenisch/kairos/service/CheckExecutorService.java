@@ -1,9 +1,14 @@
 package tech.wenisch.kairos.service;
 
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.DiscoveryServiceConfig;
+import tech.wenisch.kairos.entity.DiscoveryServiceType;
+import tech.wenisch.kairos.entity.ResourceDiscovery;
 import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.DiscoveryServiceConfigRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.ResourceDiscoveryRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +38,8 @@ public class CheckExecutorService {
     private final ResourceStatusStreamService resourceStatusStreamService;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
+    private final ResourceDiscoveryRepository resourceDiscoveryRepository;
+    private final DiscoveryServiceConfigRepository discoveryConfigRepository;
 
     private final Map<String, Long> lastRunTimeMap = new ConcurrentHashMap<>();
     private final Map<String, ExecutorService> executorMap = new ConcurrentHashMap<>();
@@ -44,13 +51,17 @@ public class CheckExecutorService {
             DockerRepositorySyncService dockerRepositorySyncService,
             ResourceStatusStreamService resourceStatusStreamService,
             MonitoredResourceRepository resourceRepository,
-            ResourceTypeConfigRepository configRepository) {
+            ResourceTypeConfigRepository configRepository,
+            ResourceDiscoveryRepository resourceDiscoveryRepository,
+            DiscoveryServiceConfigRepository discoveryConfigRepository) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
         this.dockerRepositorySyncService = dockerRepositorySyncService;
         this.resourceStatusStreamService = resourceStatusStreamService;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
+        this.resourceDiscoveryRepository = resourceDiscoveryRepository;
+        this.discoveryConfigRepository = discoveryConfigRepository;
     }
 
     @Scheduled(fixedDelay = 30000)
@@ -75,6 +86,27 @@ public class CheckExecutorService {
                     submitCheck(executor, resource, type, false);
                 }
                 log.debug("Dispatched checks for type {} ({} resources)", typeName, resources.size());
+            }
+        }
+
+        for (DiscoveryServiceType type : DiscoveryServiceType.values()) {
+            String typeName = type.name();
+            DiscoveryServiceConfig config = discoveryConfigRepository.findByTypeName(typeName).orElse(null);
+            if (config == null) continue;
+
+            long intervalMs = (long) config.getSyncIntervalMinutes() * 60 * 1000;
+            long lastRun = lastRunTimeMap.getOrDefault(typeName, 0L);
+
+            if (now - lastRun >= intervalMs) {
+                lastRunTimeMap.put(typeName, now);
+                int parallelism = Math.max(1, config.getParallelism());
+                ExecutorService executor = resolveExecutor(typeName, parallelism);
+
+                List<ResourceDiscovery> discoveries = resourceDiscoveryRepository.findByTypeAndActiveTrue(type);
+                for (ResourceDiscovery discovery : discoveries) {
+                    submitDiscoverySync(executor, discovery);
+                }
+                log.debug("Dispatched discovery sync for type {} ({} services)", typeName, discoveries.size());
             }
         }
     }
@@ -102,6 +134,20 @@ public class CheckExecutorService {
 
         ExecutorService executor = resolveExecutor(type.name(), parallelism);
         return submitCheck(executor, resource, type, true);
+    }
+
+    public boolean runImmediateDiscoverySync(ResourceDiscovery discovery) {
+        if (discovery == null || !discovery.isActive() || discovery.getType() == null) {
+            return false;
+        }
+
+        int parallelism = discoveryConfigRepository.findByTypeName(discovery.getType().name())
+                .map(DiscoveryServiceConfig::getParallelism)
+                .map(value -> Math.max(1, value))
+                .orElse(1);
+
+        ExecutorService executor = resolveExecutor(discovery.getType().name(), parallelism);
+        return submitDiscoverySync(executor, discovery);
     }
 
     /**
@@ -176,11 +222,28 @@ public class CheckExecutorService {
             } else if (type == ResourceType.DOCKER) {
                 publishCheckingState(resource);
                 dockerCheckService.check(resource);
-            } else if (type == ResourceType.DOCKERREPOSITORY) {
-                dockerRepositorySyncService.sync(resource);
             }
         } catch (Exception e) {
             log.error("Error checking resource {}: {}", resource.getName(), e.getMessage(), e);
+        }
+    }
+
+    private boolean submitDiscoverySync(ExecutorService executor, ResourceDiscovery discovery) {
+        try {
+            executor.submit(() -> executeDiscoverySync(discovery));
+            return true;
+        } catch (RejectedExecutionException ex) {
+            log.warn("Skipping discovery sync for '{}' (type {}) because the worker queue is full",
+                    discovery.getName(), discovery.getType().name());
+            return false;
+        }
+    }
+
+    private void executeDiscoverySync(ResourceDiscovery discovery) {
+        try {
+            dockerRepositorySyncService.sync(discovery);
+        } catch (Exception e) {
+            log.error("Error syncing discovery service {}: {}", discovery.getName(), e.getMessage(), e);
         }
     }
 

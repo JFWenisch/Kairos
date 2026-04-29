@@ -8,9 +8,16 @@ This page describes how check intervals and parallelism work.
 |---------------|------------------|---------------------|
 | HTTP | 1 minute | 5 threads |
 | DOCKER | 3600 minutes (60 h) | 2 threads |
-| DOCKERREPOSITORY | 60 minutes | 1 thread |
 
 Settings are managed in **Admin -> Resource Types**.
+
+## Resource Discovery Defaults
+
+| Discovery Service Type | Default Sync Interval | Default Parallelism |
+|------------------------|-----------------------|---------------------|
+| DOCKER_REPOSITORY | 60 minutes | 1 thread |
+
+Settings are managed in **Admin -> Resource Discovery**.
 
 ## How Scheduler Timing Works
 
@@ -81,8 +88,8 @@ flowchart TD
 - Outage retention uses end date to preserve full incident duration before deletion.
 - If you need long-term analytics, export data before lowering retention days.
 
-## DOCKERREPOSITORY Behavior
+## DOCKER_REPOSITORY Discovery Behavior
 
-`DOCKERREPOSITORY` runs do not create direct check entries.
+`DOCKER_REPOSITORY` sync runs do not create direct check entries.
 
 Instead, each run synchronizes discovered images into generated `DOCKER` resources in an auto-created group and removes resources that no longer exist in the upstream registry.

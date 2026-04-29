@@ -35,8 +35,11 @@ import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.AnnouncementKind;
 import tech.wenisch.kairos.entity.AuthType;
 import tech.wenisch.kairos.entity.CorsAllowedOrigin;
+import tech.wenisch.kairos.entity.DiscoveryServiceAuth;
+import tech.wenisch.kairos.entity.DiscoveryServiceType;
 import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceDiscovery;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.entity.ResourceType;
@@ -44,6 +47,7 @@ import tech.wenisch.kairos.entity.ResourceTypeAuth;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.entity.UserRole;
 import tech.wenisch.kairos.repository.CorsAllowedOriginRepository;
+import tech.wenisch.kairos.repository.DiscoveryServiceAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeAuthRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
@@ -53,6 +57,7 @@ import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.CustomHeaderService;
 import tech.wenisch.kairos.service.EmbedSettingsService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
+import tech.wenisch.kairos.service.ResourceDiscoveryManagementService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
@@ -71,10 +76,12 @@ public class AdminController {
     private final ResourceGroupService resourceGroupService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final ResourceTypeAuthRepository resourceTypeAuthRepository;
+    private final DiscoveryServiceAuthRepository discoveryServiceAuthRepository;
     private final CorsAllowedOriginRepository corsAllowedOriginRepository;
     private final EmbedSettingsService embedSettingsService;
     private final ApplicationVersionService applicationVersionService;
     private final CustomHeaderService customHeaderService;
+    private final ResourceDiscoveryManagementService resourceDiscoveryManagementService;
 
     @GetMapping
     public String admin() {
@@ -558,6 +565,142 @@ public class AdminController {
         return "redirect:/admin/resource-types";
     }
 
+    @GetMapping("/resource-discovery")
+    public String resourceDiscovery(Model model) {
+        model.addAttribute("discoveryServices", resourceDiscoveryManagementService.findAll());
+        model.addAttribute("configs", resourceDiscoveryManagementService.findAllConfigs());
+        model.addAttribute("discoveryServiceTypes", DiscoveryServiceType.values());
+        return "admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/add")
+    public String addResourceDiscovery(@RequestParam String name,
+                                       @RequestParam DiscoveryServiceType type,
+                                       @RequestParam String target,
+                                       @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                                       @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
+                                       @RequestParam(name = "active", defaultValue = "false") boolean active,
+                                       RedirectAttributes redirectAttributes) {
+        ResourceDiscovery discovery = ResourceDiscovery.builder()
+                .name(name)
+                .type(type)
+                .target(target)
+                .skipTls(skipTls)
+                .recursive(recursive)
+                .active(active)
+                .build();
+        resourceDiscoveryManagementService.save(discovery);
+        redirectAttributes.addFlashAttribute("successMessage", "Resource discovery service added: " + name);
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @GetMapping("/resource-discovery/edit/{id}")
+    public String editResourceDiscovery(@PathVariable Long id,
+                                        Model model,
+                                        RedirectAttributes redirectAttributes) {
+        return resourceDiscoveryManagementService.findById(id)
+                .map(discovery -> {
+                    model.addAttribute("discovery", discovery);
+                    model.addAttribute("discoveryServiceTypes", DiscoveryServiceType.values());
+                    return "admin/resource-discovery-edit";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Discovery service not found.");
+                    return "redirect:/admin/resource-discovery";
+                });
+    }
+
+    @PostMapping("/resource-discovery/edit/{id}")
+    public String updateResourceDiscovery(@PathVariable Long id,
+                                          @RequestParam String name,
+                                          @RequestParam DiscoveryServiceType type,
+                                          @RequestParam String target,
+                                          @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
+                                          @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
+                                          @RequestParam(name = "active", defaultValue = "false") boolean active,
+                                          RedirectAttributes redirectAttributes) {
+        resourceDiscoveryManagementService.findById(id).ifPresentOrElse(discovery -> {
+            discovery.setName(name == null ? "" : name.trim());
+            discovery.setType(type);
+            discovery.setTarget(target == null ? "" : target.trim());
+            discovery.setSkipTls(skipTls);
+            discovery.setRecursive(recursive);
+            discovery.setActive(active);
+            resourceDiscoveryManagementService.save(discovery);
+            redirectAttributes.addFlashAttribute("successMessage", "Discovery service updated: " + discovery.getName());
+        }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Discovery service not found."));
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/delete/{id}")
+    public String deleteResourceDiscovery(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        resourceDiscoveryManagementService.findById(id).ifPresent(discovery -> {
+            resourceDiscoveryManagementService.delete(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Discovery service deleted: " + discovery.getName());
+        });
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/config/update")
+    public String updateDiscoveryConfig(@RequestParam Long id,
+                                        @RequestParam int syncIntervalMinutes,
+                                        @RequestParam int parallelism,
+                                        RedirectAttributes redirectAttributes) {
+        resourceDiscoveryManagementService.findConfigById(id).ifPresent(config -> {
+            config.setSyncIntervalMinutes(Math.max(1, syncIntervalMinutes));
+            config.setParallelism(Math.max(1, parallelism));
+            resourceDiscoveryManagementService.saveConfig(config);
+        });
+        redirectAttributes.addFlashAttribute("successMessage", "Discovery configuration updated");
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/{configId}/auth/add")
+    public String addDiscoveryAuth(@PathVariable Long configId,
+                                   @RequestParam String name,
+                                   @RequestParam String urlPattern,
+                                   @RequestParam String username,
+                                   @RequestParam String password,
+                                   RedirectAttributes redirectAttributes) {
+        resourceDiscoveryManagementService.findConfigById(configId).ifPresent(config -> {
+            DiscoveryServiceAuth auth = DiscoveryServiceAuth.builder()
+                    .discoveryServiceConfig(config)
+                    .name(name)
+                    .authType(AuthType.BASIC)
+                    .urlPattern(urlPattern)
+                    .username(username)
+                    .password(password)
+                    .build();
+            discoveryServiceAuthRepository.save(auth);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + name + "' added to " + config.getTypeName());
+        });
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/auth/delete/{authId}")
+    public String deleteDiscoveryAuth(@PathVariable Long authId, RedirectAttributes redirectAttributes) {
+        discoveryServiceAuthRepository.findById(authId).ifPresent(auth -> {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Authentication '" + auth.getName() + "' deleted");
+            discoveryServiceAuthRepository.delete(auth);
+        });
+        return "redirect:/admin/resource-discovery";
+    }
+
+    @PostMapping("/resource-discovery/sync/{id}")
+    public String syncResourceDiscovery(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        resourceDiscoveryManagementService.findById(id).ifPresentOrElse(discovery -> {
+            boolean triggered = checkExecutorService.runImmediateDiscoverySync(discovery);
+            if (triggered) {
+                redirectAttributes.addFlashAttribute("successMessage", "Discovery sync queued: " + discovery.getName());
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Could not queue discovery sync for: " + discovery.getName());
+            }
+        }, () -> redirectAttributes.addFlashAttribute("errorMessage", "Discovery service not found."));
+        return "redirect:/admin/resource-discovery";
+    }
+
     @GetMapping("/users")
     public String users(Model model) {
         model.addAttribute("users", userService.findAll());
@@ -727,17 +870,16 @@ public class AdminController {
     private List<AdminResourceGroupViewModel> buildAdminResourceGroups(List<MonitoredResource> resources,
                                                                         List<ResourceGroup> groups) {
         Map<Long, List<MonitoredResource>> byGroupId = new LinkedHashMap<>();
-        Map<String, MonitoredResource> dockerRepositoryByManagedGroupName = new LinkedHashMap<>();
+        Map<String, ResourceDiscovery> discoveryByManagedGroupName = new LinkedHashMap<>();
         List<MonitoredResource> ungrouped = new ArrayList<>();
 
-        for (MonitoredResource resource : resources) {
-            if (resource.getResourceType() == ResourceType.DOCKERREPOSITORY) {
-                for (String managedGroupName : resourceService.managedGroupNames(resource)) {
-                    dockerRepositoryByManagedGroupName.put(managedGroupName, resource);
-                }
-                continue;
+        for (ResourceDiscovery discovery : resourceDiscoveryManagementService.findAll()) {
+            for (String managedGroupName : resourceDiscoveryManagementService.managedGroupNames(discovery)) {
+                discoveryByManagedGroupName.put(managedGroupName, discovery);
             }
+        }
 
+        for (MonitoredResource resource : resources) {
             if (resource.getGroups().isEmpty()) {
                 ungrouped.add(resource);
                 continue;
@@ -762,7 +904,7 @@ public class AdminController {
                     .groupName(group.getName())
                     .ungrouped(false)
                     .resources(groupedResources)
-                    .dockerRepositoryResource(dockerRepositoryByManagedGroupName.get(group.getName()))
+                    .resourceDiscovery(discoveryByManagedGroupName.get(group.getName()))
                     .build());
         }
 

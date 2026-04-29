@@ -3,6 +3,7 @@ package tech.wenisch.kairos.dto;
 import lombok.Builder;
 import lombok.Data;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceDiscovery;
 
 import java.util.List;
 
@@ -13,5 +14,5 @@ public class AdminResourceGroupViewModel {
     private String groupName;
     private boolean ungrouped;
     private List<MonitoredResource> resources;
-    private MonitoredResource dockerRepositoryResource;
+    private ResourceDiscovery resourceDiscovery;
 }

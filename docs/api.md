@@ -234,10 +234,10 @@ Add a new resource to monitor.
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `HTTP`, `DOCKER`, or `DOCKERREPOSITORY` | Yes |
-| `target` | string | Full URL, Docker image reference, or Docker repository prefix (for example `ghcr.io/jfwenisch`) | Yes |
+| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
+| `target` | string | Full URL or Docker image reference | Yes |
 | `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections (HTTP checks and Docker registry checks) | No |
-| `recursive` | boolean | `true` or `false`; used by `DOCKERREPOSITORY` to include nested repository paths | No |
+| `recursive` | boolean | `true` or `false`; used by resource types that support recursive behavior | No |
 
 **Response** `200 OK` — the created resource object
 
@@ -246,7 +246,7 @@ Add a new resource to monitor.
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/resources \
   -H "Content-Type: application/json" \
-  -d '{"name":"Example","resourceType":"DOCKERREPOSITORY","target":"ghcr.io/jfwenisch","skipTLS":false,"recursive":true}'
+  -d '{"name":"Example","resourceType":"DOCKER","target":"ghcr.io/jfwenisch/example:latest","skipTLS":false,"recursive":false}'
 ```
 
 ---
@@ -418,11 +418,7 @@ Performs an HTTP GET to the `target` URL with a 15-second timeout. A `2xx` respo
 
 Validates Docker/OCI pullability via registry API calls (manifest + blob probes). A successful probe is **AVAILABLE**; any registry/auth/pullability error is **NOT_AVAILABLE**.
 
-### `DOCKERREPOSITORY`
-
-Treats `target` as a repository prefix (for example `ghcr.io/jfwenisch`) and synchronizes discovered images into generated `DOCKER` resources within an auto-created resource group. `recursive=true` includes nested repositories; `recursive=false` includes only direct children.
-
-`DOCKERREPOSITORY` itself has no direct status/check history; generated `DOCKER` resources carry the check results.
+Resource discovery (for example Docker namespace/repository discovery) is configured in the Admin UI under **Admin -> Resource Discovery**, not via `resourceType` in this API.
 
 ---
 
@@ -511,10 +507,10 @@ Add a new resource to monitor.
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `HTTP`, `DOCKER`, or `DOCKERREPOSITORY` | Yes |
-| `target` | string | Full URL, Docker image reference, or Docker repository prefix | Yes |
+| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
+| `target` | string | Full URL or Docker image reference | Yes |
 | `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections | No |
-| `recursive` | boolean | `true` or `false`; used by `DOCKERREPOSITORY` | No |
+| `recursive` | boolean | `true` or `false`; used by resource types that support recursive behavior | No |
 
 **Response** `200 OK` — the created resource object
 
@@ -536,7 +532,7 @@ Add a new resource to monitor.
 ```bash
 curl -b cookies.txt -X POST http://localhost:8080/api/resources \
   -H "Content-Type: application/json" \
-  -d '{"name":"Example","resourceType":"DOCKERREPOSITORY","target":"ghcr.io/jfwenisch","recursive":true}'
+  -d '{"name":"Example","resourceType":"DOCKER","target":"ghcr.io/jfwenisch/example:latest","recursive":false}'
 ```
 
 ---
@@ -605,9 +601,7 @@ Performs an HTTP GET to the `target` URL with a 15-second timeout. A `2xx` respo
 
 Validates Docker/OCI pullability via registry API calls (manifest + blob probes). A successful probe is **AVAILABLE**; any registry/auth/pullability error is **NOT_AVAILABLE**.
 
-### `DOCKERREPOSITORY`
-
-Synchronizes discovered repositories under the configured prefix into generated `DOCKER` resources. `recursive=true` includes nested repository paths.
+Resource discovery (for example Docker namespace/repository discovery) is configured in the Admin UI under **Admin -> Resource Discovery**, not via `resourceType` in this API.
 
 ---
 

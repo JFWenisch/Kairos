@@ -2,7 +2,7 @@
 
 Kairos validates Docker/OCI image **pullability** without requiring Docker Engine, Podman, containerd, or a mounted socket.
 
-For `DOCKERREPOSITORY` resources, Kairos first discovers matching repositories (for example from `ghcr.io/<owner>`), then creates/updates generated `DOCKER` resources for each discovered image. Pullability checks are executed on those generated Docker resources.
+For `DOCKER_REPOSITORY` discovery services, Kairos first discovers matching repositories (for example from `ghcr.io/<owner>`), then creates/updates generated `DOCKER` resources for each discovered image. Pullability checks are executed on those generated Docker resources.
 
 ## Why this exists
 
@@ -51,7 +51,7 @@ flowchart TD
 
 `skipTLS` on a resource also applies to Docker registry checks.
 
-For `DOCKERREPOSITORY`, `skipTLS` also applies during repository discovery API calls.
+For `DOCKER_REPOSITORY`, `skipTLS` also applies during repository discovery API calls.
 
 When enabled, Kairos bypasses certificate-chain and hostname verification for that resource's HTTPS calls.
 

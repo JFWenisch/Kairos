@@ -6,7 +6,12 @@ Kairos supports attaching authentication credentials to resource type configurat
 
 ## Overview
 
-Credentials are managed **per resource type** (e.g. HTTP, DOCKER, DOCKERREPOSITORY) inside the Admin Panel under **Resource Types**. Each credential entry has:
+Credentials are managed per checker/discovery configuration:
+
+- **Resource Types** for runtime checks (for example `HTTP`, `DOCKER`)
+- **Resource Discovery** for discovery sync sources (for example `DOCKER_REPOSITORY`)
+
+Each credential entry has:
 
 | Field | Description |
 |-------|-------------|
@@ -58,8 +63,8 @@ flowchart TD
 
 ## Managing Credentials in the Admin Panel
 
-1. Navigate to **Admin → Resource Types**.
-2. Find the resource type you want to configure (e.g. `HTTP`, `DOCKER`, or `DOCKERREPOSITORY`).
+1. Navigate to **Admin → Resource Types** (for HTTP/DOCKER checks) or **Admin → Resource Discovery** (for discovery sync).
+2. Find the type you want to configure.
 3. Click **Add Authentication** to expand the form.
 4. Fill in the fields:
    - **Name** — e.g. `My Private Registry`
@@ -125,7 +130,7 @@ Any Docker resource whose target starts with `ghcr.io` will use those credential
 
 Any Docker resource whose target starts with `registry.example.com` will use those credentials for registry authentication.
 
-For `DOCKERREPOSITORY` discovery, Kairos reuses Docker credentials (`DOCKER` resource type config) to authenticate discovery requests against registries and, for GHCR owner discovery, against the GitHub API when matching credentials are configured.
+For `DOCKER_REPOSITORY` discovery services, credentials are configured in **Admin -> Resource Discovery** and used for registry discovery requests and, for GHCR owner discovery, for GitHub API calls when patterns match.
 
 > **Note:** Registry checks are socketless and do not need local Docker/Podman binaries.
 

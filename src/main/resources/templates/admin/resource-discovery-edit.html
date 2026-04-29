@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Edit Discovery Service - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0"><i class="bi bi-pencil-square me-2"></i>Edit Discovery Service</h2>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/resource-discovery}">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="@{/admin/resource-discovery/edit/{id}(id=${discovery.id})}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required maxlength="255" th:value="${discovery.name}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" name="type" required>
+                                <option th:each="type : ${discoveryServiceTypes}"
+                                        th:value="${type}"
+                                        th:selected="${discovery.type == type}"
+                                        th:text="${type}">TYPE</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Target</label>
+                            <input type="text" class="form-control" name="target" required maxlength="1000" th:value="${discovery.target}">
+                            <div class="form-text">Registry namespace, for example ghcr.io/owner or registry.example.com/team.</div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="skipTLS" name="skipTLS" value="true"
+                                   th:checked="${discovery.skipTls}">
+                            <label class="form-check-label" for="skipTLS">Ignore TLS certificate and hostname errors</label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="recursive" name="recursive" value="true"
+                                   th:checked="${discovery.recursive}">
+                            <label class="form-check-label" for="recursive">Recursive discovery</label>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="active" name="active" value="true"
+                                   th:checked="${discovery.active}">
+                            <label class="form-check-label" for="active">Active</label>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Save Changes
+                            </button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/resource-discovery}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

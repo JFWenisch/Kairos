@@ -15,19 +15,12 @@
 
 ![Status Dashboard – Card View](docs/img/kairos-hero.png)
 
-| Screenshot | Description |
-|---|---|
-| ![Status Dashboard](docs/img/dashboard.png) | **Status Dashboard (Timeline view)** — 24-hour timeline bars per resource, uptime percentages, and active outage indicators across multiple groups. |
-| ![Status Dashboard](docs/img/dashboard-cards.png) | **Status Dashboard (Card view)** — card based overview per resource, uptime percentages, and active outage indicators across multiple groups. |
-| ![Resource Detail](docs/img/resource-detail.png) | **Resource Detail** — Full check history table with status, response time, and error codes; manual "Check Now" button and outage history. |
-| ![Manage Resources](docs/img/admin-resources.png) | **Admin · Manage Resources** — Add, edit, and delete monitored resources; drag-and-drop reordering within and across groups. |
-| ![Resource Types](docs/img/admin-resource-types.png) | **Admin · Resource Type Configuration** — Configure check intervals, parallelism, outage and recovery thresholds per resource type (HTTP, Docker, Docker Repository). |
-| ![Announcements](docs/img/admin-announcements.png) | **Admin · Announcements** — Create and manage rich-text status announcements with severity levels and optional auto-expiry. |
-| ![API Keys](docs/img/admin-api-keys.png) | **Admin · API Keys** — Generate and revoke named API keys for machine-to-machine access to the REST API. |
-| ![Users](docs/img/admin-users.png) | **Admin · Users** — Manage local user accounts and passwords. |
-| ![Settings](docs/img/admin-settings.png) | **Admin · General Settings** — Application-wide settings including public submission mode and OIDC configuration. |
-| ![Outages Timeline](docs/img/outages-timeline.png) | **Outages · Calendar (Timeline view)** — Gantt-style outage calendar showing per-resource outage bars across a 7-day window with time-axis ticks and active outage highlight. |
-| ![Outages List](docs/img/outages-list.png) | **Outages · List** — Tabular outage log with resource name, type, active/resolved status badge, start time, end time, and duration; supports filtering by status and time range. |
+|  |  |  |
+|---|---|---|
+| ![Status Dashboard Timeline](docs/img/dashboard.png)<br><sub>Status Dashboard (Timeline)</sub> | ![Status Dashboard Cards](docs/img/dashboard-cards.png)<br><sub>Status Dashboard (Card view)</sub> | ![Resource Detail](docs/img/resource-detail.png)<br><sub>Resource Detail</sub> |
+| ![Manage Resources](docs/img/admin-resources.png)<br><sub>Admin: Manage Resources</sub> | ![Resource Types](docs/img/admin-resource-types.png)<br><sub>Admin: Resource Types</sub> | ![Announcements](docs/img/admin-announcements.png)<br><sub>Admin: Announcements</sub> |
+| ![API Keys](docs/img/admin-api-keys.png)<br><sub>Admin: API Keys</sub> | ![Users](docs/img/admin-users.png)<br><sub>Admin: Users</sub> | ![Settings](docs/img/admin-settings.png)<br><sub>Admin: General Settings</sub> |
+| ![Outages Timeline](docs/img/outages-timeline.png)<br><sub>Outages: Calendar Timeline</sub> | ![Outages List](docs/img/outages-list.png)<br><sub>Outages: List</sub> |  |
 
 ---
 
@@ -36,7 +29,7 @@
 - **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
 - **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
 - **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
-- **Dockerrepository discovery** - provide a repository prefix (for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
+- **Resource discovery services** - configure discovery sources (currently Docker registry/namespace discovery, for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
 - **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
 - **Instant checks on startup** - monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** - 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table

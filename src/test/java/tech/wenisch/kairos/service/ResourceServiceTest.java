@@ -26,7 +26,6 @@ import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
-import tech.wenisch.kairos.entity.ResourceType;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.CheckResultRepository;
 import tech.wenisch.kairos.repository.MonitoredResourceRepository;
@@ -158,59 +157,6 @@ class ResourceServiceTest {
         assertThat(savedClosedOutage.getEndDate()).isNotNull();
 
         verify(resourceRepository).delete(resource);
-        }
-
-        @Test
-        void deleteDockerRepositoryAlsoDeletesManagedDockerResourcesAndGroup() {
-        MonitoredResource dockerRepository = MonitoredResource.builder()
-            .id(50L)
-            .name("registry")
-            .resourceType(ResourceType.DOCKERREPOSITORY)
-            .target("https://registry.example.com/registry/images/")
-            .active(true)
-            .build();
-
-        ResourceGroup managedGroup = ResourceGroup.builder()
-            .id(15L)
-            .name("registry")
-            .build();
-
-        MonitoredResource managedDocker = MonitoredResource.builder()
-            .id(51L)
-            .name("alpine")
-            .resourceType(ResourceType.DOCKER)
-            .target("registry.example.com/images/alpine:latest")
-            .active(true)
-            .build();
-        managedDocker.getGroups().add(managedGroup);
-
-        CheckResult managedHistory = CheckResult.builder().id(100L).resource(managedDocker).build();
-        CheckResult repositoryHistory = CheckResult.builder().id(101L).resource(dockerRepository).build();
-        Outage managedOutage = Outage.builder().id(201L).resource(managedDocker).build();
-        Outage repositoryOutage = Outage.builder().id(202L).resource(dockerRepository).build();
-
-        when(resourceRepository.findById(50L)).thenReturn(Optional.of(dockerRepository));
-        when(resourceTypeConfigRepository.findAll()).thenReturn(List.of(ResourceTypeConfig.builder()
-            .deleteOutagesOnResourceDelete(true)
-            .build()));
-        when(resourceGroupRepository.findByNameIgnoreCase("registry")).thenReturn(Optional.of(managedGroup));
-        when(resourceGroupRepository.findByNameIgnoreCase("Dockerrepository: https://registry.example.com/registry/images/")).thenReturn(Optional.empty());
-        when(resourceRepository.findByGroups_IdAndResourceType(15L, ResourceType.DOCKER)).thenReturn(List.of(managedDocker));
-        when(resourceRepository.findByGroups_Id(15L)).thenReturn(List.of());
-        when(outageRepository.findByResourceOrderByStartDateDesc(managedDocker)).thenReturn(List.of(managedOutage));
-        when(outageRepository.findByResourceOrderByStartDateDesc(dockerRepository)).thenReturn(List.of(repositoryOutage));
-        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(managedDocker)).thenReturn(List.of(managedHistory));
-        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(dockerRepository)).thenReturn(List.of(repositoryHistory));
-
-        resourceService.delete(50L);
-
-        verify(outageRepository).deleteAll(List.of(managedOutage));
-        verify(outageRepository).deleteAll(List.of(repositoryOutage));
-        verify(checkResultRepository).delete(managedHistory);
-        verify(resourceRepository).delete(managedDocker);
-        verify(resourceGroupRepository).delete(managedGroup);
-        verify(checkResultRepository).delete(repositoryHistory);
-        verify(resourceRepository).delete(dockerRepository);
         }
 
     @Test

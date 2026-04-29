@@ -34,11 +34,12 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-grid-3x3-gap me-2"></i>Resource Types
     </a>
-    <a th:href="@{/admin/embed}"
-       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/embed')} ? 'active' : ''"
+    <a th:href="@{/admin/resource-discovery}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/resource-discovery')} ? 'active' : ''"
        class="nav-link px-2 py-2 rounded mb-1">
-        <i class="bi bi-badge-ad me-2"></i>Embed Widget
+        <i class="bi bi-search me-2"></i>Resource Discovery
     </a>
+    <hr class="border-secondary my-2">
     <a th:href="@{/admin/users}"
        th:classappend="${currentRequestUri != null and currentRequestUri.contains('/users')} ? 'active' : ''"
        class="nav-link px-2 py-2 rounded mb-1">
@@ -56,6 +57,12 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-code-square me-2"></i>Custom Headers
     </a>
+    <a th:href="@{/admin/embed}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/embed')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-badge-ad me-2"></i>Embed Widget
+    </a>
+    <hr class="border-secondary my-2">
     <a th:href="@{/api}"
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-braces me-2"></i>API Docs

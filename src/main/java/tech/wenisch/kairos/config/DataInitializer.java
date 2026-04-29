@@ -1,7 +1,9 @@
 package tech.wenisch.kairos.config;
 
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.entity.DiscoveryServiceConfig;
 import tech.wenisch.kairos.repository.AppUserRepository;
+import tech.wenisch.kairos.repository.DiscoveryServiceConfigRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.UserService;
 import tech.wenisch.kairos.entity.UserRole;
@@ -19,6 +21,7 @@ public class DataInitializer implements ApplicationRunner {
     private final AppUserRepository userRepository;
     private final UserService userService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
+    private final DiscoveryServiceConfigRepository discoveryServiceConfigRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -77,20 +80,16 @@ public class DataInitializer implements ApplicationRunner {
                     .build());
             log.info("Created default ResourceTypeConfig for DOCKER");
         }
-        if (resourceTypeConfigRepository.findByTypeName("DOCKERREPOSITORY").isEmpty()) {
-            resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
-                    .typeName("DOCKERREPOSITORY")
-                    .checkIntervalMinutes(60)
+
+        resourceTypeConfigRepository.findByTypeName("DOCKERREPOSITORY").ifPresent(resourceTypeConfigRepository::delete);
+
+        if (discoveryServiceConfigRepository.findByTypeName("DOCKER_REPOSITORY").isEmpty()) {
+            discoveryServiceConfigRepository.save(DiscoveryServiceConfig.builder()
+                    .typeName("DOCKER_REPOSITORY")
+                    .syncIntervalMinutes(60)
                     .parallelism(1)
-                    .allowPublicAdd(false)
-                    .checkHistoryRetentionEnabled(true)
-                    .checkHistoryRetentionIntervalMinutes(60)
-                    .checkHistoryRetentionDays(31)
-                    .outageRetentionEnabled(true)
-                    .outageRetentionIntervalHours(12)
-                    .outageRetentionDays(31)
                     .build());
-            log.info("Created default ResourceTypeConfig for DOCKERREPOSITORY");
+            log.info("Created default DiscoveryServiceConfig for DOCKER_REPOSITORY");
         }
     }
 }

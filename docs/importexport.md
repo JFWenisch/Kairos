@@ -58,12 +58,8 @@ resources:
     recursive: false
     active: true
     createdAt: 2026-03-11T12:10:00
-  - name: GHCR Namespace
-    resourceType: DOCKERREPOSITORY
-    target: ghcr.io/jfwenisch
-    recursive: true
-    active: true
-    createdAt: 2026-03-11T12:15:00
+
+> Note: Resource discovery services are configured separately in **Admin -> Resource Discovery** and are not part of this monitored-resource import/export format.
 ```
 
 ## Compatibility Strategy
