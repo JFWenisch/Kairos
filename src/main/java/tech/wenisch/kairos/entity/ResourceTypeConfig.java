@@ -45,6 +45,15 @@ public class ResourceTypeConfig {
     private int checkHistoryRetentionDays = 31;
 
     @Builder.Default
+    private boolean outageRetentionEnabled = true;
+
+    @Builder.Default
+    private int outageRetentionIntervalHours = 12;
+
+    @Builder.Default
+    private int outageRetentionDays = 31;
+
+    @Builder.Default
     private int outageThreshold = 3;
 
     @Builder.Default

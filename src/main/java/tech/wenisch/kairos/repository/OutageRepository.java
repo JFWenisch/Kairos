@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import tech.wenisch.kairos.entity.MonitoredResource;
 import tech.wenisch.kairos.entity.Outage;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -20,6 +21,8 @@ public interface OutageRepository extends JpaRepository<Outage, Long> {
     /** Fetch all active outages with their resources in a single JOIN FETCH query. */
     @Query("SELECT o FROM Outage o JOIN FETCH o.resource WHERE o.active = true ORDER BY o.startDate DESC")
     List<Outage> findAllActiveWithResource();
+
+    long deleteByActiveFalseAndEndDateBefore(LocalDateTime cutoff);
 
     long countByActiveTrue();
 }

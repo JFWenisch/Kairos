@@ -56,6 +56,9 @@ public class DataInitializer implements ApplicationRunner {
                     .checkHistoryRetentionEnabled(true)
                     .checkHistoryRetentionIntervalMinutes(60)
                     .checkHistoryRetentionDays(31)
+                    .outageRetentionEnabled(true)
+                    .outageRetentionIntervalHours(12)
+                    .outageRetentionDays(31)
                     .build());
             log.info("Created default ResourceTypeConfig for HTTP");
         }
@@ -68,6 +71,9 @@ public class DataInitializer implements ApplicationRunner {
                     .checkHistoryRetentionEnabled(true)
                     .checkHistoryRetentionIntervalMinutes(60)
                     .checkHistoryRetentionDays(31)
+                    .outageRetentionEnabled(true)
+                    .outageRetentionIntervalHours(12)
+                    .outageRetentionDays(31)
                     .build());
             log.info("Created default ResourceTypeConfig for DOCKER");
         }
@@ -80,6 +86,9 @@ public class DataInitializer implements ApplicationRunner {
                     .checkHistoryRetentionEnabled(true)
                     .checkHistoryRetentionIntervalMinutes(60)
                     .checkHistoryRetentionDays(31)
+                    .outageRetentionEnabled(true)
+                    .outageRetentionIntervalHours(12)
+                    .outageRetentionDays(31)
                     .build());
             log.info("Created default ResourceTypeConfig for DOCKERREPOSITORY");
         }

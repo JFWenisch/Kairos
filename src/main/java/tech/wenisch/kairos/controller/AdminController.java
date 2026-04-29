@@ -132,6 +132,15 @@ public class AdminController {
                 .map(ResourceTypeConfig::getCheckHistoryRetentionDays)
                 .findFirst()
                 .orElse(31);
+        boolean outageRetentionEnabled = configs.stream().anyMatch(ResourceTypeConfig::isOutageRetentionEnabled);
+        int outageRetentionIntervalHours = configs.stream()
+            .map(ResourceTypeConfig::getOutageRetentionIntervalHours)
+            .findFirst()
+            .orElse(12);
+        int outageRetentionDays = configs.stream()
+            .map(ResourceTypeConfig::getOutageRetentionDays)
+            .findFirst()
+            .orElse(31);
         boolean deleteOutagesOnResourceDelete = configs.stream().anyMatch(ResourceTypeConfig::isDeleteOutagesOnResourceDelete);
         model.addAttribute("allowPublicAccess", allowPublicAccess);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
@@ -140,6 +149,9 @@ public class AdminController {
         model.addAttribute("checkHistoryRetentionEnabled", checkHistoryRetentionEnabled);
         model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
         model.addAttribute("checkHistoryRetentionDays", checkHistoryRetentionDays);
+        model.addAttribute("outageRetentionEnabled", outageRetentionEnabled);
+        model.addAttribute("outageRetentionIntervalHours", outageRetentionIntervalHours);
+        model.addAttribute("outageRetentionDays", outageRetentionDays);
         model.addAttribute("deleteOutagesOnResourceDelete", deleteOutagesOnResourceDelete);
         model.addAttribute("corsAllowedOrigins", corsAllowedOriginRepository.findAll());
         model.addAttribute("configs", configs);
@@ -154,10 +166,15 @@ public class AdminController {
                                @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
                                @RequestParam(defaultValue = "60") int checkHistoryRetentionIntervalMinutes,
                                @RequestParam(defaultValue = "31") int checkHistoryRetentionDays,
+                               @RequestParam(defaultValue = "false") boolean outageRetentionEnabled,
+                               @RequestParam(defaultValue = "12") int outageRetentionIntervalHours,
+                               @RequestParam(defaultValue = "31") int outageRetentionDays,
                                @RequestParam(defaultValue = "false") boolean deleteOutagesOnResourceDelete,
                                RedirectAttributes redirectAttributes) {
         int sanitizedRetentionIntervalMinutes = Math.max(1, checkHistoryRetentionIntervalMinutes);
         int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
+        int sanitizedOutageRetentionIntervalHours = Math.max(1, outageRetentionIntervalHours);
+        int sanitizedOutageRetentionDays = Math.max(1, outageRetentionDays);
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
             config.setAllowPublicAccess(allowPublicAccess);
@@ -167,6 +184,9 @@ public class AdminController {
             config.setCheckHistoryRetentionEnabled(checkHistoryRetentionEnabled);
             config.setCheckHistoryRetentionIntervalMinutes(sanitizedRetentionIntervalMinutes);
             config.setCheckHistoryRetentionDays(sanitizedRetentionDays);
+            config.setOutageRetentionEnabled(outageRetentionEnabled);
+            config.setOutageRetentionIntervalHours(sanitizedOutageRetentionIntervalHours);
+            config.setOutageRetentionDays(sanitizedOutageRetentionDays);
             config.setDeleteOutagesOnResourceDelete(deleteOutagesOnResourceDelete);
             resourceTypeConfigRepository.save(config);
         }
