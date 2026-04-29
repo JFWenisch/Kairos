@@ -1,5 +1,29 @@
 # Changelog
 
+## v1.16.0 - 2026-04-29
+
+## [1.16.0](https://github.com/wenisch-tech/Kairos/compare/v1.15.0...v1.16.0) (2026-04-29)
+
+
+### Features
+
+* Adding job for outage retention (automatically deleting data older then x) ([5eb0bde](https://github.com/wenisch-tech/Kairos/commit/5eb0bdebf55cb5f554c53a2128316ae90088e33a))
+
+
+### Bug Fixes
+
+* Ensured proper closing of outages if linked resources are deleted ([939e249](https://github.com/wenisch-tech/Kairos/commit/939e24995360e02ba9910bdf01feeda7b5a91619))
+
+
+### Documentation
+
+* updated docs structure, added diagrams and added additional information ([7c29039](https://github.com/wenisch-tech/Kairos/commit/7c29039c7f0c94c876d6dfbc967a49666222b2b0))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:1.16.0
+
+
 ## v1.15.0 - 2026-04-27
 
 ## [1.15.0](https://github.com/wenisch-tech/Kairos/compare/v1.14.0...v1.15.0) (2026-04-27)
