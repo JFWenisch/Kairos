@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.tuple;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceServiceTest {
@@ -115,6 +116,49 @@ class ResourceServiceTest {
         verify(checkResultRepository).delete(resultTwo);
         verify(resourceRepository).delete(resource);
     }
+
+        @Test
+        void deleteClosesAndUnlinksOutagesWhenConfiguredToKeepOutages() {
+        MonitoredResource resource = MonitoredResource.builder().id(8L).name("to-delete").active(true).build();
+        Outage activeOutage = Outage.builder().id(11L).resource(resource).startDate(LocalDateTime.now().minusHours(2)).active(true).build();
+        Outage closedOutage = Outage.builder()
+            .id(12L)
+            .resource(resource)
+            .startDate(LocalDateTime.now().minusDays(1))
+            .endDate(LocalDateTime.now().minusHours(20))
+            .active(false)
+            .build();
+
+        when(resourceRepository.findById(8L)).thenReturn(Optional.of(resource));
+        when(resourceTypeConfigRepository.findAll()).thenReturn(List.of(ResourceTypeConfig.builder()
+            .deleteOutagesOnResourceDelete(false)
+            .build()));
+        when(outageRepository.findByResourceOrderByStartDateDesc(resource)).thenReturn(List.of(activeOutage, closedOutage));
+        when(checkResultRepository.findByResourceOrderByCheckedAtDesc(resource)).thenReturn(List.of());
+
+        resourceService.delete(8L);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Outage>> outageCaptor = ArgumentCaptor.forClass(List.class);
+        verify(outageRepository).saveAll(outageCaptor.capture());
+        List<Outage> savedOutages = outageCaptor.getValue();
+
+        assertThat(savedOutages)
+            .extracting(Outage::getId, Outage::getResource)
+            .containsExactlyInAnyOrder(
+                tuple(11L, null),
+                tuple(12L, null));
+
+        Outage savedActiveOutage = savedOutages.stream().filter(o -> o.getId().equals(11L)).findFirst().orElseThrow();
+        assertThat(savedActiveOutage.isActive()).isFalse();
+        assertThat(savedActiveOutage.getEndDate()).isNotNull();
+
+        Outage savedClosedOutage = savedOutages.stream().filter(o -> o.getId().equals(12L)).findFirst().orElseThrow();
+        assertThat(savedClosedOutage.isActive()).isFalse();
+        assertThat(savedClosedOutage.getEndDate()).isNotNull();
+
+        verify(resourceRepository).delete(resource);
+        }
 
         @Test
         void deleteDockerRepositoryAlsoDeletesManagedDockerResourcesAndGroup() {

@@ -94,7 +94,16 @@ public class ResourceService {
         if (deleteOutages) {
             outageRepository.deleteAll(outages);
         } else {
-            outages.forEach(o -> o.setResource(null));
+            LocalDateTime now = LocalDateTime.now();
+            outages.forEach(o -> {
+                if (o.isActive()) {
+                    o.setActive(false);
+                    if (o.getEndDate() == null) {
+                        o.setEndDate(now);
+                    }
+                }
+                o.setResource(null);
+            });
             outageRepository.saveAll(outages);
         }
     }
