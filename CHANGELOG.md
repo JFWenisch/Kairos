@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.0.1 - 2026-04-29
+
+### [2.0.1](https://github.com/wenisch-tech/Kairos/compare/v2.0.0...v2.0.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* updated embed location and moved it to the bottom ([f057e0f](https://github.com/wenisch-tech/Kairos/commit/f057e0f702cbc9f64bfc7d37f0bbdd2ead2a7637))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.0.1
+
+
 ## v2.0.0 - 2026-04-29
 
 ## [2.0.0](https://github.com/wenisch-tech/Kairos/compare/v1.16.0...v2.0.0) (2026-04-29)
