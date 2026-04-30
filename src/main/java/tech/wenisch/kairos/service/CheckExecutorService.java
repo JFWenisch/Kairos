@@ -35,6 +35,7 @@ public class CheckExecutorService {
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
     private final DockerRepositorySyncService dockerRepositorySyncService;
+    private final OpenshiftRouteSyncService openshiftRouteSyncService;
     private final ResourceStatusStreamService resourceStatusStreamService;
     private final MonitoredResourceRepository resourceRepository;
     private final ResourceTypeConfigRepository configRepository;
@@ -49,6 +50,7 @@ public class CheckExecutorService {
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
             DockerRepositorySyncService dockerRepositorySyncService,
+            OpenshiftRouteSyncService openshiftRouteSyncService,
             ResourceStatusStreamService resourceStatusStreamService,
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository,
@@ -57,6 +59,7 @@ public class CheckExecutorService {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
         this.dockerRepositorySyncService = dockerRepositorySyncService;
+        this.openshiftRouteSyncService = openshiftRouteSyncService;
         this.resourceStatusStreamService = resourceStatusStreamService;
         this.resourceRepository = resourceRepository;
         this.configRepository = configRepository;
@@ -241,7 +244,11 @@ public class CheckExecutorService {
 
     private void executeDiscoverySync(ResourceDiscovery discovery) {
         try {
-            dockerRepositorySyncService.sync(discovery);
+            if (discovery.getType() == DiscoveryServiceType.DOCKER_REPOSITORY) {
+                dockerRepositorySyncService.sync(discovery);
+            } else if (discovery.getType() == DiscoveryServiceType.OPENSHIFT_ROUTE) {
+                openshiftRouteSyncService.sync(discovery);
+            }
         } catch (Exception e) {
             log.error("Error syncing discovery service {}: {}", discovery.getName(), e.getMessage(), e);
         }

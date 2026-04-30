@@ -1,5 +1,6 @@
 package tech.wenisch.kairos.entity;
 
 public enum DiscoveryServiceType {
-    DOCKER_REPOSITORY
+    DOCKER_REPOSITORY,
+    OPENSHIFT_ROUTE
 }

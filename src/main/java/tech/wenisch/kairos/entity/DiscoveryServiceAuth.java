@@ -32,5 +32,6 @@ public class DiscoveryServiceAuth {
 
     private String username;
 
+    @Column(length = 4000)
     private String password;
 }
