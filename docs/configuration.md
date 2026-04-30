@@ -23,6 +23,7 @@ This section groups settings by operational concern so teams can move from basel
 ## Related Operational Guides
 
 - [Authentication for resource checks](authentication.md)
+- [Instant Check](instant-check.md)
 - [REST API reference](api.md)
 - [Import / Export](importexport.md)
 - [Docker pullability](docker-pullability.md)

@@ -129,6 +129,14 @@ public class AdminController {
         boolean allowPublicAccess = configs.stream().allMatch(ResourceTypeConfig::isAllowPublicAccess);
         boolean allowPublicAdd = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicAdd);
         boolean allowPublicCheckNow = configs.stream().anyMatch(ResourceTypeConfig::isAllowPublicCheckNow);
+        boolean instantCheckEnabled = configs.stream().anyMatch(ResourceTypeConfig::isInstantCheckEnabled);
+        boolean instantCheckAllowPublic = configs.stream().anyMatch(ResourceTypeConfig::isInstantCheckAllowPublic);
+        boolean instantCheckUseStoredAuth = configs.stream().anyMatch(ResourceTypeConfig::isInstantCheckUseStoredAuth);
+        String instantCheckAllowedDomains = configs.stream()
+            .map(ResourceTypeConfig::getInstantCheckAllowedDomains)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse("*");
         boolean alwaysDisplayUrl = configs.stream().anyMatch(ResourceTypeConfig::isAlwaysDisplayUrl);
         boolean checkHistoryRetentionEnabled = configs.stream().anyMatch(ResourceTypeConfig::isCheckHistoryRetentionEnabled);
         int checkHistoryRetentionIntervalMinutes = configs.stream()
@@ -152,6 +160,10 @@ public class AdminController {
         model.addAttribute("allowPublicAccess", allowPublicAccess);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
+        model.addAttribute("instantCheckEnabled", instantCheckEnabled);
+        model.addAttribute("instantCheckAllowPublic", instantCheckAllowPublic);
+        model.addAttribute("instantCheckUseStoredAuth", instantCheckUseStoredAuth);
+        model.addAttribute("instantCheckAllowedDomains", instantCheckAllowedDomains);
         model.addAttribute("alwaysDisplayUrl", alwaysDisplayUrl);
         model.addAttribute("checkHistoryRetentionEnabled", checkHistoryRetentionEnabled);
         model.addAttribute("checkHistoryRetentionIntervalMinutes", checkHistoryRetentionIntervalMinutes);
@@ -169,6 +181,10 @@ public class AdminController {
     public String saveSettings(@RequestParam(defaultValue = "false") boolean allowPublicAccess,
                                @RequestParam(defaultValue = "false") boolean allowPublicAdd,
                                @RequestParam(defaultValue = "false") boolean allowPublicCheckNow,
+                               @RequestParam(defaultValue = "false") boolean instantCheckEnabled,
+                               @RequestParam(defaultValue = "false") boolean instantCheckAllowPublic,
+                               @RequestParam(defaultValue = "false") boolean instantCheckUseStoredAuth,
+                               @RequestParam(defaultValue = "*") String instantCheckAllowedDomains,
                                @RequestParam(defaultValue = "false") boolean alwaysDisplayUrl,
                                @RequestParam(defaultValue = "false") boolean checkHistoryRetentionEnabled,
                                @RequestParam(defaultValue = "60") int checkHistoryRetentionIntervalMinutes,
@@ -182,11 +198,19 @@ public class AdminController {
         int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
         int sanitizedOutageRetentionIntervalHours = Math.max(1, outageRetentionIntervalHours);
         int sanitizedOutageRetentionDays = Math.max(1, outageRetentionDays);
+        String normalizedInstantCheckAllowedDomains =
+            (instantCheckAllowedDomains == null || instantCheckAllowedDomains.trim().isEmpty())
+                ? "*"
+                : instantCheckAllowedDomains.trim();
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
         for (ResourceTypeConfig config : configs) {
             config.setAllowPublicAccess(allowPublicAccess);
             config.setAllowPublicAdd(allowPublicAdd);
             config.setAllowPublicCheckNow(allowPublicCheckNow);
+            config.setInstantCheckEnabled(instantCheckEnabled);
+            config.setInstantCheckAllowPublic(instantCheckAllowPublic);
+            config.setInstantCheckUseStoredAuth(instantCheckUseStoredAuth);
+            config.setInstantCheckAllowedDomains(normalizedInstantCheckAllowedDomains);
             config.setAlwaysDisplayUrl(alwaysDisplayUrl);
             config.setCheckHistoryRetentionEnabled(checkHistoryRetentionEnabled);
             config.setCheckHistoryRetentionIntervalMinutes(sanitizedRetentionIntervalMinutes);

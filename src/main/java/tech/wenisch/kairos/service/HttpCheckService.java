@@ -1,5 +1,6 @@
 package tech.wenisch.kairos.service;
 
+import tech.wenisch.kairos.dto.InstantCheckExecutionResult;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
@@ -43,6 +44,48 @@ public class HttpCheckService {
 
     private final HttpClient httpClient = createDefaultHttpClient();
     private final HttpClient insecureHttpClient = createInsecureHttpClient();
+
+    public InstantCheckExecutionResult probe(String target, boolean skipTls, boolean useStoredAuth) {
+        String url = target == null ? "" : target.trim();
+        long checkStartedNanos = System.nanoTime();
+        try {
+            URI uri = URI.create(url);
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(15))
+                    .GET();
+
+            if (useStoredAuth) {
+                authService.findMatchingAuth(url, "HTTP").ifPresent(auth -> {
+                    String credentials = auth.getUsername() + ":" + auth.getPassword();
+                    String encoded = Base64.getEncoder().encodeToString(credentials.getBytes());
+                    requestBuilder.header("Authorization", "Basic " + encoded);
+                });
+            }
+
+            HttpResponse<Void> response = (skipTls ? insecureHttpClient : httpClient)
+                    .send(requestBuilder.build(), HttpResponse.BodyHandlers.discarding());
+            int statusCode = response.statusCode();
+
+            CheckStatus status = statusCode >= 200 && statusCode < 300
+                    ? CheckStatus.AVAILABLE
+                    : CheckStatus.NOT_AVAILABLE;
+
+            return InstantCheckExecutionResult.builder()
+                    .status(status)
+                    .message("HTTP " + statusCode)
+                    .errorCode(String.valueOf(statusCode))
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .build();
+        } catch (Exception e) {
+            return InstantCheckExecutionResult.builder()
+                    .status(CheckFailureClassifier.resolveStatus(e))
+                    .message(e.getMessage())
+                    .errorCode("CONNECTION_ERROR")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .build();
+        }
+    }
 
     public CheckResult check(MonitoredResource resource) {
         String url = resource.getTarget();

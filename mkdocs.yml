@@ -40,6 +40,7 @@ nav:
       - Custom Headers: custom-headers.md
   - Operations:
       - REST API: api.md
+      - Instant Check: instant-check.md
       - Docker Pullability: docker-pullability.md
       - Import / Export: importexport.md
       - Embed Status Widget: embed.md

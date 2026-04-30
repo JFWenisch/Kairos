@@ -33,6 +33,19 @@ public class ResourceTypeConfig {
     private boolean allowPublicCheckNow;
 
     @Builder.Default
+    private boolean instantCheckEnabled = false;
+
+    @Builder.Default
+    private boolean instantCheckAllowPublic = false;
+
+    @Builder.Default
+    private boolean instantCheckUseStoredAuth = false;
+
+    @Builder.Default
+    @Column(length = 4000)
+    private String instantCheckAllowedDomains = "*";
+
+    @Builder.Default
     private boolean alwaysDisplayUrl = false;
 
     @Builder.Default

@@ -17,6 +17,7 @@ import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.EmbedSettingsService;
+import tech.wenisch.kairos.service.InstantCheckService;
 import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
@@ -61,6 +62,7 @@ public class HomeController {
     private final OutageService outageService;
     private final EmbedSettingsService embedSettingsService;
     private final ResourceGroupService resourceGroupService;
+    private final InstantCheckService instantCheckService;
 
     @GetMapping("/")
     public String index(Authentication authentication, Model model) {
@@ -92,13 +94,23 @@ public class HomeController {
                 .map(entry -> new DashboardGroupShell(groupsById.get(entry.getKey()), entry.getValue()))
                 .toList();
 
+        boolean allowPublicAdd = isPublicAddAllowed();
+        boolean allowResourceSubmit = allowPublicAdd || authenticated;
+
         model.addAttribute("totalResourceCount", resources.size());
         model.addAttribute("ungroupedResources", ungroupedResources);
         model.addAttribute("groupedResources", groupedResources);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
-        model.addAttribute("allowPublicAdd", isPublicAddAllowed());
+        model.addAttribute("allowPublicAdd", allowPublicAdd);
+        model.addAttribute("allowResourceSubmit", allowResourceSubmit);
         model.addAttribute("showResourceUrl", shouldShowResourceUrl(authentication));
         model.addAttribute("resourceTypes", ResourceType.values());
+        InstantCheckService.InstantCheckSettings instantCheckSettings = instantCheckService.getSettings();
+        model.addAttribute("instantCheckEnabled", instantCheckSettings.enabled());
+        model.addAttribute("instantCheckAvailableForCurrentUser",
+            instantCheckSettings.enabled() && (instantCheckSettings.allowPublic() || authenticated));
+        model.addAttribute("instantCheckRequiresAuth",
+            instantCheckSettings.enabled() && !instantCheckSettings.allowPublic() && !authenticated);
         model.addAttribute("appVersion", applicationVersionService.getVersion());
         return "index";
     }
@@ -166,10 +178,11 @@ public class HomeController {
             @RequestParam String target,
             @RequestParam(name = "skipTLS", defaultValue = "false") boolean skipTls,
             @RequestParam(name = "recursive", defaultValue = "false") boolean recursive,
+            Authentication authentication,
             RedirectAttributes redirectAttributes
     ) {
-        if (!isPublicAddAllowed()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Public resource submission is currently disabled.");
+        if (!isPublicAddAllowed() && !isAuthenticated(authentication)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Authentication is required to submit resources.");
             return "redirect:/";
         }
 

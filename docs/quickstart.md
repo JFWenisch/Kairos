@@ -95,6 +95,7 @@ Then open `http://localhost:8080`.
 ## Common Next Tasks
 
 - Runtime and database tuning: [configuration.md](configuration.md)
+- Instant check configuration and behavior: [instant-check.md](instant-check.md)
 - Resource auth patterns: [authentication.md](authentication.md)
 - API usage and payloads: [api.md](api.md)
 - Import/export resources: [importexport.md](importexport.md)

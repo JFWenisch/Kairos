@@ -77,6 +77,42 @@
                             </label>
                             <div class="form-text">When enabled, unauthenticated users can manually trigger a check on any resource detail page.</div>
                         </div>
+                        <hr class="my-4">
+
+                        <h6 class="mb-3"><i class="bi bi-lightning-charge me-2"></i>Instant Check</h6>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="instantCheckEnabled"
+                                   name="instantCheckEnabled" th:checked="${instantCheckEnabled}">
+                            <label class="form-check-label" for="instantCheckEnabled">
+                                Enable instant check form on landing page
+                            </label>
+                            <div class="form-text">Shows an inline check form in the dashboard header without storing a resource.</div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="instantCheckAllowPublic"
+                                   name="instantCheckAllowPublic" th:checked="${instantCheckAllowPublic}">
+                            <label class="form-check-label" for="instantCheckAllowPublic">
+                                Allow public instant checks
+                            </label>
+                            <div class="form-text">When disabled, users must be authenticated to execute instant checks.</div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="instantCheckUseStoredAuth"
+                                   name="instantCheckUseStoredAuth" th:checked="${instantCheckUseStoredAuth}">
+                            <label class="form-check-label" for="instantCheckUseStoredAuth">
+                                Use stored authentication mappings for instant checks
+                            </label>
+                            <div class="form-text">Matches configured auth credentials using the same wildcard behavior as resource checks.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="instantCheckAllowedDomains" class="form-label">Allowed domains / targets (one entry per line)</label>
+                            <textarea class="form-control"
+                                      id="instantCheckAllowedDomains"
+                                      name="instantCheckAllowedDomains"
+                                      rows="5"
+                                      th:text="${instantCheckAllowedDomains}"></textarea>
+                            <div class="form-text">Use <code>*</code> to allow all targets (default). Wildcards are supported, for example <code>example.com/*</code>.</div>
+                        </div>
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="alwaysDisplayUrl"
                                    name="alwaysDisplayUrl" th:checked="${alwaysDisplayUrl}">

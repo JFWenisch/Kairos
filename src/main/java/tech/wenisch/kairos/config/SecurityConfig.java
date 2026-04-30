@@ -89,7 +89,7 @@ public class SecurityConfig {
             .requestMatchers("/login", "/error", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
             .requestMatchers("/embed/**").permitAll()
             .requestMatchers("/groups/**").permitAll()
-            .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
+            .requestMatchers("/", "/announcements", "/outages", "/resources/**", "/instant-check", "/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/h2-console/**",
                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/api")
             .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
                 isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())

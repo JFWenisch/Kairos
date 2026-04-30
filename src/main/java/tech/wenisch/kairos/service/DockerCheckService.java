@@ -2,6 +2,7 @@ package tech.wenisch.kairos.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import tech.wenisch.kairos.dto.InstantCheckExecutionResult;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
@@ -57,6 +58,53 @@ public class DockerCheckService {
 
     private final HttpClient httpClient = createDefaultHttpClient();
     private final HttpClient insecureHttpClient = createInsecureHttpClient();
+
+    public InstantCheckExecutionResult probe(String target, boolean skipTls, boolean useStoredAuth) {
+        String image = target == null ? "" : target.trim();
+        long checkStartedNanos = System.nanoTime();
+        try {
+            DockerImageRef imageRef = parseImageRef(image);
+
+            Optional<ResourceTypeAuth> authOpt = useStoredAuth
+                    ? resolveDockerAuth(image, imageRef)
+                    : Optional.empty();
+            String basicAuthHeader = authOpt
+                    .map(auth -> toBasicHeader(auth.getUsername(), auth.getPassword()))
+                    .orElse(null);
+            String authUsername = authOpt.map(ResourceTypeAuth::getUsername).orElse(null);
+
+            HttpClient client = skipTls ? insecureHttpClient : httpClient;
+            AuthState authState = new AuthState(
+                    basicAuthHeader,
+                    authUsername,
+                    null
+            );
+
+            ManifestResponse manifestResponse = fetchManifest(client, imageRef, imageRef.reference(), authState);
+            List<String> blobDigests = extractBlobDigests(client, imageRef, manifestResponse, authState);
+
+            if (blobDigests.isEmpty()) {
+                throw new RuntimeException("Manifest has no blobs to validate pullability");
+            }
+
+            for (String digest : blobDigests) {
+                probeBlobDownload(client, imageRef, digest, authState);
+            }
+
+            return InstantCheckExecutionResult.builder()
+                    .status(CheckStatus.AVAILABLE)
+                    .message("Manifest and " + blobDigests.size() + " blobs downloadable")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .build();
+        } catch (Exception e) {
+            return InstantCheckExecutionResult.builder()
+                    .status(CheckFailureClassifier.resolveStatus(e))
+                    .message(e.getMessage())
+                    .errorCode("DOCKER_ERROR")
+                    .latencyMs(elapsedMillis(checkStartedNanos))
+                    .build();
+        }
+    }
 
     public CheckResult check(MonitoredResource resource) {
         String image = resource.getTarget();

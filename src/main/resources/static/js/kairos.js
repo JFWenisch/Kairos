@@ -227,6 +227,7 @@ function initializeOutageSinceCounters() {
 
 document.addEventListener('DOMContentLoaded', function() {
     applyTheme(detectPreferredTheme());
+    initializeInstantCheckForm();
     initializeBootstrapPopovers();
     initializeResourceNameFilter();
     initializeSnapshotStatusFilters();
@@ -241,6 +242,204 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshAllGroupCounters();
     initAdminResourceSorting();
 });
+
+function initializeInstantCheckForm() {
+    const form = document.getElementById('instant-check-form');
+    if (!form) {
+        return;
+    }
+
+    let lastInstantCheckRequest = null;
+
+    const submitButton = document.getElementById('instant-check-submit');
+    const submitLabel = submitButton ? submitButton.querySelector('.instant-check-submit-label') : null;
+    const submitLoading = submitButton ? submitButton.querySelector('.instant-check-submit-loading') : null;
+    const trackButton = document.getElementById('instant-check-track-button');
+
+    if (trackButton) {
+        trackButton.addEventListener('click', function() {
+            if (!lastInstantCheckRequest) {
+                return;
+            }
+
+            const resourceTypeField = document.getElementById('resource-type');
+            const resourceTargetField = document.getElementById('resource-target');
+            const resourceNameField = document.getElementById('resource-name');
+            const resourceSkipTlsField = document.getElementById('resource-skip-tls');
+
+            if (resourceTypeField) {
+                resourceTypeField.value = lastInstantCheckRequest.resourceType;
+            }
+            if (resourceTargetField) {
+                resourceTargetField.value = lastInstantCheckRequest.target;
+            }
+            if (resourceSkipTlsField) {
+                resourceSkipTlsField.checked = !!lastInstantCheckRequest.skipTls;
+            }
+            if (resourceNameField && !resourceNameField.value) {
+                resourceNameField.value = lastInstantCheckRequest.target;
+            }
+
+            const resultModalEl = document.getElementById('instantCheckResultModal');
+            if (resultModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const resultModal = bootstrap.Modal.getInstance(resultModalEl);
+                if (resultModal) {
+                    resultModal.hide();
+                }
+            }
+
+            const submitModalEl = document.getElementById('publicResourceModal');
+            if (submitModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const submitModal = bootstrap.Modal.getOrCreateInstance(submitModalEl);
+                submitModal.show();
+            }
+        });
+    }
+
+    function setLoadingState(loading) {
+        if (!submitButton) {
+            return;
+        }
+        submitButton.disabled = loading;
+        if (submitLabel) {
+            submitLabel.hidden = loading;
+        }
+        if (submitLoading) {
+            submitLoading.hidden = !loading;
+        }
+    }
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const typeInput = document.getElementById('instant-check-type');
+        const targetInput = document.getElementById('instant-check-target');
+        const skipTlsInput = document.getElementById('instant-check-skip-tls');
+        const target = targetInput ? targetInput.value.trim() : '';
+
+        if (!typeInput || !targetInput || target.length === 0) {
+            showInstantCheckResult({
+                status: 'UNKNOWN',
+                message: 'Please provide resource type and target.',
+                errorCode: 'INVALID_INPUT'
+            });
+            return;
+        }
+
+        lastInstantCheckRequest = {
+            resourceType: typeInput.value,
+            target: target,
+            skipTls: !!(skipTlsInput && skipTlsInput.checked)
+        };
+
+        const body = new URLSearchParams(new FormData(form));
+        body.set('resourceType', typeInput.value);
+        body.set('target', target);
+        if (skipTlsInput && skipTlsInput.checked) {
+            body.set('skipTLS', 'true');
+        } else {
+            body.delete('skipTLS');
+        }
+
+        setLoadingState(true);
+        fetch('/instant-check', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+            },
+            body: body.toString(),
+            credentials: 'same-origin'
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return {};
+                }).then(function(payload) {
+                    return { ok: response.ok, payload: payload };
+                });
+            })
+            .then(function(result) {
+                const payload = result.payload || {};
+                showInstantCheckResult({
+                    status: payload.status || 'UNKNOWN',
+                    message: payload.message || (result.ok ? 'Check finished.' : 'Instant check failed.'),
+                    errorCode: payload.errorCode || (result.ok ? '' : 'REQUEST_FAILED'),
+                    latencyMs: payload.latencyMs
+                });
+            })
+            .catch(function() {
+                showInstantCheckResult({
+                    status: 'UNKNOWN',
+                    message: 'Network error while running instant check.',
+                    errorCode: 'NETWORK_ERROR'
+                });
+            })
+            .finally(function() {
+                setLoadingState(false);
+            });
+    });
+}
+
+function showInstantCheckResult(result) {
+    const status = String(result.status || 'UNKNOWN').toUpperCase();
+    const iconWrap = document.getElementById('instant-check-result-icon');
+    const statusElement = document.getElementById('instant-check-result-status');
+    const summaryElement = document.getElementById('instant-check-result-summary');
+    const latencyElement = document.getElementById('instant-check-result-latency');
+    const messageWrapElement = document.querySelector('.instant-check-result-message-wrap');
+    const messageElement = document.getElementById('instant-check-result-message');
+    const codeElement = document.getElementById('instant-check-result-code');
+    const timeElement = document.getElementById('instant-check-result-time');
+
+    if (!iconWrap || !statusElement || !messageElement || !codeElement) {
+        return;
+    }
+
+    iconWrap.classList.remove('status-available', 'status-not-available', 'status-unknown');
+
+    if (status === 'AVAILABLE') {
+        iconWrap.classList.add('status-available');
+        iconWrap.innerHTML = '<i class="bi bi-check-circle"></i>';
+    } else if (status === 'NOT_AVAILABLE') {
+        iconWrap.classList.add('status-not-available');
+        iconWrap.innerHTML = '<i class="bi bi-exclamation-octagon"></i>';
+    } else {
+        iconWrap.classList.add('status-unknown');
+        iconWrap.innerHTML = '<i class="bi bi-question-circle"></i>';
+    }
+
+    statusElement.textContent = status;
+    if (summaryElement) {
+        summaryElement.textContent = status === 'AVAILABLE'
+            ? 'Target is reachable.'
+            : (status === 'NOT_AVAILABLE' ? 'Target check failed.' : 'Result is inconclusive.');
+    }
+    const shouldShowMessage = status !== 'AVAILABLE' && !!(result.message && String(result.message).trim());
+    if (messageWrapElement) {
+        messageWrapElement.hidden = !shouldShowMessage;
+    }
+    messageElement.textContent = shouldShowMessage ? String(result.message).trim() : '';
+    codeElement.textContent = result.errorCode ? result.errorCode : '-';
+
+    if (latencyElement) {
+        latencyElement.textContent = result.latencyMs !== undefined && result.latencyMs !== null
+            ? (result.latencyMs + ' ms')
+            : '-';
+    }
+
+    if (timeElement) {
+        timeElement.textContent = new Date().toLocaleString();
+    }
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const modalEl = document.getElementById('instantCheckResultModal');
+        if (!modalEl) {
+            return;
+        }
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
 
 function initializeBootstrapPopovers() {
     if (typeof bootstrap === 'undefined' || !bootstrap.Popover) {

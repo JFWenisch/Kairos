@@ -68,10 +68,48 @@
                     <i class="bi bi-columns-gap"></i> Cards
                 </button>
             </div>
-            <button type="button" class="btn btn-sm btn-primary mt-1" th:if="${allowPublicAdd}"
+            <button type="button" class="btn btn-sm btn-primary mt-1" th:if="${allowResourceSubmit}"
                     data-bs-toggle="modal" data-bs-target="#publicResourceModal">
                 <i class="bi bi-plus-circle me-1"></i>Submit Resource
             </button>
+        </div>
+    </div>
+
+    <div class="instant-check-panel mb-4" th:if="${instantCheckEnabled}">
+        <div class="instant-check-panel-header">
+            <h2 class="h5 mb-1"><i class="bi bi-lightning-charge me-2"></i>Instant Check</h2>
+            <p class="text-muted mb-0">Run an immediate one-off check without creating a resource.</p>
+        </div>
+        <div class="instant-check-inline"
+             th:if="${instantCheckAvailableForCurrentUser}">
+            <form id="instant-check-form" class="instant-check-form" th:action="@{/instant-check}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <select id="instant-check-type" name="resourceType" class="form-select form-select-sm" aria-label="Resource type">
+                    <option th:each="resourceType : ${resourceTypes}" th:value="${resourceType}" th:text="${resourceType}">HTTP</option>
+                </select>
+                <input id="instant-check-target"
+                       name="target"
+                       type="text"
+                       class="form-control form-control-sm"
+                       maxlength="1000"
+                       placeholder="https://example.com/health or ghcr.io/org/image:tag"
+                       required>
+                <div class="form-check form-check-inline m-0">
+                    <input class="form-check-input" type="checkbox" id="instant-check-skip-tls" name="skipTLS" value="true">
+                    <label class="form-check-label small" for="instant-check-skip-tls">Skip TLS</label>
+                </div>
+                <button id="instant-check-submit" type="submit" class="btn btn-sm btn-warning">
+                    <span class="instant-check-submit-label"><i class="bi bi-lightning-charge me-1"></i>Instant Check</span>
+                    <span class="instant-check-submit-loading" hidden>
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Running...
+                    </span>
+                </button>
+            </form>
+        </div>
+        <div class="instant-check-auth-note" th:if="${instantCheckRequiresAuth}">
+            <small class="text-muted">Instant check requires authentication.</small>
+            <a class="btn btn-sm btn-outline-secondary ms-2" th:href="@{/login}">Sign in</a>
         </div>
     </div>
 
@@ -133,7 +171,7 @@
     <div th:if="${#lists.isEmpty(ungroupedResources) and #lists.isEmpty(groupedResources)}" class="text-center py-5">
         <i class="bi bi-emoji-smile display-1 text-muted"></i>
         <p class="text-muted mt-3">No resources being monitored yet.</p>
-        <button type="button" class="btn btn-primary" th:if="${allowPublicAdd}"
+        <button type="button" class="btn btn-primary" th:if="${allowResourceSubmit}"
                 data-bs-toggle="modal" data-bs-target="#publicResourceModal">
             <i class="bi bi-plus-circle me-1"></i>Submit Resource
         </button>
@@ -396,8 +434,50 @@
     </div>
 </div>
 
+<div class="modal fade" id="instantCheckResultModal" tabindex="-1" aria-labelledby="instantCheckResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content instant-check-result-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="instantCheckResultModalLabel">Instant Check Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="instant-check-result-head">
+                    <div id="instant-check-result-icon" class="instant-check-result-icon status-unknown">
+                        <i class="bi bi-question-circle"></i>
+                    </div>
+                    <div id="instant-check-result-status" class="fw-semibold mt-2">UNKNOWN</div>
+                    <small id="instant-check-result-summary" class="text-muted">Check finished.</small>
+                </div>
+                <div class="instant-check-result-message-wrap mt-3">
+                    <p id="instant-check-result-message" class="mb-0"></p>
+                </div>
+                <div class="instant-check-result-meta mt-3">
+                    <div class="instant-check-result-meta-item">
+                        <span class="label">Latency</span>
+                        <span id="instant-check-result-latency" class="value">-</span>
+                    </div>
+                    <div class="instant-check-result-meta-item">
+                        <span class="label">Return code</span>
+                        <span id="instant-check-result-code" class="value">-</span>
+                    </div>
+                    <div class="instant-check-result-meta-item">
+                        <span class="label">Checked at</span>
+                        <span id="instant-check-result-time" class="value">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" th:if="${allowResourceSubmit}">
+                <button type="button" class="btn btn-primary" id="instant-check-track-button">
+                    <i class="bi bi-plus-circle me-1"></i>Track As Resource
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="publicResourceModal" tabindex="-1" aria-labelledby="publicResourceModalLabel" aria-hidden="true"
-     th:if="${allowPublicAdd}">
+     th:if="${allowResourceSubmit}">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
