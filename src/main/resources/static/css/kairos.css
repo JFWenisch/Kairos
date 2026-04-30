@@ -278,6 +278,14 @@
     animation: pulse 2s infinite;
 }
 
+.resource-not-viewable .timeline-block-skeleton,
+.resource-not-viewable .status-dot.status-checking,
+.resource-not-viewable .status-dot-lg.status-checking,
+.resource-not-viewable .status-dot.status-not-available,
+.resource-not-viewable .status-dot-lg.status-not-available {
+    animation: none !important;
+}
+
 .announcement-card {
     background-color: rgba(255, 255, 255, 0.03);
 }

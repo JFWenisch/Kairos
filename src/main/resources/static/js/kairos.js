@@ -88,6 +88,83 @@ function waitForNextRenderStep(delayMs) {
     });
 }
 
+function isElementViewable(element) {
+    if (!element || element.hidden || element.getClientRects().length === 0) {
+        return false;
+    }
+    if (element.closest('[hidden]')) {
+        return false;
+    }
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    return rect.bottom >= 0 && rect.top <= viewportHeight;
+}
+
+function initializeViewportAwareResourceState() {
+    const resourceContainers = document.querySelectorAll(
+        '.resource-row[data-resource-id], .resource-detail[data-resource-id], [data-view="cards"] [data-resource-id]'
+    );
+    if (resourceContainers.length === 0) {
+        return;
+    }
+
+    function applyVisibility(container, isViewable) {
+        container.classList.toggle('resource-not-viewable', !isViewable);
+        if (!isViewable) {
+            setRowChecking(container, false);
+            return;
+        }
+
+        if (container._pendingResourceUpdate) {
+            applyResourceUpdateToContainer(container, container._pendingResourceUpdate);
+            container._pendingResourceUpdate = null;
+        }
+
+        if (container.dataset.resourceChecking === 'true') {
+            setRowChecking(container, true);
+        }
+    }
+
+    if (typeof IntersectionObserver === 'function') {
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                applyVisibility(entry.target, entry.isIntersecting);
+            });
+        }, {
+            root: null,
+            threshold: 0
+        });
+
+        resourceContainers.forEach(function(container) {
+            applyVisibility(container, isElementViewable(container));
+            observer.observe(container);
+        });
+        return;
+    }
+
+    function refreshVisibility() {
+        resourceContainers.forEach(function(container) {
+            applyVisibility(container, isElementViewable(container));
+        });
+    }
+
+    let refreshScheduled = false;
+    function scheduleRefresh() {
+        if (refreshScheduled) {
+            return;
+        }
+        refreshScheduled = true;
+        window.requestAnimationFrame(function() {
+            refreshScheduled = false;
+            refreshVisibility();
+        });
+    }
+
+    refreshVisibility();
+    window.addEventListener('scroll', scheduleRefresh, { passive: true });
+    window.addEventListener('resize', scheduleRefresh);
+}
+
 function initializeViewModeSwitcher() {
     const switcher = document.querySelector('[data-role="view-mode-switcher"]');
     if (!switcher) {
@@ -210,6 +287,9 @@ function initializeOutageSinceCounters() {
     function refresh() {
         const now = Date.now();
         counters.forEach(function(counter) {
+            if (!isElementViewable(counter)) {
+                return;
+            }
             const startRaw = counter.getAttribute('data-outage-start');
             const startDate = parseStart(startRaw);
             if (!startDate) {
@@ -235,6 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeGroupEmbedCopyButtons();
     initializeViewModeSwitcher();
     initializeResourceCardLinks();
+    initializeViewportAwareResourceState();
     initializeOutageSinceCounters();
     initializeTimelineLabels();
     initializeLatencyChartsFromDom();
@@ -633,7 +714,6 @@ function initResourceStatusStream() {
     const hasRangeSelector = rangeButtons.length > 0;
     const pollIntervalMs = 10000;
     const progressiveRenderDelayMs = 15;
-    const snapshotParallelism = 4;
     let pollingStarted = false;
     let currentTimelineHours = 24;
     let activeSnapshotRenderId = 0;
@@ -645,11 +725,16 @@ function initResourceStatusStream() {
         return !!visibleCardsContainer;
     }
 
+    function isContainerInViewport(container) {
+        return isElementViewable(container);
+    }
+
     function markResourceContainersLoading() {
         document.querySelectorAll('.resource-row[data-resource-id], .resource-detail[data-resource-id], [data-view="cards"] [data-resource-id]')
             .forEach(function(container) {
-                container.classList.add('resource-loading');
-                setRowChecking(container, true);
+                const shouldAnimateLoading = isContainerInViewport(container);
+                container.classList.toggle('resource-loading', shouldAnimateLoading);
+                setRowChecking(container, shouldAnimateLoading);
             });
     }
 
@@ -777,9 +862,8 @@ function initResourceStatusStream() {
         return Array.from(ids);
     }
 
-    function buildResourceSnapshotUrl(resourceId) {
-        return '/api/resources/' + encodeURIComponent(String(resourceId))
-            + '/status-update?hours=' + encodeURIComponent(String(currentTimelineHours));
+    function buildSnapshotUrl() {
+        return '/api/resources/status-updates?hours=' + encodeURIComponent(String(currentTimelineHours));
     }
 
     function fetchSnapshot(options) {
@@ -809,11 +893,11 @@ function initResourceStatusStream() {
             });
         }
 
-        const updates = [];
-        let nextResourceIndex = 0;
+        const visibleResourceIds = new Set(resourceIds.map(function(id) {
+            return String(id);
+        }));
 
-        function fetchResourceUpdate(resourceId) {
-            return fetch(buildResourceSnapshotUrl(resourceId), {
+        return fetch(buildSnapshotUrl(), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
@@ -826,49 +910,31 @@ function initResourceStatusStream() {
                     }
                     return response.json();
                 })
-                .then(function(update) {
-                    if (requestRenderId !== activeSnapshotRenderId || !update) {
+                .then(function(payload) {
+                    if (requestRenderId !== activeSnapshotRenderId) {
                         return;
                     }
-                    updates.push(update);
-                    updateResourceRow(update);
+
+                    const updates = Array.isArray(payload)
+                        ? payload.filter(function(update) {
+                            return update && update.resourceId != null
+                                && visibleResourceIds.has(String(update.resourceId));
+                        })
+                        : [];
+
                     if (isInitialRender) {
-                        return waitForNextRenderStep(progressiveRenderDelayMs);
+                        return renderSnapshotSequentially(updates, requestRenderId)
+                            .then(function() {
+                                if (requestRenderId !== activeSnapshotRenderId) {
+                                    return;
+                                }
+                                updateSnapshotCounts(updates);
+                            });
                     }
-                })
-                .catch(function() {
-                    // Continue with remaining resources.
-                });
-        }
 
-        function worker() {
-            if (requestRenderId !== activeSnapshotRenderId) {
-                return Promise.resolve();
-            }
-
-            if (nextResourceIndex >= resourceIds.length) {
-                return Promise.resolve();
-            }
-
-            const resourceId = resourceIds[nextResourceIndex];
-            nextResourceIndex += 1;
-
-            return fetchResourceUpdate(resourceId).then(worker);
-        }
-
-        const workers = [];
-        const workerCount = Math.min(snapshotParallelism, resourceIds.length);
-        for (let i = 0; i < workerCount; i += 1) {
-            workers.push(worker());
-        }
-
-        return Promise.all(workers)
-            .then(function() {
-                if (requestRenderId !== activeSnapshotRenderId) {
-                    return;
-                }
-                clearResourceLoadingStates();
-                updateSnapshotCounts(updates);
+                    updates.forEach(updateResourceRow);
+                    clearResourceLoadingStates();
+                    updateSnapshotCounts(updates);
             })
             .catch(function() {
                 // Retry on next interval.
@@ -1159,20 +1225,34 @@ function updateResourceRow(update) {
 
     containers.forEach(function(container) {
         const normalizedStatus = normalizeStatus(update.currentStatus);
-        setRowChecking(container, false);
         container.setAttribute('data-resource-status', normalizedStatus);
-        updateStatusDot(container, normalizedStatus);
-        updateCardStatus(container, normalizedStatus);
-        updateTimeline(container, update.timelineBlocks);
-        updateUptime(container, update.uptimePercentage);
-        updateOutageBadge(container, update.activeOutageSince || null);
-        updateLatencyLabel(container, update.timelineBlocks);
-        container.classList.remove('resource-loading');
+        container.dataset.resourceChecking = 'false';
+        setRowChecking(container, false);
+
+        if (!isElementViewable(container)) {
+            container._pendingResourceUpdate = update;
+            container.classList.remove('resource-loading');
+            return;
+        }
+
+        applyResourceUpdateToContainer(container, update);
     });
 
     updateSnapshotCounts();
     applyResourceStatusFilter();
     refreshAllGroupCounters();
+}
+
+function applyResourceUpdateToContainer(container, update) {
+    const normalizedStatus = normalizeStatus(update.currentStatus);
+    container.setAttribute('data-resource-status', normalizedStatus);
+    updateStatusDot(container, normalizedStatus);
+    updateCardStatus(container, normalizedStatus);
+    updateTimeline(container, update.timelineBlocks);
+    updateUptime(container, update.uptimePercentage);
+    updateOutageBadge(container, update.activeOutageSince || null);
+    updateLatencyLabel(container, update.timelineBlocks);
+    container.classList.remove('resource-loading');
 }
 
 function updateResourceView(update) {
@@ -1186,6 +1266,11 @@ function setResourceChecking(resourceId, checking) {
     }
 
     containers.forEach(function(container) {
+        container.dataset.resourceChecking = checking ? 'true' : 'false';
+        if (!isElementViewable(container)) {
+            setRowChecking(container, false);
+            return;
+        }
         setRowChecking(container, checking);
     });
 }
@@ -1202,7 +1287,7 @@ function setRowChecking(row, checking) {
     if (!dot) {
         return;
     }
-    dot.classList.toggle('status-checking', checking);
+    dot.classList.toggle('status-checking', checking && isElementViewable(row));
 }
 
 function updateStatusDot(row, status) {
