@@ -57,7 +57,7 @@ public class V19__add_resource_discovery_tables extends BaseJavaMigration {
                         auth_type VARCHAR(50),
                         url_pattern VARCHAR(1000),
                         username VARCHAR(255),
-                        password VARCHAR(255),
+                            password VARCHAR(255),
                         FOREIGN KEY (discovery_service_config_id) REFERENCES discovery_service_config(id)
                     )
                     """);
@@ -91,7 +91,7 @@ public class V19__add_resource_discovery_tables extends BaseJavaMigration {
                         auth_type VARCHAR(50),
                         url_pattern VARCHAR(1000),
                         username VARCHAR(255),
-                        password VARCHAR(255),
+                            password VARCHAR(255),
                         FOREIGN KEY (discovery_service_config_id) REFERENCES discovery_service_config(id)
                     )
                     """);

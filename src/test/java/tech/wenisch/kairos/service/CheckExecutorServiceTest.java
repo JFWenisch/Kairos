@@ -39,6 +39,9 @@ class CheckExecutorServiceTest {
     private DockerRepositorySyncService dockerRepositorySyncService;
 
     @Mock
+    private OpenshiftRouteSyncService openshiftRouteSyncService;
+
+    @Mock
     private ResourceStatusStreamService resourceStatusStreamService;
 
     @Mock
@@ -61,6 +64,7 @@ class CheckExecutorServiceTest {
                 httpCheckService,
                 dockerCheckService,
                 dockerRepositorySyncService,
+                openshiftRouteSyncService,
                 resourceStatusStreamService,
                 resourceRepository,
                 configRepository,
@@ -81,7 +85,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(123L);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -91,7 +95,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(inactive);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -101,7 +105,7 @@ class CheckExecutorServiceTest {
         boolean result = checkExecutorService.runImmediateCheck(resource);
 
         assertThat(result).isFalse();
-        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService, resourceStatusStreamService);
     }
 
     @Test
@@ -121,7 +125,7 @@ class CheckExecutorServiceTest {
         assertThat(triggered).isTrue();
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(httpCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService);
+        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService);
     }
 
     @Test
@@ -141,7 +145,7 @@ class CheckExecutorServiceTest {
         assertThat(triggered).isTrue();
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(dockerCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(httpCheckService, dockerRepositorySyncService);
+        verifyNoInteractions(httpCheckService, dockerRepositorySyncService, openshiftRouteSyncService);
     }
 
     @Test
@@ -153,7 +157,7 @@ class CheckExecutorServiceTest {
         checkExecutorService.dispatch();
 
         verify(resourceRepository, never()).findByResourceTypeAndActiveTrue(any());
-        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService);
     }
 
     @Test
@@ -179,7 +183,7 @@ class CheckExecutorServiceTest {
 
         verify(resourceStatusStreamService, org.mockito.Mockito.timeout(1000)).publishResourceChecking(resource);
         verify(httpCheckService, org.mockito.Mockito.timeout(1000)).check(resource);
-        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService);
+        verifyNoInteractions(dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService);
     }
 
     @Test
@@ -199,6 +203,6 @@ class CheckExecutorServiceTest {
     void shutdownHandlesEmptyExecutorState() {
         checkExecutorService.shutdown();
 
-        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, resourceStatusStreamService);
+        verifyNoInteractions(httpCheckService, dockerCheckService, dockerRepositorySyncService, openshiftRouteSyncService, resourceStatusStreamService);
     }
 }

@@ -683,16 +683,21 @@ public class AdminController {
     public String addDiscoveryAuth(@PathVariable Long configId,
                                    @RequestParam String name,
                                    @RequestParam String urlPattern,
-                                   @RequestParam String username,
+                       @RequestParam(defaultValue = "BASIC") AuthType authType,
+                       @RequestParam(required = false) String username,
                                    @RequestParam String password,
                                    RedirectAttributes redirectAttributes) {
         resourceDiscoveryManagementService.findConfigById(configId).ifPresent(config -> {
+            String normalizedUsername = username == null ? null : username.trim();
+            if (normalizedUsername != null && normalizedUsername.isBlank()) {
+            normalizedUsername = null;
+            }
             DiscoveryServiceAuth auth = DiscoveryServiceAuth.builder()
                     .discoveryServiceConfig(config)
                     .name(name)
-                    .authType(AuthType.BASIC)
+                .authType(authType)
                     .urlPattern(urlPattern)
-                    .username(username)
+                .username(normalizedUsername)
                     .password(password)
                     .build();
             discoveryServiceAuthRepository.save(auth);
