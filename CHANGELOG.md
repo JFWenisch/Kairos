@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.1.0 - 2026-04-30
+
+## [2.1.0](https://github.com/wenisch-tech/Kairos/compare/v2.0.2...v2.1.0) (2026-04-30)
+
+
+### Features
+
+* add configurable instant check flow with polished landing UX and result actions ([721aad6](https://github.com/wenisch-tech/Kairos/commit/721aad6f1df9987989bb43c197dd206f0ccd70c2))
+* Outages can now be queried via API ([fab07ab](https://github.com/wenisch-tech/Kairos/commit/fab07ab7effb7e911907d3abcab6fdb13515a88d))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.1.0
+
+
 ## v2.0.2 - 2026-04-30
 
 ### [2.0.2](https://github.com/wenisch-tech/Kairos/compare/v2.0.1...v2.0.2) (2026-04-30)
