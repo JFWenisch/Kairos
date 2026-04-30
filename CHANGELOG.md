@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.0.2 - 2026-04-30
+
+### [2.0.2](https://github.com/wenisch-tech/Kairos/compare/v2.0.1...v2.0.2) (2026-04-30)
+
+
+### Bug Fixes
+
+* updated default docker check interval to 5 minutes instead of 3600 ([a19a824](https://github.com/wenisch-tech/Kairos/commit/a19a824a37df315262a56088c5ad73ac2aab0ac0))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.0.2
+
+
 ## v2.0.1 - 2026-04-29
 
 ### [2.0.1](https://github.com/wenisch-tech/Kairos/compare/v2.0.0...v2.0.1) (2026-04-29)
