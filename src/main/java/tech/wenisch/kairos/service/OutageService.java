@@ -120,6 +120,14 @@ public class OutageService {
         return outageRepository.findAllByOrderByStartDateDesc();
     }
 
+    public List<Outage> findAllForApi() {
+        return outageRepository.findAllWithResourceOrderByStartDateDesc();
+    }
+
+    public List<Outage> findByResourceForApi(MonitoredResource resource) {
+        return outageRepository.findByResourceWithResourceOrderByStartDateDesc(resource);
+    }
+
     public long countActiveOutages() {
         return outageRepository.countByActiveTrue();
     }

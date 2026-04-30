@@ -110,6 +110,10 @@ public class SecurityConfig {
             .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
                 isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
             ))
+            .requestMatchers(HttpMethod.GET, "/api/outages", "/api/resources/*/outages")
+            .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())
+            ))
             .requestMatchers(HttpMethod.GET, "/api/announcements", "/api/announcements/*")
             .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
                 isPublicAccessAllowed(resourceTypeConfigRepository) || isAuthenticated(authentication.get())

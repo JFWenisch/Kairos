@@ -3,16 +3,19 @@ package tech.wenisch.kairos.controller;
 import tech.wenisch.kairos.dto.AnnouncementDTO;
 import tech.wenisch.kairos.dto.GroupSummaryDTO;
 import tech.wenisch.kairos.dto.LatencySampleDTO;
+import tech.wenisch.kairos.dto.OutageDTO;
 import tech.wenisch.kairos.dto.ResourceDTO;
 import tech.wenisch.kairos.dto.ResourceDetailsDTO;
 import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceGroup;
 import tech.wenisch.kairos.entity.ResourceGroupVisibility;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -48,14 +50,63 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Tag(name = "Resources", description = "Manage and query monitored resources and their health history")
 public class ApiController {
 
     private final ResourceService resourceService;
     private final ResourceGroupService resourceGroupService;
     private final CheckExecutorService checkExecutorService;
+        private final OutageService outageService;
     private final AnnouncementService announcementService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+
+            @Operation(summary = "List outages",
+                description = "Returns outages ordered by newest start date. By default returns all outages visible to the caller. Use active=true to only return active outages.",
+                tags = "Outages")
+        @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successful - list of outages (may be empty)")
+        })
+        @GetMapping("/outages")
+        public ResponseEntity<List<OutageDTO>> listOutages(
+            @RequestParam(name = "active", required = false) Boolean active,
+            Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
+
+        List<OutageDTO> outages = outageService.findAllForApi().stream()
+            .filter(outage -> outage.getResource() != null)
+            .filter(outage -> isVisibleByGroupPolicy(outage.getResource(), authenticated))
+            .filter(outage -> active == null || Boolean.valueOf(outage.isActive()).equals(active))
+            .map(this::toOutageDto)
+            .toList();
+
+        return ResponseEntity.ok(outages);
+        }
+
+            @Operation(summary = "List outages for a resource",
+                description = "Returns outages for a single resource ordered by newest start date.",
+                    tags = "Resources")
+        @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successful - list of outages (may be empty)"),
+            @ApiResponse(responseCode = "404", description = "No resource with the given ID exists", content = @Content)
+        })
+        @GetMapping("/resources/{id}/outages")
+        public ResponseEntity<List<OutageDTO>> listOutagesForResource(
+            @PathVariable Long id,
+            @RequestParam(name = "active", required = false) Boolean active,
+            Authentication authentication) {
+        boolean authenticated = isAuthenticated(authentication);
+        Optional<MonitoredResource> resourceOpt = resourceService.findById(id)
+            .filter(resource -> isVisibleByGroupPolicy(resource, authenticated));
+        if (resourceOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        List<OutageDTO> outages = outageService.findByResourceForApi(resourceOpt.get()).stream()
+            .filter(outage -> active == null || Boolean.valueOf(outage.isActive()).equals(active))
+            .map(this::toOutageDto)
+            .toList();
+
+        return ResponseEntity.ok(outages);
+        }
 
     /**
      * Returns all currently active monitored resources.
@@ -65,7 +116,8 @@ public class ApiController {
      * @return list of active {@link MonitoredResource} objects
      */
     @Operation(summary = "List active resources",
-               description = "Returns all monitored resources that are currently marked as active. No authentication required.")
+               description = "Returns all monitored resources that are currently marked as active. No authentication required.",
+               tags = "Resources")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Successful – list of active resources (may be empty)")
     })
@@ -78,7 +130,10 @@ public class ApiController {
         return ResponseEntity.ok(visibleResources);
     }
 
-    @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+        @Operation(summary = "Stream resource updates",
+            description = "Server-sent event stream for live resource status changes.",
+            tags = "Resources")
+        @GetMapping(value = "/resources/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> streamResourceUpdates() {
         HttpHeaders headers = new HttpHeaders();
         headers.setCacheControl(CacheControl.noStore().mustRevalidate());
@@ -87,14 +142,20 @@ public class ApiController {
         return ResponseEntity.ok().headers(headers).body(resourceStatusStreamService.subscribe());
     }
 
-    @GetMapping("/resources/status-updates")
+        @Operation(summary = "Get status update snapshot",
+            description = "Returns current status snapshots for visible resources.",
+            tags = "Resources")
+        @GetMapping("/resources/status-updates")
     public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates(
             @RequestParam(name = "hours", defaultValue = "24") int hours) {
         int normalizedHours = normalizeTimelineHours(hours);
         return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours));
     }
 
-    @GetMapping("/resources/{id}/status-update")
+        @Operation(summary = "Get resource status update",
+            description = "Returns one status snapshot for the selected resource.",
+            tags = "Resources")
+        @GetMapping("/resources/{id}/status-update")
     public ResponseEntity<ResourceStatusUpdateDTO> getResourceStatusUpdateByResourceId(
             @PathVariable Long id,
             @RequestParam(name = "hours", defaultValue = "24") int hours,
@@ -109,7 +170,10 @@ public class ApiController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/resources/{id}/latency-samples")
+        @Operation(summary = "Get resource latency samples",
+            description = "Returns latency samples for a resource in the selected time range.",
+            tags = "Resources")
+        @GetMapping("/resources/{id}/latency-samples")
     public ResponseEntity<List<LatencySampleDTO>> getResourceLatencySamples(
             @PathVariable Long id,
             @RequestParam(name = "hours", defaultValue = "24") int hours,
@@ -140,7 +204,8 @@ public class ApiController {
      *         recent check status, or {@code 404} when no resource with the given id exists
      */
     @Operation(summary = "Get resource by ID",
-               description = "Returns general information about a monitored resource together with its latest health-check result. No authentication required.")
+               description = "Returns general information about a monitored resource together with its latest health-check result. No authentication required.",
+               tags = "Resources")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resource found",
                      content = @Content(schema = @Schema(implementation = ResourceDetailsDTO.class))),
@@ -208,6 +273,23 @@ public class ApiController {
         };
     }
 
+    private OutageDTO toOutageDto(Outage outage) {
+        MonitoredResource resource = outage.getResource();
+        java.time.LocalDateTime endDate = outage.getEndDate() != null ? outage.getEndDate() : java.time.LocalDateTime.now();
+        long durationMinutes = Math.max(0L, java.time.Duration.between(outage.getStartDate(), endDate).toMinutes());
+
+        return new OutageDTO(
+                outage.getId(),
+                resource != null ? resource.getId() : null,
+                resource != null ? resource.getName() : null,
+                resource != null ? resource.getResourceType() : null,
+                outage.getStartDate(),
+                outage.getEndDate(),
+                outage.isActive(),
+                durationMinutes
+        );
+    }
+
     /**
      * Creates a new monitored resource.
      *
@@ -219,6 +301,7 @@ public class ApiController {
      */
     @Operation(summary = "Create a resource",
                description = "Adds a new monitored resource and activates it immediately. Requires ADMIN role.",
+               tags = "Resources",
                security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resource created successfully",
@@ -238,7 +321,7 @@ public class ApiController {
                 .target(dto.getTarget())
                 .skipTls(dto.isSkipTls())
                 .recursive(dto.isRecursive())
-                .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : 0)
+            .displayOrder(java.util.Optional.ofNullable(dto.getDisplayOrder()).orElse(0))
                 .active(true)
                 .build();
         if (group != null) {
@@ -259,6 +342,7 @@ public class ApiController {
      */
     @Operation(summary = "Create template resources",
                description = "Creates a set of sample resources for testing (HTTP services, Docker images, groups). Requires ADMIN role.",
+               tags = "Resources",
                security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Template resources created successfully"),
@@ -365,6 +449,7 @@ public class ApiController {
      */
     @Operation(summary = "Delete a resource",
                description = "Permanently removes a monitored resource and its entire check history. Requires ADMIN role.",
+               tags = "Resources",
                security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resource deleted"),
@@ -390,6 +475,7 @@ public class ApiController {
      */
     @Operation(summary = "Get check history",
                description = "Returns every historical health-check result for the specified resource, newest first. Requires authentication.",
+               tags = "Resources",
                security = {@SecurityRequirement(name = "cookieAuth"), @SecurityRequirement(name = "apiKeyAuth")})
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "History returned (may be empty)"),
