@@ -18,6 +18,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class DataInitializer implements ApplicationRunner {
 
+    static final int DEFAULT_DOCKER_CHECK_INTERVAL_MINUTES = 5;
+    static final int LEGACY_DOCKER_CHECK_INTERVAL_MINUTES = 3600;
+
     private final AppUserRepository userRepository;
     private final UserService userService;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
@@ -68,7 +71,7 @@ public class DataInitializer implements ApplicationRunner {
         if (resourceTypeConfigRepository.findByTypeName("DOCKER").isEmpty()) {
             resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
                     .typeName("DOCKER")
-                    .checkIntervalMinutes(3600) // 60 hours
+                    .checkIntervalMinutes(DEFAULT_DOCKER_CHECK_INTERVAL_MINUTES)
                     .parallelism(2)
                     .allowPublicAdd(false)
                     .checkHistoryRetentionEnabled(true)
@@ -80,6 +83,15 @@ public class DataInitializer implements ApplicationRunner {
                     .build());
             log.info("Created default ResourceTypeConfig for DOCKER");
         }
+        resourceTypeConfigRepository.findByTypeName("DOCKER").ifPresent(dockerConfig -> {
+            if (dockerConfig.getCheckIntervalMinutes() == LEGACY_DOCKER_CHECK_INTERVAL_MINUTES) {
+                dockerConfig.setCheckIntervalMinutes(DEFAULT_DOCKER_CHECK_INTERVAL_MINUTES);
+                resourceTypeConfigRepository.save(dockerConfig);
+                log.info("Updated legacy DOCKER check interval default from {} to {} minutes",
+                        LEGACY_DOCKER_CHECK_INTERVAL_MINUTES,
+                        DEFAULT_DOCKER_CHECK_INTERVAL_MINUTES);
+            }
+        });
 
         resourceTypeConfigRepository.findByTypeName("DOCKERREPOSITORY").ifPresent(resourceTypeConfigRepository::delete);
 

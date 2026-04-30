@@ -7,7 +7,7 @@ This page describes how check intervals and parallelism work.
 | Resource Type | Default Interval | Default Parallelism |
 |---------------|------------------|---------------------|
 | HTTP | 1 minute | 5 threads |
-| DOCKER | 3600 minutes (60 h) | 2 threads |
+| DOCKER | 5 minutes | 2 threads |
 
 Settings are managed in **Admin -> Resource Types**.
 
