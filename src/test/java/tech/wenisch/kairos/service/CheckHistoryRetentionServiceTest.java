@@ -1,21 +1,21 @@
 package tech.wenisch.kairos.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.repository.CheckResultRepository;
-import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import org.mockito.Mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.CheckResultRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CheckHistoryRetentionServiceTest {

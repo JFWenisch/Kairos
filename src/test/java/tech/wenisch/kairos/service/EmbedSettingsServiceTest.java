@@ -1,23 +1,23 @@
 package tech.wenisch.kairos.service;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import tech.wenisch.kairos.entity.EmbedAllowedOrigin;
 import tech.wenisch.kairos.entity.EmbedPolicy;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.EmbedAllowedOriginRepository;
 import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EmbedSettingsServiceTest {
