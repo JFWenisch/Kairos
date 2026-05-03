@@ -303,7 +303,9 @@ public class HomeController {
             redirectAttributes.addFlashAttribute("errorMessage", "Manual checks are not available for public users.");
             return "redirect:/resources/" + id;
         }
-        boolean triggered = checkExecutorService.runImmediateCheck(id);
+        boolean triggered = checkExecutorService.runImmediateCheck(id,
+                authentication != null && !(authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)
+                        ? authentication.getName() : "Anonymous");
         if (triggered) {
             redirectAttributes.addFlashAttribute("successMessage", "Check started immediately.");
         } else {

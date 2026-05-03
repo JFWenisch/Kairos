@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Check History - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+
+        <div class="col-md-10 py-4 px-4">
+            <h2 class="h4 mb-1"><i class="bi bi-journal-check me-2"></i>Check History</h2>
+            <p class="text-muted small mb-4">In-memory log of the most recent checks. Not persisted — resets on restart. Shows up to 200 entries.</p>
+
+            <div class="card">
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(entries)}" class="p-4 text-muted text-center">
+                        No checks recorded yet. Checks will appear here once the scheduler runs or a manual / instant check is performed.
+                    </div>
+                    <div th:if="${not #lists.isEmpty(entries)}">
+                        <table class="table table-sm table-hover mb-0 align-middle" style="font-size:.875rem">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="ps-3">Timestamp</th>
+                                    <th>Kind</th>
+                                    <th>Resource</th>
+                                    <th>Target</th>
+                                    <th>Result</th>
+                                    <th>Triggered By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="entry : ${entries}">
+                                    <td class="ps-3 text-muted text-nowrap"
+                                        th:text="${#temporals.format(entry.timestamp(), 'yyyy-MM-dd HH:mm:ss')}"></td>
+                                    <td>
+                                        <span th:if="${entry.kind() == 'Scheduled'}"
+                                              class="badge bg-secondary">Scheduled</span>
+                                        <span th:if="${entry.kind() == 'Check Now'}"
+                                              class="badge bg-primary">Check Now</span>
+                                        <span th:if="${entry.kind() == 'Instant Check'}"
+                                              class="badge bg-info text-dark">Instant Check</span>
+                                        <span th:if="${entry.kind() != 'Scheduled' and entry.kind() != 'Check Now' and entry.kind() != 'Instant Check'}"
+                                              class="badge bg-dark" th:text="${entry.kind()}"></span>
+                                    </td>
+                                    <td th:text="${entry.resourceName() != null ? entry.resourceName() : '—'}"></td>
+                                    <td class="font-monospace small"
+                                        th:text="${entry.target() != null ? entry.target() : '—'}"></td>
+                                    <td>
+                                        <span th:if="${entry.result() == 'AVAILABLE'}" class="badge bg-success">Available</span>
+                                        <span th:if="${entry.result() == 'NOT_AVAILABLE'}" class="badge bg-danger">Not Available</span>
+                                        <span th:if="${entry.result() != 'AVAILABLE' and entry.result() != 'NOT_AVAILABLE'}"
+                                              class="badge bg-secondary" th:text="${entry.result()}"></span>
+                                    </td>
+                                    <td th:text="${entry.triggeredBy()}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

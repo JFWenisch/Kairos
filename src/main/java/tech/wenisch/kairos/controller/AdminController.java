@@ -61,6 +61,7 @@ import tech.wenisch.kairos.service.ResourceDiscoveryManagementService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
+import tech.wenisch.kairos.service.CheckAuditService;
 
 @Controller
 @RequestMapping("/admin")
@@ -82,6 +83,7 @@ public class AdminController {
     private final ApplicationVersionService applicationVersionService;
     private final CustomHeaderService customHeaderService;
     private final ResourceDiscoveryManagementService resourceDiscoveryManagementService;
+    private final CheckAuditService checkAuditService;
 
     @GetMapping
     public String admin() {
@@ -105,6 +107,12 @@ public class AdminController {
         model.addAttribute("javaVersion", System.getProperty("java.version", "unknown"));
         model.addAttribute("buildTimestamp", LocalDateTime.now());
         return "admin/about";
+    }
+
+    @GetMapping("/check-history")
+    public String checkHistory(Model model) {
+        model.addAttribute("entries", checkAuditService.getEntries());
+        return "admin/check-history";
     }
 
     @GetMapping("/custom-headers")

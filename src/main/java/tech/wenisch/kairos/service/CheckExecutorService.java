@@ -41,6 +41,7 @@ public class CheckExecutorService {
     private final ResourceTypeConfigRepository configRepository;
     private final ResourceDiscoveryRepository resourceDiscoveryRepository;
     private final DiscoveryServiceConfigRepository discoveryConfigRepository;
+    private final CheckAuditService checkAuditService;
 
     private final Map<String, Long> lastRunTimeMap = new ConcurrentHashMap<>();
     private final Map<String, ExecutorService> executorMap = new ConcurrentHashMap<>();
@@ -55,7 +56,8 @@ public class CheckExecutorService {
             MonitoredResourceRepository resourceRepository,
             ResourceTypeConfigRepository configRepository,
             ResourceDiscoveryRepository resourceDiscoveryRepository,
-            DiscoveryServiceConfigRepository discoveryConfigRepository) {
+            DiscoveryServiceConfigRepository discoveryConfigRepository,
+            CheckAuditService checkAuditService) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
         this.dockerRepositorySyncService = dockerRepositorySyncService;
@@ -65,6 +67,7 @@ public class CheckExecutorService {
         this.configRepository = configRepository;
         this.resourceDiscoveryRepository = resourceDiscoveryRepository;
         this.discoveryConfigRepository = discoveryConfigRepository;
+        this.checkAuditService = checkAuditService;
     }
 
     @Scheduled(fixedDelay = 30000)
@@ -118,6 +121,28 @@ public class CheckExecutorService {
         return resourceRepository.findById(resourceId)
                 .map(this::runImmediateCheck)
                 .orElse(false);
+    }
+
+    public boolean runImmediateCheck(Long resourceId, String triggeredBy) {
+        return resourceRepository.findById(resourceId)
+                .map(r -> runImmediateCheck(r, triggeredBy))
+                .orElse(false);
+    }
+
+    public boolean runImmediateCheck(MonitoredResource resource, String triggeredBy) {
+        if (resource == null || !resource.isActive()) {
+            return false;
+        }
+        ResourceType type = resource.getResourceType();
+        if (type == null) {
+            return false;
+        }
+        int parallelism = configRepository.findByTypeName(type.name())
+                .map(ResourceTypeConfig::getParallelism)
+                .map(value -> Math.max(1, value))
+                .orElse(1);
+        ExecutorService executor = resolveExecutor(type.name(), parallelism);
+        return submitCheck(executor, resource, type, "Check Now", triggeredBy);
     }
 
     public boolean runImmediateCheck(MonitoredResource resource) {
@@ -206,25 +231,37 @@ public class CheckExecutorService {
     private boolean submitCheck(ExecutorService executor,
                                 MonitoredResource resource,
                                 ResourceType type,
-                                boolean immediate) {
+                                @SuppressWarnings("unused") boolean immediate) {
+        return submitCheck(executor, resource, type, "Scheduled", "System");
+    }
+
+    private boolean submitCheck(ExecutorService executor,
+                                MonitoredResource resource,
+                                ResourceType type,
+                                String kind,
+                                String triggeredBy) {
         try {
-            executor.submit(() -> executeCheck(resource, type));
+            executor.submit(() -> executeCheck(resource, type, kind, triggeredBy));
             return true;
         } catch (RejectedExecutionException ex) {
-            log.warn("Skipping {} check for resource '{}' (type {}) because the worker queue is full",
-                    immediate ? "immediate" : "scheduled", resource.getName(), type.name());
+            log.warn("Skipping check for resource '{}' (type {}) because the worker queue is full",
+                    resource.getName(), type.name());
             return false;
         }
     }
 
-    private void executeCheck(MonitoredResource resource, ResourceType type) {
+    private void executeCheck(MonitoredResource resource, ResourceType type, String kind, String triggeredBy) {
         try {
             if (type == ResourceType.HTTP) {
                 publishCheckingState(resource);
-                httpCheckService.check(resource);
+                tech.wenisch.kairos.entity.CheckResult cr = httpCheckService.check(resource);
+                String result = cr != null && cr.getStatus() != null ? cr.getStatus().name() : "UNKNOWN";
+                checkAuditService.record(kind, resource.getName(), resource.getTarget(), triggeredBy, result);
             } else if (type == ResourceType.DOCKER) {
                 publishCheckingState(resource);
-                dockerCheckService.check(resource);
+                tech.wenisch.kairos.entity.CheckResult cr = dockerCheckService.check(resource);
+                String result = cr != null && cr.getStatus() != null ? cr.getStatus().name() : "UNKNOWN";
+                checkAuditService.record(kind, resource.getName(), resource.getTarget(), triggeredBy, result);
             }
         } catch (Exception e) {
             log.error("Error checking resource {}: {}", resource.getName(), e.getMessage(), e);

@@ -19,6 +19,7 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-sliders me-2"></i>General Settings
     </a>
+
     <a th:href="@{/admin/announcements}"
        th:classappend="${currentRequestUri != null and currentRequestUri.contains('/announcements')} ? 'active' : ''"
        class="nav-link px-2 py-2 rounded mb-1">
@@ -40,6 +41,13 @@
         <i class="bi bi-search me-2"></i>Resource Discovery
     </a>
     <hr class="border-secondary my-2">
+        <a th:href="@{/admin/check-history}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/check-history')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-journal-check me-2"></i>Check History
+    </a>
+     <hr class="border-secondary my-2">
+
     <a th:href="@{/admin/users}"
        th:classappend="${currentRequestUri != null and currentRequestUri.contains('/users')} ? 'active' : ''"
        class="nav-link px-2 py-2 rounded mb-1">

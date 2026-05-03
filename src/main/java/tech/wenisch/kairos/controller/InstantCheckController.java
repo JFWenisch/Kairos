@@ -3,6 +3,7 @@ package tech.wenisch.kairos.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import tech.wenisch.kairos.dto.InstantCheckExecutionResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.service.CheckAuditService;
 import tech.wenisch.kairos.service.InstantCheckService;
 
 @RestController
@@ -18,6 +20,7 @@ import tech.wenisch.kairos.service.InstantCheckService;
 public class InstantCheckController {
 
     private final InstantCheckService instantCheckService;
+    private final CheckAuditService checkAuditService;
 
     @PostMapping("/instant-check")
     @ResponseBody
@@ -53,6 +56,10 @@ public class InstantCheckController {
                 skipTls,
                 settings.useStoredAuth()
         );
+
+        String triggeredBy = authentication != null && !(authentication instanceof AnonymousAuthenticationToken)
+                ? authentication.getName() : "Anonymous";
+        checkAuditService.record("Instant Check", null, normalizedTarget, triggeredBy, result.status().name());
 
         String outcome = result.status() == CheckStatus.AVAILABLE ? "ok" : "error";
         return ResponseEntity.ok(new InstantCheckResponse(
