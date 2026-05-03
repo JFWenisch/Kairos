@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.4.1 - 2026-05-03
+
+### [2.4.1](https://github.com/wenisch-tech/Kairos/compare/v2.4.0...v2.4.1) (2026-05-03)
+
+
+### Bug Fixes
+
+* fixed problem that lead to MCP calls not being visible in audit log ([73a94f3](https://github.com/wenisch-tech/Kairos/commit/73a94f30dfeeb55b098a7aad9f76e9529b8098d1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.4.1
+
+
 ## v2.4.0 - 2026-05-03
 
 ## [2.4.0](https://github.com/wenisch-tech/Kairos/compare/v2.3.0...v2.4.0) (2026-05-03)
