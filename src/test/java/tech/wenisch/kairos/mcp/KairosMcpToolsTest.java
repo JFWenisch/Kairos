@@ -1,10 +1,22 @@
 package tech.wenisch.kairos.mcp;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import tech.wenisch.kairos.dto.InstantCheckExecutionResult;
 import tech.wenisch.kairos.entity.Announcement;
 import tech.wenisch.kairos.entity.AnnouncementKind;
@@ -21,18 +33,6 @@ import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.InstantCheckService;
 import tech.wenisch.kairos.service.OutageService;
 import tech.wenisch.kairos.service.ResourceService;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class KairosMcpToolsTest {

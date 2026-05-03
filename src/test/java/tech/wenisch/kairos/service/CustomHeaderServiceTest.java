@@ -1,19 +1,19 @@
 package tech.wenisch.kairos.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import tech.wenisch.kairos.entity.CustomHeaderSettings;
-import tech.wenisch.kairos.repository.CustomHeaderSettingsRepository;
-
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import tech.wenisch.kairos.entity.CustomHeaderSettings;
+import tech.wenisch.kairos.repository.CustomHeaderSettingsRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CustomHeaderServiceTest {
