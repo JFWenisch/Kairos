@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.5.1 - 2026-05-03
+
+### [2.5.1](https://github.com/wenisch-tech/Kairos/compare/v2.5.0...v2.5.1) (2026-05-03)
+
+
+### Bug Fixes
+
+* added missing files regarding TcpCheck ([95a6809](https://github.com/wenisch-tech/Kairos/commit/95a6809e35252f2cf5be36da9605dc1bb0df31eb))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.5.1
+
+
 ## v2.4.1 - 2026-05-03
 
 ### [2.4.1](https://github.com/wenisch-tech/Kairos/compare/v2.4.0...v2.4.1) (2026-05-03)
