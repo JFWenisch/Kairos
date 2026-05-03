@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.4.0 - 2026-05-03
+
+## [2.4.0](https://github.com/wenisch-tech/Kairos/compare/v2.3.0...v2.4.0) (2026-05-03)
+
+
+### Features
+
+* Introduced MCP Server functionalities ([8a1bbc8](https://github.com/wenisch-tech/Kairos/commit/8a1bbc8868924995e0bca0d7145bd61e4e5e2004))
+
+
+### Bug Fixes
+
+* added additional juint tests for mcp server ([e8d5b6f](https://github.com/wenisch-tech/Kairos/commit/e8d5b6fe48ae3bcc0ac49ad134f6387fe141689c))
+* Added additional junit tests for mcp server and added example ([0ab8b0e](https://github.com/wenisch-tech/Kairos/commit/0ab8b0e0fe8392a3d83c520829a1e2a0d01b9fff))
+* update ExecutorServicetest ([3aed1b4](https://github.com/wenisch-tech/Kairos/commit/3aed1b4a3761c32c14240356abccaa786d5d4dd3))
+* update test ([439621b](https://github.com/wenisch-tech/Kairos/commit/439621b216ecc031f1c8b06fb433e4aaca962750))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.4.0
+
+
 ## v2.2.5 - 2026-05-03
 
 ### [2.2.5](https://github.com/wenisch-tech/Kairos/compare/v2.2.4...v2.2.5) (2026-05-03)
