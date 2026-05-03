@@ -185,6 +185,58 @@ See [docs/api.md](docs/api.md) for full request/response examples.
 
 ---
 
+## AI Assistant Integration (MCP)
+
+Kairos ships a built-in [Model Context Protocol](https://modelcontextprotocol.io) server so AI assistants can query and manage it in natural language. The MCP server is secured with your existing API keys.
+
+### Connect Claude Code
+
+```bash
+claude mcp add kairos \
+  --transport sse \
+  --url http://localhost:8080/sse \
+  --header "X-API-KEY: your-api-key"
+```
+
+### Connect GitHub Copilot (VS Code)
+
+Add the following to your VS Code `settings.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "kairos": {
+        "type": "sse",
+        "url": "http://localhost:8080/sse",
+        "headers": {
+          "X-API-KEY": "your-api-key"
+        }
+      }
+    }
+  }
+}
+```
+
+### Example Prompts
+
+Once connected, you can use natural language to interact with Kairos:
+
+| Goal | Example prompt |
+|------|----------------|
+| Get an overview | *"What is the current status of all monitored resources?"* |
+| Investigate a failure | *"Which resources are currently down, and when did they go down?"* |
+| Add a resource | *"Add a new HTTP monitor for https://api.example.com called 'Production API'."* |
+| Remove a resource | *"Delete the resource named 'Staging DB'."* |
+| Trigger an immediate check | *"Run an instant check on https://example.com."* |
+| Check history | *"Show the last 10 check results for the resource named 'GitHub'."* |
+| Post an announcement | *"Create a WARNING announcement: 'Scheduled maintenance on Saturday 08:00–10:00 UTC', active until 2026-06-07T10:00:00."* |
+| Active outages | *"Are there any active outages right now? Give me details."* |
+
+See [docs/mcp-server.md](docs/mcp-server.md) for the full tool reference and advanced configuration.
+
+---
+
 ## Monitoring with Prometheus
 
 Kairos exposes a Prometheus-compatible endpoint at `/actuator/prometheus`. The key metric is:
