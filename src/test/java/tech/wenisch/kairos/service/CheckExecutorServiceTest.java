@@ -56,6 +56,9 @@ class CheckExecutorServiceTest {
     @Mock
     private DiscoveryServiceConfigRepository discoveryConfigRepository;
 
+    @Mock
+    private CheckAuditService checkAuditService;
+
     private CheckExecutorService checkExecutorService;
 
     @BeforeEach
@@ -69,7 +72,8 @@ class CheckExecutorServiceTest {
                 resourceRepository,
                 configRepository,
                 resourceDiscoveryRepository,
-                discoveryConfigRepository
+                discoveryConfigRepository,
+                checkAuditService
         );
     }
 
