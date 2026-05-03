@@ -155,7 +155,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new XorCsrfTokenRequestAttributeHandler())
-                .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/resources/**", "/api/announcements", "/api/announcements/**")
+                .ignoringRequestMatchers("/h2-console/**", "/api/resources", "/api/resources/**",
+                        "/api/announcements", "/api/announcements/**",
+                        "/mcp/**", "/sse")
             )
             .headers(headers -> headers
                 .frameOptions(frame -> frame.disable())

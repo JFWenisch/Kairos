@@ -25,33 +25,34 @@
 ---
 
 ## Features
-
-- **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
-- **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
-- **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
-- **Resource discovery services** - configure discovery sources (currently Docker registry/namespace discovery, for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
-- **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
-- **Instant checks on startup** - monitoring begins immediately when the application starts; no waiting for the first interval tick
 - **Status dashboard** - 24-hour timeline, uptime percentages (24 h / 7 d / 30 d), and a full check history per resource with filterable table
-- **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
-- **Manual instant checks** - admins can trigger an immediate check from the resource detail page, bypassing scheduler interval and parallelism queue
-- **Public "Check Now"** - optionally allow unauthenticated users to trigger an immediate check from the resource detail page
+
 - **Resource groups** - organise resources into named groups; drag-and-drop reordering within and across groups; a resource can belong to **multiple groups simultaneously**
 - **Group visibility controls** - per resource group, choose `PUBLIC`, `AUTHENTICATED`, or `HIDDEN`; when a resource is in multiple groups the most-permissive visibility wins
+
+- **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
+- **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
+- **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
+- **Resource discovery services** - configure discovery sources (currently Docker registry/namespace discovery, for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
+- **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
+
+- **Authentication support** - per-resource-type Basic Auth credentials with wildcard URL pattern matching; HTTP checks send an `Authorization: Basic ...` header, Docker checks use credentials for registry API/token requests
+
+- **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
+
+
 - **Admin panel** - manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **API keys** - generate and revoke named API keys for machine-to-machine access to the REST API
 - **YAML import / export** - export resources from the admin panel and import them again via a versioned, forward-compatible YAML exchange format
 - **Announcement system** - publish rich-text announcements with three severity kinds (`INFORMATION`, `WARNING`, `PROBLEM`), active/inactive state, optional auto-expiry (`active until`), creator and creation timestamp
-- **Public announcements** - active announcements are shown on the dashboard and a dedicated public announcements page lists all announcements by creation date
+
 - **Embeddable status widget** - expose a lightweight iframe status badge (green/red indicator with status text) and control embedding centrally via **Admin -> Embed Widget** with policies for disabled, allow-all, or domain allowlist
-- **Public submission mode** - optionally allow unauthenticated users to add resources via the REST API
-- **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
+
 - **OIDC / OAuth2 login** - plug in any OpenID Connect provider (Keycloak, Auth0, etc.)
 - **Prometheus metrics** - `kairos_resource_status` gauge per resource, exposed at `/actuator/prometheus`
-- **H2 (default) or PostgreSQL** - switch databases with a single property change
-- **Automatic schema migrations** - Flyway runs database migrations automatically on startup (existing databases are baselined)
 - **Custom headers** - inject arbitrary HTML or JavaScript into the `<head>` of all pages from the admin panel (analytics tags, custom stylesheets, etc.)
 - **Dark-mode UI** - Bootstrap 5 with Bootstrap Icons, served via WebJars (no CDN dependency)
+- **MCP server** - built-in [Model Context Protocol](https://modelcontextprotocol.io) server (Spring AI, SSE transport) lets AI assistants (Claude, GitHub Copilot, Cursor, etc.) query status, manage resources and announcements, trigger checks, and run instant checks — secured via existing API key authentication
 
 ---
 
