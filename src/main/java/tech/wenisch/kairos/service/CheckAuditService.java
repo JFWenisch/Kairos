@@ -1,11 +1,11 @@
 package tech.wenisch.kairos.service;
 
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
 
 @Service
 public class CheckAuditService {

@@ -1,42 +1,5 @@
 package tech.wenisch.kairos.controller;
 
-import tech.wenisch.kairos.dto.DashboardGroupShell;
-import tech.wenisch.kairos.dto.ResourceViewModel;
-import tech.wenisch.kairos.dto.TimelineBlockDTO;
-import tech.wenisch.kairos.entity.CheckResult;
-import tech.wenisch.kairos.entity.CheckStatus;
-import tech.wenisch.kairos.entity.EmbedPolicy;
-import tech.wenisch.kairos.entity.MonitoredResource;
-import tech.wenisch.kairos.entity.Outage;
-import tech.wenisch.kairos.entity.ResourceGroup;
-import tech.wenisch.kairos.entity.ResourceType;
-import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.entity.ResourceGroupVisibility;
-import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-import tech.wenisch.kairos.service.AnnouncementService;
-import tech.wenisch.kairos.service.ApplicationVersionService;
-import tech.wenisch.kairos.service.CheckExecutorService;
-import tech.wenisch.kairos.service.EmbedSettingsService;
-import tech.wenisch.kairos.service.InstantCheckService;
-import tech.wenisch.kairos.service.OutageService;
-import tech.wenisch.kairos.service.ResourceGroupService;
-import tech.wenisch.kairos.service.ResourceService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.http.HttpStatus;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -47,6 +10,44 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import lombok.RequiredArgsConstructor;
+import tech.wenisch.kairos.dto.DashboardGroupShell;
+import tech.wenisch.kairos.dto.ResourceViewModel;
+import tech.wenisch.kairos.dto.TimelineBlockDTO;
+import tech.wenisch.kairos.entity.CheckResult;
+import tech.wenisch.kairos.entity.CheckStatus;
+import tech.wenisch.kairos.entity.EmbedPolicy;
+import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.Outage;
+import tech.wenisch.kairos.entity.ResourceGroup;
+import tech.wenisch.kairos.entity.ResourceGroupVisibility;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
+import tech.wenisch.kairos.service.AnnouncementService;
+import tech.wenisch.kairos.service.ApplicationVersionService;
+import tech.wenisch.kairos.service.CheckExecutorService;
+import tech.wenisch.kairos.service.EmbedSettingsService;
+import tech.wenisch.kairos.service.InstantCheckService;
+import tech.wenisch.kairos.service.OutageService;
+import tech.wenisch.kairos.service.ResourceGroupService;
+import tech.wenisch.kairos.service.ResourceService;
 
 @Controller
 @RequiredArgsConstructor

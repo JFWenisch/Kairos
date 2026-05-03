@@ -53,15 +53,15 @@ import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 import tech.wenisch.kairos.service.AnnouncementService;
 import tech.wenisch.kairos.service.ApiKeyService;
 import tech.wenisch.kairos.service.ApplicationVersionService;
+import tech.wenisch.kairos.service.CheckAuditService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.CustomHeaderService;
 import tech.wenisch.kairos.service.EmbedSettingsService;
-import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceDiscoveryManagementService;
+import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceGroupService;
 import tech.wenisch.kairos.service.ResourceService;
 import tech.wenisch.kairos.service.UserService;
-import tech.wenisch.kairos.service.CheckAuditService;
 
 @Controller
 @RequestMapping("/admin")

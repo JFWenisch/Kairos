@@ -1,22 +1,5 @@
 package tech.wenisch.kairos.service;
 
-import tech.wenisch.kairos.entity.MonitoredResource;
-import tech.wenisch.kairos.entity.DiscoveryServiceConfig;
-import tech.wenisch.kairos.entity.DiscoveryServiceType;
-import tech.wenisch.kairos.entity.ResourceDiscovery;
-import tech.wenisch.kairos.entity.ResourceType;
-import tech.wenisch.kairos.entity.ResourceTypeConfig;
-import tech.wenisch.kairos.repository.DiscoveryServiceConfigRepository;
-import tech.wenisch.kairos.repository.MonitoredResourceRepository;
-import tech.wenisch.kairos.repository.ResourceDiscoveryRepository;
-import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
-import jakarta.annotation.PreDestroy;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,6 +10,24 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
+import tech.wenisch.kairos.entity.DiscoveryServiceConfig;
+import tech.wenisch.kairos.entity.DiscoveryServiceType;
+import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.ResourceDiscovery;
+import tech.wenisch.kairos.entity.ResourceType;
+import tech.wenisch.kairos.entity.ResourceTypeConfig;
+import tech.wenisch.kairos.repository.DiscoveryServiceConfigRepository;
+import tech.wenisch.kairos.repository.MonitoredResourceRepository;
+import tech.wenisch.kairos.repository.ResourceDiscoveryRepository;
+import tech.wenisch.kairos.repository.ResourceTypeConfigRepository;
 
 @Service
 @Slf4j
