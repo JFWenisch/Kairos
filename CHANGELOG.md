@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.2.5 - 2026-05-03
+
+### [2.2.5](https://github.com/wenisch-tech/Kairos/compare/v2.2.4...v2.2.5) (2026-05-03)
+
+
+### Build Systems
+
+* **deps:** bump actions/attest-build-provenance from 2 to 4 ([5e6aa0c](https://github.com/wenisch-tech/Kairos/commit/5e6aa0c22e994811a87c5d68a76df8bfc74020d1))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.2.5
+
+
 ## v2.1.0 - 2026-04-30
 
 ## [2.1.0](https://github.com/wenisch-tech/Kairos/compare/v2.0.2...v2.1.0) (2026-04-30)
