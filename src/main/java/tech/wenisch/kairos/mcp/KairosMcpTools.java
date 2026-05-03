@@ -210,9 +210,11 @@ public class KairosMcpTools {
         try {
             tech.wenisch.kairos.dto.InstantCheckExecutionResult result =
                     instantCheckService.runInstantCheck(type, target, false, false);
+            String statusName = result.status() != null ? result.status().name() : "UNKNOWN";
+            checkAuditService.record("Instant Check", null, target, "MCP", statusName);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("target", target);
-            m.put("status", result.status() != null ? result.status().name() : "UNKNOWN");
+            m.put("status", statusName);
             m.put("message", result.message());
             m.put("errorCode", result.errorCode());
             m.put("latencyMs", result.latencyMs());

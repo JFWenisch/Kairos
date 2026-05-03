@@ -254,6 +254,7 @@ class KairosMcpToolsTest {
 
         Map<String, Object> result = tools.runInstantCheck("https://example.com", "HTTP");
         assertThat(result).containsEntry("status", "AVAILABLE").containsEntry("latencyMs", 100L);
+        verify(checkAuditService).record("Instant Check", null, "https://example.com", "MCP", "AVAILABLE");
     }
 
     @Test
