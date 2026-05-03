@@ -6,7 +6,7 @@ Use this when you want to quickly validate reachability or pullability before de
 
 ## What It Does
 
-- Runs an immediate check for a selected resource type (`HTTP` or `DOCKER`)
+- Runs an immediate check for a selected resource type (`HTTP`, `DOCKER`, or `TCP`)
 - Returns result details in a modal
 - Does not store a new resource automatically
 - Optionally lets users convert the checked target into a tracked resource

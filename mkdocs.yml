@@ -43,6 +43,7 @@ nav:
       - MCP Server: mcp-server.md
       - Instant Check: instant-check.md
       - Docker Pullability: docker-pullability.md
+      - TCP Port Checks: tcp-checks.md
       - Import / Export: importexport.md
       - Embed Status Widget: embed.md
       - Announcements: announcements.md

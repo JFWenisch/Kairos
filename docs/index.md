@@ -16,6 +16,7 @@ This site is built automatically from the Markdown files in this folder and publ
 - [REST API](api.md)
 - [Import / Export](importexport.md)
 - [Docker Pullability](docker-pullability.md)
+- [TCP Port Checks](tcp-checks.md)
 - [Announcements](announcements.md)
 - [Embed Status Widget](embed.md)
 

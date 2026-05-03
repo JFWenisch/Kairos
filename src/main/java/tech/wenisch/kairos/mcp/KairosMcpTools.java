@@ -195,17 +195,17 @@ public class KairosMcpTools {
                 .toList();
     }
 
-    @Tool(description = "Run an ad-hoc instant check against a URL or Docker image reference without "
+    @Tool(description = "Run an ad-hoc instant check against a URL, Docker image reference, or TCP host:port without "
             + "adding it to the monitored resources. Returns status (AVAILABLE/NOT_AVAILABLE) and message. "
             + "Instant checks must be enabled in Admin → General Settings.")
     public Map<String, Object> runInstantCheck(
-            @ToolParam(description = "The URL (for HTTP) or Docker image reference (for DOCKER) to check") String target,
-            @ToolParam(description = "Resource type to use: HTTP or DOCKER") String resourceType) {
+            @ToolParam(description = "The URL (for HTTP), Docker image reference (for DOCKER), or host:port (for TCP) to check") String target,
+            @ToolParam(description = "Resource type to use: HTTP, DOCKER, or TCP") String resourceType) {
         ResourceType type;
         try {
             type = ResourceType.valueOf(resourceType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return Map.of("error", "Invalid resourceType '" + resourceType + "'. Must be HTTP or DOCKER.");
+            return Map.of("error", "Invalid resourceType '" + resourceType + "'. Must be HTTP, DOCKER, or TCP.");
         }
         try {
             tech.wenisch.kairos.dto.InstantCheckExecutionResult result =
@@ -226,19 +226,19 @@ public class KairosMcpTools {
     }
 
     @Tool(description = "Add a new monitored resource. "
-            + "resourceType must be HTTP (for URLs) or DOCKER (for container image references). "
+            + "resourceType must be HTTP (for URLs), DOCKER (for container image references), or TCP (for host:port endpoints). "
             + "Returns the created resource including its assigned numeric ID.")
     @Transactional
     public Map<String, Object> createResource(
             @ToolParam(description = "Display name for the resource") String name,
-            @ToolParam(description = "Resource type: HTTP or DOCKER") String resourceType,
-            @ToolParam(description = "Target URL (HTTP) or Docker image reference (DOCKER)") String target,
+            @ToolParam(description = "Resource type: HTTP, DOCKER, or TCP") String resourceType,
+            @ToolParam(description = "Target URL (HTTP), Docker image reference (DOCKER), or host:port (TCP)") String target,
             @ToolParam(description = "Skip TLS certificate verification: true or false") boolean skipTls) {
         ResourceType type;
         try {
             type = ResourceType.valueOf(resourceType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return Map.of("error", "Invalid resourceType '" + resourceType + "'. Must be HTTP or DOCKER.");
+            return Map.of("error", "Invalid resourceType '" + resourceType + "'. Must be HTTP, DOCKER, or TCP.");
         }
         MonitoredResource resource = MonitoredResource.builder()
                 .name(name)

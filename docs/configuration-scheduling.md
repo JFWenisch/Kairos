@@ -8,6 +8,7 @@ This page describes how check intervals and parallelism work.
 |---------------|------------------|---------------------|
 | HTTP | 1 minute | 5 threads |
 | DOCKER | 5 minutes | 2 threads |
+| TCP | 1 minute | 5 threads |
 
 Settings are managed in **Admin -> Resource Types**.
 

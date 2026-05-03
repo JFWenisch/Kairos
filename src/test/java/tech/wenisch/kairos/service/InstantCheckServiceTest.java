@@ -30,11 +30,14 @@ class InstantCheckServiceTest {
     @Mock
     private DockerCheckService dockerCheckService;
 
+    @Mock
+    private TcpCheckService tcpCheckService;
+
     private InstantCheckService instantCheckService;
 
     @BeforeEach
     void setUp() {
-        instantCheckService = new InstantCheckService(resourceTypeConfigRepository, httpCheckService, dockerCheckService);
+        instantCheckService = new InstantCheckService(resourceTypeConfigRepository, httpCheckService, dockerCheckService, tcpCheckService);
     }
 
     @Test
@@ -76,6 +79,17 @@ class InstantCheckServiceTest {
 
         assertThat(result.status()).isEqualTo(CheckStatus.AVAILABLE);
         verify(dockerCheckService).probe("ghcr.io/org/image:latest", false, false);
+    }
+
+    @Test
+    void delegatesTcpChecksToTcpService() {
+        when(tcpCheckService.probe("mydb.example.com:5432", false, false))
+                .thenReturn(InstantCheckExecutionResult.builder().status(CheckStatus.AVAILABLE).message("TCP connection succeeded").build());
+
+        InstantCheckExecutionResult result = instantCheckService.runInstantCheck(ResourceType.TCP, "mydb.example.com:5432", false, false);
+
+        assertThat(result.status()).isEqualTo(CheckStatus.AVAILABLE);
+        verify(tcpCheckService).probe("mydb.example.com:5432", false, false);
     }
 
     private ResourceTypeConfig config(boolean allowPublic, boolean enabled) {

@@ -23,6 +23,7 @@ public class InstantCheckService {
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
+    private final TcpCheckService tcpCheckService;
 
     public InstantCheckSettings getSettings() {
         List<ResourceTypeConfig> configs = resourceTypeConfigRepository.findAll();
@@ -75,6 +76,9 @@ public class InstantCheckService {
                                                        boolean useStoredAuth) {
         if (resourceType == ResourceType.DOCKER) {
             return dockerCheckService.probe(target, skipTls, useStoredAuth);
+        }
+        if (resourceType == ResourceType.TCP) {
+            return tcpCheckService.probe(target, skipTls, useStoredAuth);
         }
         return httpCheckService.probe(target, skipTls, useStoredAuth);
     }

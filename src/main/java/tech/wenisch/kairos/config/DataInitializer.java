@@ -93,6 +93,22 @@ public class DataInitializer implements ApplicationRunner {
             }
         });
 
+        if (resourceTypeConfigRepository.findByTypeName("TCP").isEmpty()) {
+            resourceTypeConfigRepository.save(ResourceTypeConfig.builder()
+                    .typeName("TCP")
+                    .checkIntervalMinutes(1)
+                    .parallelism(5)
+                    .allowPublicAdd(false)
+                    .checkHistoryRetentionEnabled(true)
+                    .checkHistoryRetentionIntervalMinutes(60)
+                    .checkHistoryRetentionDays(31)
+                    .outageRetentionEnabled(true)
+                    .outageRetentionIntervalHours(12)
+                    .outageRetentionDays(31)
+                    .build());
+            log.info("Created default ResourceTypeConfig for TCP");
+        }
+
         resourceTypeConfigRepository.findByTypeName("DOCKERREPOSITORY").ifPresent(resourceTypeConfigRepository::delete);
 
         if (discoveryServiceConfigRepository.findByTypeName("DOCKER_REPOSITORY").isEmpty()) {

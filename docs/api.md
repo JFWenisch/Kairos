@@ -234,8 +234,8 @@ Add a new resource to monitor.
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
-| `target` | string | Full URL or Docker image reference | Yes |
+| `resourceType` | string | `HTTP`, `DOCKER`, or `TCP` | Yes |
+| `target` | string | Full URL (HTTP), Docker image reference (DOCKER), or `host:port` (TCP) | Yes |
 | `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections (HTTP checks and Docker registry checks) | No |
 | `recursive` | boolean | `true` or `false`; used by resource types that support recursive behavior | No |
 
@@ -507,8 +507,8 @@ Add a new resource to monitor.
 | Field | Type | Values | Required |
 |-------|------|--------|----------|
 | `name` | string | Any display name | Yes |
-| `resourceType` | string | `HTTP` or `DOCKER` | Yes |
-| `target` | string | Full URL or Docker image reference | Yes |
+| `resourceType` | string | `HTTP`, `DOCKER`, or `TCP` | Yes |
+| `target` | string | Full URL (HTTP), Docker image reference (DOCKER), or `host:port` (TCP) | Yes |
 | `skipTLS` | boolean | `true` or `false`; applies to HTTPS connections | No |
 | `recursive` | boolean | `true` or `false`; used by resource types that support recursive behavior | No |
 

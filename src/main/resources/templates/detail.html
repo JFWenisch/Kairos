@@ -47,7 +47,7 @@
                         <span data-role="status-dot" th:class="'status-dot me-1 status-' + ${vm.currentStatus}"></span>
                         <span class="badge detail-type-badge d-inline-flex align-items-center gap-1">
                             <i class="bi" aria-hidden="true"
-                               th:classappend="${vm.resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${vm.resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : ' bi-boxes')"></i>
+                               th:classappend="${vm.resource.resourceType.name() == 'HTTP'} ? ' bi-globe2' : (${vm.resource.resourceType.name() == 'DOCKER'} ? ' bi-box-seam' : (${vm.resource.resourceType.name() == 'TCP'} ? ' bi-hdd-network' : ' bi-boxes'))"></i>
                             <span th:text="${vm.resource.resourceType}">TYPE</span>
                         </span>
                         <span th:text="${vm.resource.name}">Resource Name</span>

@@ -35,6 +35,7 @@ public class CheckExecutorService {
 
     private final HttpCheckService httpCheckService;
     private final DockerCheckService dockerCheckService;
+    private final TcpCheckService tcpCheckService;
     private final DockerRepositorySyncService dockerRepositorySyncService;
     private final OpenshiftRouteSyncService openshiftRouteSyncService;
     private final ResourceStatusStreamService resourceStatusStreamService;
@@ -51,6 +52,7 @@ public class CheckExecutorService {
     public CheckExecutorService(
             HttpCheckService httpCheckService,
             DockerCheckService dockerCheckService,
+            TcpCheckService tcpCheckService,
             DockerRepositorySyncService dockerRepositorySyncService,
             OpenshiftRouteSyncService openshiftRouteSyncService,
             ResourceStatusStreamService resourceStatusStreamService,
@@ -61,6 +63,7 @@ public class CheckExecutorService {
             CheckAuditService checkAuditService) {
         this.httpCheckService = httpCheckService;
         this.dockerCheckService = dockerCheckService;
+        this.tcpCheckService = tcpCheckService;
         this.dockerRepositorySyncService = dockerRepositorySyncService;
         this.openshiftRouteSyncService = openshiftRouteSyncService;
         this.resourceStatusStreamService = resourceStatusStreamService;
@@ -261,6 +264,11 @@ public class CheckExecutorService {
             } else if (type == ResourceType.DOCKER) {
                 publishCheckingState(resource);
                 tech.wenisch.kairos.entity.CheckResult cr = dockerCheckService.check(resource);
+                String result = cr != null && cr.getStatus() != null ? cr.getStatus().name() : "UNKNOWN";
+                checkAuditService.record(kind, resource.getName(), resource.getTarget(), triggeredBy, result);
+            } else if (type == ResourceType.TCP) {
+                publishCheckingState(resource);
+                tech.wenisch.kairos.entity.CheckResult cr = tcpCheckService.check(resource);
                 String result = cr != null && cr.getStatus() != null ? cr.getStatus().name() : "UNKNOWN";
                 checkAuditService.record(kind, resource.getName(), resource.getTarget(), triggeredBy, result);
             }

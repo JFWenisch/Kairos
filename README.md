@@ -7,7 +7,7 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kairos)](https://artifacthub.io/packages/helm/jfwenisch/kairos)
 [![Signed](https://img.shields.io/badge/signed-cosign-green?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAxTDMgNXY2YzAgNS41NSAzLjg0IDEwLjc0IDkgMTIgNS4xNi0xLjI2IDktNi40NSA5LTEyVjVsLTktNHoiLz48L3N2Zz4=)](https://github.com/wenisch-tech/Kairos/actions)
 
-**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services and Docker images are reachable, can discover Docker images from repository prefixes, stores a full check history, and presents the results on a clean status dashboard - with Prometheus metrics included.
+**Kairos** is a self-hosted uptime and availability monitoring application built with Spring Boot. It periodically checks whether your HTTP services, Docker images, and TCP endpoints are reachable, can discover Docker images from repository prefixes, stores a full check history, and presents the results on a clean status dashboard - with Prometheus metrics included.
 
 ---
 
@@ -33,6 +33,7 @@
 - **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
 - **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
 - **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
+- **TCP port monitoring** - checks whether any TCP endpoint (`host:port`) accepts connections; useful for databases, message brokers, and internal services
 - **Resource discovery services** - configure discovery sources (currently Docker registry/namespace discovery, for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
 - **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
 
