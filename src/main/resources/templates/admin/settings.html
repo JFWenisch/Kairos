@@ -49,10 +49,10 @@
 
             <h2 class="h4 mb-4"><i class="bi bi-sliders me-2"></i>General Settings</h2>
 
+            <form th:action="@{/admin/settings}" method="post">
             <div class="card mb-4">
                 <div class="card-header">Public Access Settings</div>
                 <div class="card-body">
-                    <form th:action="@{/admin/settings}" method="post">
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="allowPublicAccess"
                                    name="allowPublicAccess" th:checked="${allowPublicAccess}">
@@ -77,17 +77,6 @@
                             </label>
                             <div class="form-text">When enabled, unauthenticated users can manually trigger a check on any resource detail page.</div>
                         </div>
-                        <hr class="my-4">
-
-                        <h6 class="mb-3"><i class="bi bi-lightning-charge me-2"></i>Instant Check</h6>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="instantCheckEnabled"
-                                   name="instantCheckEnabled" th:checked="${instantCheckEnabled}">
-                            <label class="form-check-label" for="instantCheckEnabled">
-                                Enable instant check form on landing page
-                            </label>
-                            <div class="form-text">Shows an inline check form in the dashboard header without storing a resource.</div>
-                        </div>
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="instantCheckAllowPublic"
                                    name="instantCheckAllowPublic" th:checked="${instantCheckAllowPublic}">
@@ -95,6 +84,28 @@
                                 Allow public instant checks
                             </label>
                             <div class="form-text">When disabled, users must be authenticated to execute instant checks.</div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="alwaysDisplayUrl"
+                                   name="alwaysDisplayUrl" th:checked="${alwaysDisplayUrl}">
+                            <label class="form-check-label" for="alwaysDisplayUrl">
+                                Always display URL
+                            </label>
+                            <div class="form-text">When enabled, full resource URLs are shown. When disabled, only the resource name is displayed.</div>
+                        </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-lightning-charge me-2"></i>Instant Check</div>
+                <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="instantCheckEnabled"
+                                   name="instantCheckEnabled" th:checked="${instantCheckEnabled}">
+                            <label class="form-check-label" for="instantCheckEnabled">
+                                Enable instant check form on landing page
+                            </label>
+                            <div class="form-text">Shows an inline check form in the dashboard header without storing a resource.</div>
                         </div>
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="instantCheckUseStoredAuth"
@@ -113,18 +124,12 @@
                                       th:text="${instantCheckAllowedDomains}"></textarea>
                             <div class="form-text">Use <code>*</code> to allow all targets (default). Wildcards are supported, for example <code>example.com/*</code>.</div>
                         </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="alwaysDisplayUrl"
-                                   name="alwaysDisplayUrl" th:checked="${alwaysDisplayUrl}">
-                            <label class="form-check-label" for="alwaysDisplayUrl">
-                                Always display URL
-                            </label>
-                            <div class="form-text">When enabled, full resource URLs are shown. When disabled, only the resource name is displayed.</div>
-                        </div>
+                </div>
+            </div>
 
-                        <hr class="my-4">
-
-                        <h6 class="mb-3"><i class="bi bi-trash3 me-2"></i>Check History Retention</h6>
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-trash3 me-2"></i>Check History Retention</div>
+                <div class="card-body">
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="checkHistoryRetentionEnabled"
                                    name="checkHistoryRetentionEnabled" th:checked="${checkHistoryRetentionEnabled}">
@@ -133,7 +138,6 @@
                             </label>
                             <div class="form-text">Deletes old check records in the background without blocking regular checks.</div>
                         </div>
-
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="checkHistoryRetentionIntervalMinutes" class="form-label">Run cleanup every (minutes)</label>
@@ -154,10 +158,12 @@
                                        th:value="${checkHistoryRetentionDays}">
                             </div>
                         </div>
+                </div>
+            </div>
 
-                        <hr class="my-4">
-
-                        <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i>Outage Retention</h6>
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-clock-history me-2"></i>Outage Retention</div>
+                <div class="card-body">
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="outageRetentionEnabled"
                                    name="outageRetentionEnabled" th:checked="${outageRetentionEnabled}">
@@ -166,8 +172,7 @@
                             </label>
                             <div class="form-text">Deletes closed outage records in a dedicated scheduled run using outage end date as the retention reference.</div>
                         </div>
-
-                        <div class="row g-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label for="outageRetentionIntervalHours" class="form-label">Run cleanup every (hours)</label>
                                 <input type="number"
@@ -187,10 +192,6 @@
                                        th:value="${outageRetentionDays}">
                             </div>
                         </div>
-
-                        <hr class="my-4">
-
-                        <h6 class="mb-3"><i class="bi bi-hdd-network me-2"></i>Resource Management</h6>
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input" type="checkbox" id="deleteOutagesOnResourceDelete"
                                    name="deleteOutagesOnResourceDelete" th:checked="${deleteOutagesOnResourceDelete}">
@@ -199,11 +200,6 @@
                             </label>
                             <div class="form-text">When enabled, all outage records for a resource are deleted together with it. When disabled, outage history is kept but no longer linked to any resource.</div>
                         </div>
-
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save me-1"></i>Save Settings
-                        </button>
-                    </form>
                 </div>
             </div>
 
@@ -242,6 +238,13 @@
                     </form>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Save Settings
+                </button>
+            </div>
+            </form>
         </div>
     </div>
 </div>
