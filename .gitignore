@@ -12,3 +12,4 @@ kairos.trace.db
 .settings/
 .classpath
 .project
+.vscode/mcp.json
