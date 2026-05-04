@@ -17,6 +17,8 @@ theme:
     - navigation.expand
     - navigation.top
     - content.code.copy
+  logo: img/kairos.png
+  favicon: img/kairos.png
   icon:
     repo: fontawesome/brands/github
 extra_css:
@@ -25,6 +27,7 @@ nav:
   - Home: index.md
   - Getting Started:
       - Installation and Quickstart: quickstart.md
+      - Setting up Notifications: notifications-quickstart.md
       - Additional Parameters: additional-parameters.md
   - Configuration:
       - Overview: configuration.md
@@ -38,6 +41,10 @@ nav:
       - Security Concepts: configuration-security.md
       - Observability: configuration-observability.md
       - Custom Headers: custom-headers.md
+      - Notifications:
+          - Overview: notifications/index.md
+          - Notification Providers: notifications/providers.md
+          - Notification Policies: notifications/policies.md
   - Operations:
       - REST API: api.md
       - MCP Server: mcp-server.md
