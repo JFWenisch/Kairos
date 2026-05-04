@@ -165,6 +165,10 @@ public class AdminController {
             .findFirst()
             .orElse(31);
         boolean deleteOutagesOnResourceDelete = configs.stream().anyMatch(ResourceTypeConfig::isDeleteOutagesOnResourceDelete);
+        int dashboardAutoGroupThreshold = configs.stream()
+            .map(ResourceTypeConfig::getDashboardAutoGroupThreshold)
+            .findFirst()
+            .orElse(10);
         model.addAttribute("allowPublicAccess", allowPublicAccess);
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowPublicCheckNow", allowPublicCheckNow);
@@ -180,6 +184,7 @@ public class AdminController {
         model.addAttribute("outageRetentionIntervalHours", outageRetentionIntervalHours);
         model.addAttribute("outageRetentionDays", outageRetentionDays);
         model.addAttribute("deleteOutagesOnResourceDelete", deleteOutagesOnResourceDelete);
+        model.addAttribute("dashboardAutoGroupThreshold", dashboardAutoGroupThreshold);
         model.addAttribute("corsAllowedOrigins", corsAllowedOriginRepository.findAll());
         model.addAttribute("configs", configs);
         return "admin/settings";
@@ -201,11 +206,13 @@ public class AdminController {
                                @RequestParam(defaultValue = "12") int outageRetentionIntervalHours,
                                @RequestParam(defaultValue = "31") int outageRetentionDays,
                                @RequestParam(defaultValue = "false") boolean deleteOutagesOnResourceDelete,
+                               @RequestParam(defaultValue = "10") int dashboardAutoGroupThreshold,
                                RedirectAttributes redirectAttributes) {
         int sanitizedRetentionIntervalMinutes = Math.max(1, checkHistoryRetentionIntervalMinutes);
         int sanitizedRetentionDays = Math.max(1, checkHistoryRetentionDays);
         int sanitizedOutageRetentionIntervalHours = Math.max(1, outageRetentionIntervalHours);
         int sanitizedOutageRetentionDays = Math.max(1, outageRetentionDays);
+        int sanitizedDashboardAutoGroupThreshold = Math.max(1, dashboardAutoGroupThreshold);
         String normalizedInstantCheckAllowedDomains =
             (instantCheckAllowedDomains == null || instantCheckAllowedDomains.trim().isEmpty())
                 ? "*"
@@ -227,6 +234,7 @@ public class AdminController {
             config.setOutageRetentionIntervalHours(sanitizedOutageRetentionIntervalHours);
             config.setOutageRetentionDays(sanitizedOutageRetentionDays);
             config.setDeleteOutagesOnResourceDelete(deleteOutagesOnResourceDelete);
+            config.setDashboardAutoGroupThreshold(sanitizedDashboardAutoGroupThreshold);
             resourceTypeConfigRepository.save(config);
         }
         redirectAttributes.addFlashAttribute("successMessage", "Settings saved successfully");

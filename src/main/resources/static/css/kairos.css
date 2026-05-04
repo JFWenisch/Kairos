@@ -579,6 +579,19 @@
     min-width: 2rem;
 }
 
+.group-header-only-item {
+    border: 1px solid var(--landing-border);
+    border-radius: 1rem;
+    background-color: var(--landing-surface-soft);
+    overflow: hidden;
+}
+
+.group-header-only-button {
+    display: block;
+    width: 100%;
+    padding: 1rem 1.25rem;
+}
+
 .group-open-link {
     color: inherit;
 }

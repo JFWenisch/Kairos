@@ -8,6 +8,7 @@ import tech.wenisch.kairos.dto.ResourceStatusUpdateDTO;
 import tech.wenisch.kairos.entity.MonitoredResource;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,6 +64,10 @@ public class ResourceStatusStreamService {
         return buildSnapshot(hours);
     }
 
+    public List<ResourceStatusUpdateDTO> getSnapshot(int hours, boolean includeTimeline) {
+        return buildSnapshot(hours, includeTimeline);
+    }
+
     public Optional<ResourceStatusUpdateDTO> getSnapshotForResource(Long resourceId, int hours) {
         return resourceService.findById(resourceId)
             .map(resource -> {
@@ -70,6 +75,16 @@ public class ResourceStatusStreamService {
                     .map(o -> o.getStartDate().format(OUTAGE_FORMATTER))
                     .orElse(null);
                 return buildUpdate(resource, hours, activeOutageSince);
+            });
+    }
+
+    public Optional<ResourceStatusUpdateDTO> getSnapshotForResource(Long resourceId, int hours, boolean includeTimeline) {
+        return resourceService.findById(resourceId)
+            .map(resource -> {
+                String activeOutageSince = outageService.findActiveOutage(resource)
+                    .map(o -> o.getStartDate().format(OUTAGE_FORMATTER))
+                    .orElse(null);
+                return buildUpdate(resource, hours, activeOutageSince, includeTimeline);
             });
     }
 
@@ -84,6 +99,13 @@ public class ResourceStatusStreamService {
             .toList();
     }
 
+    private List<ResourceStatusUpdateDTO> buildSnapshot(int hours, boolean includeTimeline) {
+        Map<Long, String> outageMap = outageService.findAllActiveSinceByResourceId();
+        return resourceService.findAllActive().stream()
+            .map(resource -> buildUpdate(resource, hours, outageMap.get(resource.getId()), includeTimeline))
+            .toList();
+    }
+
     private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource) {
         return buildUpdate(resource, 24, null);
     }
@@ -93,6 +115,20 @@ public class ResourceStatusStreamService {
         }
 
     private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours, String activeOutageSince) {
+        return buildUpdate(resource, hours, activeOutageSince, true);
+    }
+
+    private ResourceStatusUpdateDTO buildUpdate(MonitoredResource resource, int hours, String activeOutageSince, boolean includeTimeline) {
+        if (!includeTimeline) {
+            return new ResourceStatusUpdateDTO(
+                resource.getId(),
+                resourceService.getCurrentStatus(resource),
+                Collections.emptyList(),
+                0.0,
+                activeOutageSince
+            );
+        }
+
         ResourceService.TimelineData timelineData = resourceService.getTimelineData(resource, hours);
         return new ResourceStatusUpdateDTO(
             resource.getId(),

@@ -93,6 +93,16 @@
                             </label>
                             <div class="form-text">When enabled, full resource URLs are shown. When disabled, only the resource name is displayed.</div>
                         </div>
+                        <div class="mb-3">
+                            <label for="dashboardAutoGroupThreshold" class="form-label">Auto-switch to Groups mode at group count</label>
+                            <input type="number"
+                                   min="1"
+                                   class="form-control"
+                                   id="dashboardAutoGroupThreshold"
+                                   name="dashboardAutoGroupThreshold"
+                                   th:value="${dashboardAutoGroupThreshold}">
+                            <div class="form-text">Default: 10. If the dashboard has at least this many groups, the initial landing-page view defaults to Groups mode. Users can still switch modes and their preference is remembered.</div>
+                        </div>
                 </div>
             </div>
 

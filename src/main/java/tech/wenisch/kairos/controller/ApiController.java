@@ -147,9 +147,10 @@ public class ApiController {
             tags = "Resources")
         @GetMapping("/resources/status-updates")
     public ResponseEntity<List<ResourceStatusUpdateDTO>> getResourceStatusUpdates(
-            @RequestParam(name = "hours", defaultValue = "24") int hours) {
+                @RequestParam(name = "hours", defaultValue = "24") int hours,
+                @RequestParam(name = "includeTimeline", defaultValue = "true") boolean includeTimeline) {
         int normalizedHours = normalizeTimelineHours(hours);
-        return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours));
+            return ResponseEntity.ok(resourceStatusStreamService.getSnapshot(normalizedHours, includeTimeline));
     }
 
         @Operation(summary = "Get resource status update",
@@ -159,13 +160,14 @@ public class ApiController {
     public ResponseEntity<ResourceStatusUpdateDTO> getResourceStatusUpdateByResourceId(
             @PathVariable Long id,
             @RequestParam(name = "hours", defaultValue = "24") int hours,
+            @RequestParam(name = "includeTimeline", defaultValue = "true") boolean includeTimeline,
             Authentication authentication) {
         int normalizedHours = normalizeTimelineHours(hours);
         boolean authenticated = isAuthenticated(authentication);
         if (resourceService.findById(id).filter(resource -> isVisibleByGroupPolicy(resource, authenticated)).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours)
+        return resourceStatusStreamService.getSnapshotForResource(id, normalizedHours, includeTimeline)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

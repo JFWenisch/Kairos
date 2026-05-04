@@ -76,6 +76,9 @@ public class ResourceTypeConfig {
     private boolean deleteOutagesOnResourceDelete = true;
 
     @Builder.Default
+    private int dashboardAutoGroupThreshold = 10;
+
+    @Builder.Default
     private String embedPolicy = "ALLOW_ALL";
 
     @OneToMany(mappedBy = "resourceTypeConfig", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

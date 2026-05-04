@@ -172,10 +172,24 @@ function initializeViewModeSwitcher() {
     }
 
     const buttons = switcher.querySelectorAll('button[data-view-mode]');
-    const savedViewMode = localStorage.getItem('viewMode');
+    const storageKey = switcher.getAttribute('data-view-mode-storage-key') || 'viewMode';
+    const initialViewMode = switcher.getAttribute('data-initial-view-mode');
+    const availableModes = Array.from(buttons)
+        .map(function(button) {
+            return button.getAttribute('data-view-mode');
+        })
+        .filter(function(mode) {
+            return mode === 'timeline' || mode === 'cards' || mode === 'groups';
+        });
+    const hasTimelineMode = availableModes.indexOf('timeline') !== -1;
+    const defaultMode = hasTimelineMode ? 'timeline' : (availableModes[0] || 'timeline');
+    const savedViewMode = localStorage.getItem(storageKey);
 
     function normalizeViewMode(mode) {
-        return mode === 'cards' ? 'cards' : 'timeline';
+        if (mode && availableModes.indexOf(mode) !== -1) {
+            return mode;
+        }
+        return defaultMode;
     }
 
     function setViewMode(mode) {
@@ -199,11 +213,17 @@ function initializeViewModeSwitcher() {
         });
 
         // Save preference
-        localStorage.setItem('viewMode', normalizedMode);
+        localStorage.setItem(storageKey, normalizedMode);
+        window.dispatchEvent(new CustomEvent('kairos:viewmodechange', {
+            detail: { mode: normalizedMode }
+        }));
+        applyResourceStatusFilter();
     }
 
-    // Set initial view mode
-    setViewMode(normalizeViewMode(savedViewMode));
+    // Set initial view mode: user preference wins; otherwise use server-provided initial mode.
+    const hasSavedMode = savedViewMode && availableModes.indexOf(savedViewMode) !== -1;
+    const preferredInitialMode = hasSavedMode ? savedViewMode : initialViewMode;
+    setViewMode(normalizeViewMode(preferredInitialMode));
 
     // Add click listeners to buttons
     buttons.forEach(function(button) {
@@ -212,6 +232,14 @@ function initializeViewModeSwitcher() {
             setViewMode(mode);
         });
     });
+}
+
+function isGroupsViewActive() {
+    const activeButton = document.querySelector('[data-role="view-mode-switcher"] .view-mode-btn.active[data-view-mode]');
+    if (!activeButton) {
+        return false;
+    }
+    return activeButton.getAttribute('data-view-mode') === 'groups';
 }
 
 function initializeResourceCardLinks() {
@@ -863,7 +891,9 @@ function initResourceStatusStream() {
     }
 
     function buildSnapshotUrl() {
-        return '/api/resources/status-updates?hours=' + encodeURIComponent(String(currentTimelineHours));
+        const includeTimeline = !isGroupsViewActive();
+        return '/api/resources/status-updates?hours=' + encodeURIComponent(String(currentTimelineHours))
+            + '&includeTimeline=' + encodeURIComponent(String(includeTimeline));
     }
 
     function fetchSnapshot(options) {
@@ -1006,6 +1036,15 @@ function initResourceStatusStream() {
         });
     });
 
+    window.addEventListener('kairos:viewmodechange', function(event) {
+        const mode = event && event.detail ? event.detail.mode : null;
+        if (mode === 'groups') {
+            fetchSnapshotWithOptionalLoading(false);
+            return;
+        }
+        fetchSnapshotWithOptionalLoading(true);
+    });
+
     if (preferPollingOverSse || typeof EventSource === 'undefined') {
         startHttpPolling();
         return;
@@ -1052,6 +1091,21 @@ function parseUpdatePayload(raw) {
 
 var activeResourceStatusFilter = 'all';
 var activeResourceNameFilter = '';
+var resourceViewRecomputeScheduled = false;
+
+function scheduleResourceViewRecompute() {
+    if (resourceViewRecomputeScheduled) {
+        return;
+    }
+
+    resourceViewRecomputeScheduled = true;
+    window.requestAnimationFrame(function() {
+        resourceViewRecomputeScheduled = false;
+        updateSnapshotCounts();
+        applyResourceStatusFilter();
+        refreshAllGroupCounters();
+    });
+}
 
 function normalizeResourceFilterStatus(filter) {
     if (filter === 'available' || filter === 'not-available' || filter === 'unknown') {
@@ -1123,6 +1177,22 @@ function applyResourceStatusFilter() {
         container.hidden = !matches;
     });
 
+    const visibleRowGroupIds = new Set();
+    document.querySelectorAll('.resource-row[data-group-id]:not([hidden])').forEach(function(row) {
+        const groupId = row.getAttribute('data-group-id');
+        if (groupId) {
+            visibleRowGroupIds.add(groupId);
+        }
+    });
+
+    const visibleCardGroupIds = new Set();
+    document.querySelectorAll('[data-view="cards"] [data-resource-id][data-group-id]:not([hidden])').forEach(function(card) {
+        const groupId = card.getAttribute('data-group-id');
+        if (groupId) {
+            visibleCardGroupIds.add(groupId);
+        }
+    });
+
     const ungroupedTimelinePanel = document.querySelector('.resource-panel');
     if (ungroupedTimelinePanel) {
         const visibleRows = ungroupedTimelinePanel.querySelector('.resource-row[data-resource-id]:not([hidden])');
@@ -1137,8 +1207,7 @@ function applyResourceStatusFilter() {
 
     document.querySelectorAll('#groupedResourceAccordion .accordion-item[data-group-id]').forEach(function(groupItem) {
         const groupId = groupItem.getAttribute('data-group-id');
-        const visibleRows = groupItem.querySelector('.resource-row[data-group-id="' + groupId + '"]:not([hidden])');
-        groupItem.hidden = !visibleRows;
+        groupItem.hidden = !visibleRowGroupIds.has(groupId);
     });
 
     const groupedAccordion = document.querySelector('#groupedResourceAccordion');
@@ -1147,10 +1216,20 @@ function applyResourceStatusFilter() {
         groupedAccordion.hidden = !hasVisibleGroup;
     }
 
+    const groupedHeaderList = document.querySelector('#groupedResourceHeaderList');
+    if (groupedHeaderList) {
+        groupedHeaderList.querySelectorAll('.group-header-only-item[data-group-id]').forEach(function(groupItem) {
+            const groupId = groupItem.getAttribute('data-group-id');
+            groupItem.hidden = !visibleRowGroupIds.has(groupId);
+        });
+
+        const hasVisibleHeaderGroup = groupedHeaderList.querySelector('.group-header-only-item[data-group-id]:not([hidden])');
+        groupedHeaderList.hidden = !hasVisibleHeaderGroup;
+    }
+
     document.querySelectorAll('.resource-cards-group[data-group-id]').forEach(function(groupContainer) {
         const groupId = groupContainer.getAttribute('data-group-id');
-        const visibleCards = groupContainer.querySelector('[data-resource-id][data-group-id="' + groupId + '"]:not([hidden])');
-        groupContainer.hidden = !visibleCards;
+        groupContainer.hidden = !visibleCardGroupIds.has(groupId);
     });
 }
 
@@ -1238,9 +1317,7 @@ function updateResourceRow(update) {
         applyResourceUpdateToContainer(container, update);
     });
 
-    updateSnapshotCounts();
-    applyResourceStatusFilter();
-    refreshAllGroupCounters();
+    scheduleResourceViewRecompute();
 }
 
 function applyResourceUpdateToContainer(container, update) {
@@ -1248,10 +1325,14 @@ function applyResourceUpdateToContainer(container, update) {
     container.setAttribute('data-resource-status', normalizedStatus);
     updateStatusDot(container, normalizedStatus);
     updateCardStatus(container, normalizedStatus);
-    updateTimeline(container, update.timelineBlocks);
+    if (!isGroupsViewActive()) {
+        updateTimeline(container, update.timelineBlocks);
+    }
     updateUptime(container, update.uptimePercentage);
     updateOutageBadge(container, update.activeOutageSince || null);
-    updateLatencyLabel(container, update.timelineBlocks);
+    if (!isGroupsViewActive()) {
+        updateLatencyLabel(container, update.timelineBlocks);
+    }
     container.classList.remove('resource-loading');
 }
 
@@ -1855,41 +1936,73 @@ function formatCheckedAtShort(checkedAt) {
 function refreshAllGroupCounters() {
     const groups = document.querySelectorAll('[data-group-id]');
     const uniqueGroupIds = new Set();
+    const countsByGroup = new Map();
+
+    document.querySelectorAll('.resource-row[data-group-id]').forEach(function(row) {
+        const groupId = row.getAttribute('data-group-id');
+        if (!groupId) {
+            return;
+        }
+
+        if (!countsByGroup.has(groupId)) {
+            countsByGroup.set(groupId, {
+                available: 0,
+                'not-available': 0,
+                unknown: 0
+            });
+        }
+
+        const counts = countsByGroup.get(groupId);
+        const status = normalizeStatus(row.getAttribute('data-resource-status'));
+        counts[status] += 1;
+    });
 
     groups.forEach(function(element) {
         const groupId = element.getAttribute('data-group-id');
-        if (groupId && groupId !== 'ungrouped') {
+        if (groupId) {
             uniqueGroupIds.add(groupId);
         }
     });
 
     uniqueGroupIds.forEach(function(groupId) {
-        const rows = document.querySelectorAll('.resource-row[data-group-id="' + groupId + '"]');
-        const counts = {
+        const counts = countsByGroup.get(groupId) || {
             available: 0,
             'not-available': 0,
             unknown: 0
         };
 
-        rows.forEach(function(row) {
-            const dot = row.querySelector('[data-role="status-dot"]');
-            const status = getStatusFromDot(dot);
-            counts[status] += 1;
-        });
-
         updateGroupCounterBadge(groupId, 'available', counts.available);
         updateGroupCounterBadge(groupId, 'not-available', counts['not-available']);
         updateGroupCounterBadge(groupId, 'unknown', counts.unknown);
+        updateGroupIndicator(groupId, counts);
     });
 }
 
 function updateGroupCounterBadge(groupId, status, value) {
     const selector = '[data-group-counter="' + status + '"][data-group-id="' + groupId + '"]';
-    const badge = document.querySelector(selector);
-    if (!badge) {
+    const badges = document.querySelectorAll(selector);
+    badges.forEach(function(badge) {
+        badge.textContent = String(value);
+    });
+}
+
+function updateGroupIndicator(groupId, counts) {
+    const indicators = document.querySelectorAll('[data-group-indicator="true"][data-group-id="' + groupId + '"]');
+    if (indicators.length === 0) {
         return;
     }
-    badge.textContent = String(value);
+
+    let overallStatus = 'unknown';
+    if (counts['not-available'] > 0) {
+        overallStatus = 'not-available';
+    } else if (counts.available > 0) {
+        overallStatus = 'available';
+    }
+
+    indicators.forEach(function(indicator) {
+        indicator.classList.remove('status-available', 'status-not-available', 'status-unknown');
+        indicator.classList.add('status-' + overallStatus);
+    });
 }
 
 function getStatusFromDot(dot) {

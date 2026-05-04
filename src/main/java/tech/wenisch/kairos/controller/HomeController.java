@@ -97,10 +97,16 @@ public class HomeController {
 
         boolean allowPublicAdd = isPublicAddAllowed();
         boolean allowResourceSubmit = allowPublicAdd || authenticated;
+        int dashboardAutoGroupThreshold = resourceTypeConfigRepository.findAll().stream()
+            .map(ResourceTypeConfig::getDashboardAutoGroupThreshold)
+            .findFirst()
+            .orElse(10);
+        String initialDashboardViewMode = groupedResources.size() >= dashboardAutoGroupThreshold ? "groups" : "timeline";
 
         model.addAttribute("totalResourceCount", resources.size());
         model.addAttribute("ungroupedResources", ungroupedResources);
         model.addAttribute("groupedResources", groupedResources);
+        model.addAttribute("initialDashboardViewMode", initialDashboardViewMode);
         model.addAttribute("announcements", announcementService.findAllActiveForPublicView());
         model.addAttribute("allowPublicAdd", allowPublicAdd);
         model.addAttribute("allowResourceSubmit", allowResourceSubmit);

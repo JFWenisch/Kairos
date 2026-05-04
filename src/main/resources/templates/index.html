@@ -58,7 +58,8 @@
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Refreshing cards...
             </span>
-            <div class="btn-group btn-group-sm ms-2 view-mode-group" role="group" aria-label="View mode" data-role="view-mode-switcher">
+              <div class="btn-group btn-group-sm ms-2 view-mode-group" role="group" aria-label="View mode" data-role="view-mode-switcher" data-view-mode-storage-key="viewMode.dashboard"
+                  th:attr="data-initial-view-mode=${initialDashboardViewMode}">
                 <button type="button" class="btn btn-outline-secondary view-mode-btn active" data-view-mode="timeline" aria-pressed="true"
                         title="Timeline view">
                     <i class="bi bi-bar-chart"></i> Timeline
@@ -66,6 +67,10 @@
                 <button type="button" class="btn btn-outline-secondary view-mode-btn" data-view-mode="cards" aria-pressed="false"
                         title="Card view">
                     <i class="bi bi-columns-gap"></i> Cards
+                </button>
+                <button type="button" class="btn btn-outline-secondary view-mode-btn" data-view-mode="groups" aria-pressed="false"
+                        title="Groups mode: shows only group headers and status indicators for faster loading.">
+                    <i class="bi bi-diagram-3"></i> Groups
                 </button>
             </div>
             <button type="button" class="btn btn-sm btn-primary mt-1" th:if="${allowResourceSubmit}"
@@ -279,6 +284,7 @@
                         th:attr="data-bs-target='#group-collapse-' + ${groupShell.group.id},aria-controls='group-collapse-' + ${groupShell.group.id}">
                   <span class="group-header-content">
                     <span class="fw-semibold me-3">
+                                <span class="status-dot me-2 status-unknown" th:attr="data-group-indicator='true',data-group-id=${groupShell.group.id}" aria-hidden="true" title="Group status indicator"></span>
                         <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>
                         <a th:href="@{/groups/{id}(id=${groupShell.group.id})}" class="group-open-link text-decoration-none"
                            onclick="event.stopPropagation();"><span th:text="${groupShell.group.name}">Group Name</span></a>
@@ -389,6 +395,46 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="groupedResourceHeaderList" class="group-header-only-list" data-view="groups" style="display: none;">
+        <div class="group-header-only-item mb-3" th:unless="${#lists.isEmpty(ungroupedResources)}" data-group-id="ungrouped">
+            <div class="group-header-only-button">
+                <span class="group-header-content">
+                    <span class="fw-semibold me-3">
+                        <span class="status-dot me-2 status-unknown" data-group-indicator="true" data-group-id="ungrouped" aria-hidden="true" title="Ungrouped status indicator"></span>
+                        <i class="bi bi-grid me-2" aria-hidden="true"></i>
+                        Ungrouped
+                    </span>
+                    <span class="group-status-summary ms-auto">
+                        <span class="badge text-bg-success me-1" data-group-counter="available" data-group-id="ungrouped">0</span>
+                        <span class="badge text-bg-danger me-1" data-group-counter="not-available" data-group-id="ungrouped">0</span>
+                        <span class="badge text-bg-secondary" data-group-counter="unknown" data-group-id="ungrouped">0</span>
+                    </span>
+                </span>
+            </div>
+        </div>
+        <div class="group-header-only-item mb-3" th:each="groupShell : ${groupedResources}" th:attr="data-group-id=${groupShell.group.id}">
+            <div class="group-header-only-button">
+                <span class="group-header-content">
+                    <span class="fw-semibold me-3">
+                        <span class="status-dot me-2 status-unknown" th:attr="data-group-indicator='true',data-group-id=${groupShell.group.id}" aria-hidden="true" title="Group status indicator"></span>
+                        <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>
+                        <a th:href="@{/groups/{id}(id=${groupShell.group.id})}" class="group-open-link text-decoration-none">
+                            <span th:text="${groupShell.group.name}">Group Name</span>
+                        </a>
+                        <a th:href="@{/groups/{id}(id=${groupShell.group.id})}" class="group-open-link text-decoration-none ms-1" aria-label="Open group dashboard">
+                            <i class="bi bi-arrow-up-right-circle" aria-hidden="true"></i>
+                        </a>
+                    </span>
+                    <span class="group-status-summary ms-auto">
+                        <span class="badge text-bg-success me-1" th:attr="data-group-counter='available',data-group-id=${groupShell.group.id}">0</span>
+                        <span class="badge text-bg-danger me-1" th:attr="data-group-counter='not-available',data-group-id=${groupShell.group.id}">0</span>
+                        <span class="badge text-bg-secondary" th:attr="data-group-counter='unknown',data-group-id=${groupShell.group.id}">0</span>
+                    </span>
+                </span>
             </div>
         </div>
     </div>
