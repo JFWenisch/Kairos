@@ -2,7 +2,7 @@
 
 Kairos can send you an alert when a resource goes down and another when it recovers. This guide walks you through the complete setup using **Email (SMTP)** as the example, then shows how to extend it to other channels.
 
-The full reference for every provider option is in [Notification Providers](../notifications/providers.md). Scope and routing rules are explained in [Notification Policies](../notifications/policies.md).
+The full reference for every provider option is in [Notification Providers](notifications/providers.md). Scope and routing rules are explained in [Notification Policies](notifications/policies.md).
 
 ---
 
@@ -69,6 +69,6 @@ Add a resource that is currently unreachable (or temporarily set an existing res
 
 Now that your first provider and policy are in place, you can extend the setup:
 
-- **Add more providers** — set up Discord, a generic webhook, or GitLab incident management in parallel. Each provider type has its own dedicated section in [Notification Providers](../notifications/providers.md).
-- **Narrow the scope** — switch a policy from *All Resources* to *Scoped* and pick specific resource groups or individual resources. See [Notification Policies](../notifications/policies.md) for examples.
+- **Add more providers** — set up Discord, a generic webhook, or GitLab incident management in parallel. Each provider type has its own dedicated section in [Notification Providers](notifications/providers.md).
+- **Narrow the scope** — switch a policy from *All Resources* to *Scoped* and pick specific resource groups or individual resources. See [Notification Policies](notifications/policies.md) for examples.
 - **Stack policies** — create a second policy that also pings Discord only for your most critical resources, while the email policy continues to cover everything.
