@@ -1,5 +1,31 @@
 # Changelog
 
+## v2.7.0 - 2026-05-04
+
+## [2.7.0](https://github.com/wenisch-tech/Kairos/compare/v2.6.0...v2.7.0) (2026-05-04)
+
+
+### Features
+
+* Added Support for gitlab as notification channel using gitlab incident feature ([9585600](https://github.com/wenisch-tech/Kairos/commit/95856004e299f1dc0e5a9d6db4ebbe035868306c))
+* adding notificationpolicy ([5052d53](https://github.com/wenisch-tech/Kairos/commit/5052d53b823a5e38930f9d9bb835ff5a3edadcfb))
+* Adding support for  Notification providers (Email, Webhook, Discord) and notification policies ([89e980d](https://github.com/wenisch-tech/Kairos/commit/89e980df1e494d37610d805a9457d290a4a364a2))
+
+
+### Bug Fixes
+
+* updated db migration for gitlab notifications adding h2 support ([e184cf5](https://github.com/wenisch-tech/Kairos/commit/e184cf5e1f33dc7e9d53b809096ac36f887ffb97))
+
+
+### Documentation
+
+* Updated docs regarding notifications and added logo within docs ([a23b56d](https://github.com/wenisch-tech/Kairos/commit/a23b56d3190290e9fc995dc299ce613af3ef4485))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.7.0
+
+
 ## v2.6.0 - 2026-05-04
 
 ## [2.6.0](https://github.com/wenisch-tech/Kairos/compare/v2.5.2...v2.6.0) (2026-05-04)
