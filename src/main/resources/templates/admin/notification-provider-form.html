@@ -133,6 +133,32 @@
                             </div>
                         </div>
 
+                        <!-- GITLAB fields -->
+                        <div id="gitlabFields" class="border rounded p-3 mb-4" style="display:none;">
+                            <h6 class="fw-semibold mb-3"><i class="bi bi-git me-2"></i>GitLab Incident Management Settings</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">GitLab Base URL</label>
+                                    <input type="url" class="form-control" name="gitlabBaseUrl" maxlength="2048"
+                                           th:value="${provider.gitlabBaseUrl}" placeholder="https://gitlab.com">
+                                    <div class="form-text">Base URL of your GitLab instance.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Project ID or Path</label>
+                                    <input type="text" class="form-control" name="gitlabProjectId" maxlength="255"
+                                           th:value="${provider.gitlabProjectId}" placeholder="42 or mygroup/myproject">
+                                    <div class="form-text">Numeric project ID or URL-encoded path.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Personal Access Token</label>
+                                    <input type="password" class="form-control" name="gitlabToken" maxlength="255"
+                                           th:value="${provider.gitlabToken}" autocomplete="new-password"
+                                           placeholder="glpat-xxxxxxxxxxxxxxxxxxxx">
+                                    <div class="form-text">Token needs <code>api</code> scope to create and close incidents.</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-1"></i>Save
@@ -155,6 +181,7 @@
         document.getElementById('emailFields').style.display   = (type === 'EMAIL')   ? '' : 'none';
         document.getElementById('webhookFields').style.display = (type === 'WEBHOOK') ? '' : 'none';
         document.getElementById('discordFields').style.display = (type === 'DISCORD') ? '' : 'none';
+        document.getElementById('gitlabFields').style.display  = (type === 'GITLAB')  ? '' : 'none';
     }
 
     document.addEventListener('DOMContentLoaded', function () {

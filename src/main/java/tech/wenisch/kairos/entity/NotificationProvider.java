@@ -52,4 +52,14 @@ public class NotificationProvider {
     // Discord fields
     @Column(length = 2048)
     private String discordWebhookUrl;
+
+    // GitLab fields
+    @Column(length = 2048)
+    private String gitlabBaseUrl;
+
+    @Column(length = 255)
+    private String gitlabProjectId;
+
+    @Column(length = 255)
+    private String gitlabToken;
 }
