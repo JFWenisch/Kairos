@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.7.1 - 2026-05-04
+
+### [2.7.1](https://github.com/wenisch-tech/Kairos/compare/v2.7.0...v2.7.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* updated docs leading to notification section not properly shown ([33778a0](https://github.com/wenisch-tech/Kairos/commit/33778a0117a902d6f0d6fa7220776664250b9e51))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.7.1
+
+
 ## v2.7.0 - 2026-05-04
 
 ## [2.7.0](https://github.com/wenisch-tech/Kairos/compare/v2.6.0...v2.7.0) (2026-05-04)
