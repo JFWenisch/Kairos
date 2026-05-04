@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.6.0 - 2026-05-04
+
+## [2.6.0](https://github.com/wenisch-tech/Kairos/compare/v2.5.2...v2.6.0) (2026-05-04)
+
+
+### Features
+
+* Added Groupview and default groupview when a configurable tresholds of groups is used to improve performance for visitors ([b1f4ff7](https://github.com/wenisch-tech/Kairos/commit/b1f4ff7eb889586f79fd78a7a23873ab252e3ce5))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.6.0
+
+
 ## v2.5.2 - 2026-05-04
 
 ### [2.5.2](https://github.com/wenisch-tech/Kairos/compare/v2.5.1...v2.5.2) (2026-05-04)
