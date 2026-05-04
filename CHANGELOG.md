@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.5.2 - 2026-05-04
+
+### [2.5.2](https://github.com/wenisch-tech/Kairos/compare/v2.5.1...v2.5.2) (2026-05-04)
+
+
+### Bug Fixes
+
+* Updated AuthenticationFilterChain so API-Keys are properly handled when using mcp-server ([e6c5708](https://github.com/wenisch-tech/Kairos/commit/e6c570858851fd39918d09696680532972f58142))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.5.2
+
+
 ## v2.5.1 - 2026-05-03
 
 ### [2.5.1](https://github.com/wenisch-tech/Kairos/compare/v2.5.0...v2.5.1) (2026-05-03)
