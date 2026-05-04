@@ -41,6 +41,8 @@
 
 - **Outage tracking** - per-resource outage lifecycle from first failure streak to recovery streak, with active outage indicators and live "since" counters in dashboard/resource views
 
+- **Notifications** - alert your team when a resource goes down or recovers through multiple built-in channels: **Email (SMTP)**, **Discord** (rich embeds via webhook), **generic Webhook** (configurable JSON template), and **GitLab Incident Management** (automatically opens and closes incidents via the GitLab Issues API); notifications are controlled by flexible policies that can target all resources or specific groups/resources
+
 
 - **Admin panel** - manage resources, tune check intervals and parallelism per resource type, manage users, configure authentication credentials
 - **API keys** - generate and revoke named API keys for machine-to-machine access to the REST API
