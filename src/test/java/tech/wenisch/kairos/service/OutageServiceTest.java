@@ -36,6 +36,7 @@ class OutageServiceTest {
     @Mock private OutageRepository outageRepository;
     @Mock private CheckResultRepository checkResultRepository;
     @Mock private ResourceTypeConfigRepository resourceTypeConfigRepository;
+    @Mock private NotificationDispatchService notificationDispatchService;
 
     private OutageService outageService;
 
@@ -43,7 +44,7 @@ class OutageServiceTest {
 
     @BeforeEach
     void setUp() {
-        outageService = new OutageService(outageRepository, checkResultRepository, resourceTypeConfigRepository);
+        outageService = new OutageService(outageRepository, checkResultRepository, resourceTypeConfigRepository, notificationDispatchService);
         resource = MonitoredResource.builder()
                 .id(1L).name("TestService").resourceType(ResourceType.HTTP).active(true).build();
     }

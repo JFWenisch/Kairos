@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Notification Providers - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <span th:text="${successMessage}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${errorMessage}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0"><i class="bi bi-bell me-2"></i>Notification Providers</h2>
+                <a class="btn btn-primary btn-sm" th:href="@{/admin/notification-providers/new}">
+                    <i class="bi bi-plus-lg me-1"></i>Add Provider
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><strong>Configured Providers</strong></div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(providers)}" class="p-3 text-muted">No notification providers configured.</div>
+                    <table class="table table-hover mb-0" th:unless="${#lists.isEmpty(providers)}">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th style="width: 240px;">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="provider : ${providers}">
+                            <td th:text="${provider.name}">Name</td>
+                            <td>
+                                <span class="badge text-bg-primary" th:text="${provider.type}">TYPE</span>
+                            </td>
+                            <td>
+                                <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/notification-providers/edit/{id}(id=${provider.id})}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/admin/notification-providers/{id}/test(id=${provider.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-info btn-sm" title="Send test notification">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/notification-providers/delete/{id}(id=${provider.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this provider and all its associated notification policies?')">
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}" defer></script>
+</body>
+</html>

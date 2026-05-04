@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title th:text="${editMode} ? 'Edit Notification Provider' : 'New Notification Provider'">Notification Provider - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 mb-0">
+                    <i class="bi bi-bell me-2"></i>
+                    <span th:text="${editMode} ? 'Edit Notification Provider' : 'New Notification Provider'">Notification Provider</span>
+                </h2>
+                <a class="btn btn-outline-secondary" th:href="@{/admin/notification-providers}">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form th:action="${editMode} ? @{/admin/notification-providers/edit/{id}(id=${provider.id})} : @{/admin/notification-providers/new}"
+                          method="post">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Name</label>
+                            <input type="text" class="form-control" name="name" required maxlength="255"
+                                   th:value="${provider.name}" placeholder="e.g. My SMTP Server">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Type</label>
+                            <select class="form-select" name="type" id="providerTypeSelect" required onchange="updateTypeFields()">
+                                <option th:each="t : ${providerTypes}"
+                                        th:value="${t}"
+                                        th:selected="${provider.type == t}"
+                                        th:text="${t}">TYPE</option>
+                            </select>
+                        </div>
+
+                        <!-- EMAIL fields -->
+                        <div id="emailFields" class="border rounded p-3 mb-4" style="display:none;">
+                            <h6 class="fw-semibold mb-3"><i class="bi bi-envelope me-2"></i>Email (SMTP) Settings</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Host</label>
+                                    <input type="text" class="form-control" name="smtpHost" maxlength="255"
+                                           th:value="${provider.smtpHost}" placeholder="smtp.example.com">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" name="smtpPort" min="1" max="65535"
+                                           th:value="${provider.smtpPort}" placeholder="587">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="smtpUseTls" name="smtpUseTls"
+                                               value="true" th:checked="${provider.smtpUseTls != false}">
+                                        <label class="form-check-label" for="smtpUseTls">Use STARTTLS</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Username</label>
+                                    <input type="text" class="form-control" name="smtpUsername" maxlength="255"
+                                           th:value="${provider.smtpUsername}" placeholder="user@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SMTP Password</label>
+                                    <input type="password" class="form-control" name="smtpPassword" maxlength="255"
+                                           th:value="${provider.smtpPassword}" autocomplete="new-password">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sender Email</label>
+                                    <input type="email" class="form-control" name="senderEmail" maxlength="255"
+                                           th:value="${provider.senderEmail}" placeholder="kairos@example.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Recipient Email</label>
+                                    <input type="email" class="form-control" name="recipientEmail" maxlength="255"
+                                           th:value="${provider.recipientEmail}" placeholder="alerts@example.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WEBHOOK fields -->
+                        <div id="webhookFields" class="border rounded p-3 mb-4" style="display:none;">
+                            <h6 class="fw-semibold mb-3"><i class="bi bi-arrow-up-right-square me-2"></i>Webhook Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Webhook URL</label>
+                                <input type="url" class="form-control" name="webhookUrl" maxlength="2048"
+                                       th:value="${provider.webhookUrl}" placeholder="https://example.com/webhook">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Body Template</label>
+                                <textarea class="form-control font-monospace" name="webhookBodyTemplate" rows="6"
+                                          th:text="${provider.webhookBodyTemplate}"
+                                          placeholder='{"event":"{{event_type}}","resource":"{{resource_name}}","type":"{{resource_type}}","target":"{{resource_target}}","started":"{{outage_start}}","ended":"{{outage_end}}"}'></textarea>
+                                <div class="form-text">
+                                    Leave blank to use the default JSON payload. Available placeholders:
+                                    <code>{{event_type}}</code>, <code>{{resource_name}}</code>, <code>{{resource_type}}</code>,
+                                    <code>{{resource_target}}</code>, <code>{{outage_start}}</code>, <code>{{outage_end}}</code>.
+                                    The body is sent as <code>Content-Type: application/json</code>.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DISCORD fields -->
+                        <div id="discordFields" class="border rounded p-3 mb-4" style="display:none;">
+                            <h6 class="fw-semibold mb-3"><i class="bi bi-discord me-2"></i>Discord Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Discord Webhook URL</label>
+                                <input type="url" class="form-control" name="discordWebhookUrl" maxlength="2048"
+                                       th:value="${provider.discordWebhookUrl}"
+                                       placeholder="https://discord.com/api/webhooks/...">
+                                <div class="form-text">Notifications are sent as rich embeds (colored cards).</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Save
+                            </button>
+                            <a class="btn btn-outline-secondary" th:href="@{/admin/notification-providers}">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}" defer></script>
+<script th:inline="javascript">
+    const currentType = /*[[${provider.type}]]*/ null;
+
+    function updateTypeFields() {
+        const type = document.getElementById('providerTypeSelect').value;
+        document.getElementById('emailFields').style.display   = (type === 'EMAIL')   ? '' : 'none';
+        document.getElementById('webhookFields').style.display = (type === 'WEBHOOK') ? '' : 'none';
+        document.getElementById('discordFields').style.display = (type === 'DISCORD') ? '' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (currentType) {
+            document.getElementById('providerTypeSelect').value = currentType;
+        }
+        updateTypeFields();
+    });
+</script>
+</body>
+</html>
