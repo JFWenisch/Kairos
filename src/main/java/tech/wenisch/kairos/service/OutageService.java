@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tech.wenisch.kairos.entity.CheckResult;
 import tech.wenisch.kairos.entity.CheckStatus;
 import tech.wenisch.kairos.entity.MonitoredResource;
+import tech.wenisch.kairos.entity.NotificationEvent;
 import tech.wenisch.kairos.entity.Outage;
 import tech.wenisch.kairos.entity.ResourceTypeConfig;
 import tech.wenisch.kairos.repository.CheckResultRepository;
@@ -30,6 +31,7 @@ public class OutageService {
     private final OutageRepository outageRepository;
     private final CheckResultRepository checkResultRepository;
     private final ResourceTypeConfigRepository resourceTypeConfigRepository;
+    private final NotificationDispatchService notificationDispatchService;
 
     /**
      * Evaluates whether an outage should be opened or closed for the given resource,
@@ -69,6 +71,11 @@ public class OutageService {
                 outageRepository.save(outage);
                 log.info("Outage opened for resource '{}' (id={}) starting at {}",
                         resource.getName(), resource.getId(), startDate);
+                try {
+                    notificationDispatchService.dispatch(NotificationEvent.OUTAGE_STARTED, outage, resource);
+                } catch (Exception e) {
+                    log.error("Failed to dispatch OUTAGE_STARTED notifications for resource '{}': {}", resource.getName(), e.getMessage());
+                }
             }
         } else {
             // Active outage – check whether to close it
@@ -87,6 +94,11 @@ public class OutageService {
                 outageRepository.save(outage);
                 log.info("Outage closed for resource '{}' (id={}) ending at {}",
                         resource.getName(), resource.getId(), endDate);
+                try {
+                    notificationDispatchService.dispatch(NotificationEvent.OUTAGE_ENDED, outage, resource);
+                } catch (Exception e) {
+                    log.error("Failed to dispatch OUTAGE_ENDED notifications for resource '{}': {}", resource.getName(), e.getMessage());
+                }
             }
         }
     }
