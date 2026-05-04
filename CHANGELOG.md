@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.7.2 - 2026-05-04
+
+### [2.7.2](https://github.com/wenisch-tech/Kairos/compare/v2.7.1...v2.7.2) (2026-05-04)
+
+
+### Documentation
+
+* Added security advisor ([c8002e7](https://github.com/wenisch-tech/Kairos/commit/c8002e759038cc2e35d05e9cd371aaaaf571465a))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.7.2
+
+
 ## v2.7.1 - 2026-05-04
 
 ### [2.7.1](https://github.com/wenisch-tech/Kairos/compare/v2.7.0...v2.7.1) (2026-05-04)
