@@ -40,6 +40,11 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-search me-2"></i>Resource Discovery
     </a>
+        <a th:href="@{/admin/proxy-config}"
+       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/proxy-config')} ? 'active' : ''"
+       class="nav-link px-2 py-2 rounded mb-1">
+        <i class="bi bi-globe2 me-2"></i>Proxy Configuration
+    </a>
     <hr class="border-secondary my-2">
 
     <a th:href="@{/admin/notification-providers}"
@@ -77,11 +82,7 @@
        class="nav-link px-2 py-2 rounded mb-1">
         <i class="bi bi-code-square me-2"></i>Custom Headers
     </a>
-    <a th:href="@{/admin/proxy-config}"
-       th:classappend="${currentRequestUri != null and currentRequestUri.contains('/proxy-config')} ? 'active' : ''"
-       class="nav-link px-2 py-2 rounded mb-1">
-        <i class="bi bi-globe2 me-2"></i>Proxy Configuration
-    </a>
+
     <a th:href="@{/admin/embed}"
        th:classappend="${currentRequestUri != null and currentRequestUri.contains('/admin/embed')} ? 'active' : ''"
        class="nav-link px-2 py-2 rounded mb-1">
