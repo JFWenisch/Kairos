@@ -2,6 +2,7 @@ package tech.wenisch.kairos.service;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,14 +52,17 @@ public class ProxySettingsService {
             String mode,
             String targetRules) {
         ProxySettings settings = getSettings();
+        EndpointConfig httpEndpoint = resolveEndpointConfig(httpProxyHost, parsePort(httpProxyPort));
+        EndpointConfig socksEndpoint = resolveEndpointConfig(socksProxyHost, parsePort(socksProxyPort));
+
         settings.setId(SETTINGS_ID);
         settings.setProxyEnabled(proxyEnabled);
         settings.setHttpProxyEnabled(httpProxyEnabled);
-        settings.setHttpProxyHost(normalizeText(httpProxyHost));
-        settings.setHttpProxyPort(parsePort(httpProxyPort));
+        settings.setHttpProxyHost(httpEndpoint.host());
+        settings.setHttpProxyPort(httpEndpoint.port());
         settings.setSocksProxyEnabled(socksProxyEnabled);
-        settings.setSocksProxyHost(normalizeText(socksProxyHost));
-        settings.setSocksProxyPort(parsePort(socksProxyPort));
+        settings.setSocksProxyHost(socksEndpoint.host());
+        settings.setSocksProxyPort(socksEndpoint.port());
         settings.setProxyUsername(normalizeText(proxyUsername));
         if (proxyPassword != null && !proxyPassword.isBlank()) {
             settings.setProxyPassword(proxyPassword);
@@ -77,8 +81,9 @@ public class ProxySettingsService {
             return Optional.empty();
         }
 
-        String host = normalizeText(settings.getHttpProxyHost());
-        Integer port = settings.getHttpProxyPort();
+        EndpointConfig endpoint = resolveEndpointConfig(settings.getHttpProxyHost(), settings.getHttpProxyPort());
+        String host = endpoint.host();
+        Integer port = endpoint.port();
         if (host == null || port == null || port < 1 || port > 65535) {
             return Optional.empty();
         }
@@ -99,8 +104,9 @@ public class ProxySettingsService {
             return Optional.empty();
         }
 
-        String host = normalizeText(settings.getSocksProxyHost());
-        Integer port = settings.getSocksProxyPort();
+        EndpointConfig endpoint = resolveEndpointConfig(settings.getSocksProxyHost(), settings.getSocksProxyPort());
+        String host = endpoint.host();
+        Integer port = endpoint.port();
         if (host == null || port == null || port < 1 || port > 65535) {
             return Optional.empty();
         }
@@ -173,6 +179,31 @@ public class ProxySettingsService {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private EndpointConfig resolveEndpointConfig(String rawHost, Integer explicitPort) {
+        String hostInput = normalizeText(rawHost);
+        if (hostInput == null) {
+            return new EndpointConfig(null, explicitPort);
+        }
+
+        String candidate = hostInput;
+        if (!candidate.contains("://")) {
+            candidate = "http://" + candidate;
+        }
+
+        try {
+            URI uri = URI.create(candidate);
+            String host = normalizeText(uri.getHost());
+            Integer port = explicitPort != null ? explicitPort : (uri.getPort() > 0 ? uri.getPort() : null);
+            return new EndpointConfig(host, port);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Invalid proxy endpoint '{}': {}", rawHost, ex.getMessage());
+            return new EndpointConfig(normalizeText(rawHost), explicitPort);
+        }
+    }
+
+    private record EndpointConfig(String host, Integer port) {
     }
 
     public record HttpProxyEndpoint(String host, int port, String username, String password) {

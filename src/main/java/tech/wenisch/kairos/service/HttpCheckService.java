@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -18,15 +20,19 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
+import java.net.SocketTimeoutException;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -64,25 +70,31 @@ public class HttpCheckService {
                 });
             }
 
-            HttpResponse<Void> response = getHttpClient(url, skipTls)
-                    .send(requestBuilder.build(), HttpResponse.BodyHandlers.discarding());
+                HttpResponse<String> response = getHttpClient(url, skipTls)
+                    .send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
             int statusCode = response.statusCode();
 
             CheckStatus status = statusCode >= 200 && statusCode < 300
                     ? CheckStatus.AVAILABLE
                     : CheckStatus.NOT_AVAILABLE;
 
+                String responseMessage = statusCode >= 200 && statusCode < 300
+                    ? "HTTP " + statusCode
+                    : formatInstantHttpErrorMessage(statusCode, response.body());
+
             return InstantCheckExecutionResult.builder()
                     .status(status)
-                    .message("HTTP " + statusCode)
+                    .message(responseMessage)
                     .errorCode(String.valueOf(statusCode))
                     .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
         } catch (Exception e) {
+            String errorDetails = formatExceptionDetails(e, url);
+            String errorCode = resolveConnectionErrorCode(e, url);
             return InstantCheckExecutionResult.builder()
                     .status(CheckFailureClassifier.resolveStatus(e))
-                    .message(e.getMessage())
-                    .errorCode("CONNECTION_ERROR")
+                .message(errorDetails)
+                    .errorCode(errorCode)
                     .latencyMs(elapsedMillis(checkStartedNanos))
                     .build();
         }
@@ -144,13 +156,15 @@ public class HttpCheckService {
             resourceStatusStreamService.publishResourceUpdate(resource);
             return saved;
         } catch (Exception e) {
-            log.warn("HTTP check failed for {}: {}", url, e.getMessage());
+            String errorDetails = formatExceptionDetails(e, url);
+            String errorCode = resolveConnectionErrorCode(e, url);
+            log.warn("HTTP check failed for {}: {}", url, errorDetails, e);
             CheckResult result = CheckResult.builder()
                     .resource(resource)
                     .status(CheckFailureClassifier.resolveStatus(e))
                     .checkedAt(LocalDateTime.now())
-                    .message(e.getMessage())
-                    .errorCode("CONNECTION_ERROR")
+                .message(errorDetails)
+                    .errorCode(errorCode)
                     .latencyMs(elapsedMillis(checkStartedNanos))
                     .dnsResolutionMs(phaseLatency.dnsResolutionMs())
                     .connectMs(phaseLatency.connectMs())
@@ -222,6 +236,102 @@ public class HttpCheckService {
 
     private Long elapsedMillis(long startedNanos) {
         return Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
+    }
+
+    private String formatInstantHttpErrorMessage(int statusCode, String body) {
+        String normalizedBody = body == null ? "" : body.replaceAll("\\s+", " ").trim();
+        if (normalizedBody.isBlank()) {
+            return "HTTP " + statusCode;
+        }
+        if (normalizedBody.length() > 500) {
+            normalizedBody = normalizedBody.substring(0, 500) + "...";
+        }
+        return "HTTP " + statusCode + " - " + normalizedBody;
+    }
+
+    private String formatExceptionDetails(Throwable throwable, String targetUrl) {
+        if (throwable == null) {
+            return "Unknown error. " + describeTargetContext(targetUrl);
+        }
+
+        String message = throwable.getMessage();
+        if (message != null && !message.isBlank()) {
+            return throwable.getClass().getSimpleName() + ": " + message + ". " + describeTargetContext(targetUrl);
+        }
+
+        Throwable cause = throwable.getCause();
+        if (cause != null) {
+            String causeMessage = cause.getMessage();
+            if (causeMessage != null && !causeMessage.isBlank()) {
+                return throwable.getClass().getSimpleName() + " (caused by "
+                        + cause.getClass().getSimpleName() + "): " + causeMessage + ". "
+                        + describeTargetContext(targetUrl);
+            }
+            return throwable.getClass().getSimpleName() + " (caused by "
+                    + cause.getClass().getSimpleName() + "). " + describeTargetContext(targetUrl);
+        }
+
+        if (throwable instanceof java.net.ConnectException) {
+            return "ConnectException: connection failed (no detailed message from JVM). "
+                    + describeTargetContext(targetUrl)
+                    + ". Verify DNS/route, target reachability, and proxy endpoint/auth.";
+        }
+
+        return throwable.getClass().getSimpleName() + ". " + describeTargetContext(targetUrl);
+    }
+
+    private String describeTargetContext(String targetUrl) {
+        String endpoint = targetUrl == null ? "" : targetUrl.trim();
+        String hostPart = endpoint;
+
+        try {
+            URI uri = URI.create(endpoint);
+            String host = uri.getHost();
+            if (host != null && !host.isBlank()) {
+                int port = uri.getPort() > 0 ? uri.getPort() : resolvePort(uri);
+                hostPart = host + (port > 0 ? ":" + port : "");
+            }
+        } catch (Exception ignored) {
+        }
+
+        String route = proxySettingsService.resolveHttpProxyForTarget(endpoint)
+                .map(proxy -> "proxy=" + proxy.host() + ":" + proxy.port())
+                .orElse("proxy=direct");
+
+        return "target=" + hostPart + ", " + route;
+    }
+
+    private String resolveConnectionErrorCode(Throwable throwable, String targetUrl) {
+        Throwable root = rootCause(throwable);
+        boolean viaProxy = proxySettingsService.resolveHttpProxyForTarget(targetUrl).isPresent();
+
+        if (root instanceof URISyntaxException) {
+            return "INVALID_URL";
+        }
+        if (root instanceof java.net.UnknownHostException) {
+            return viaProxy ? "PROXY_DNS_ERROR" : "DNS_ERROR";
+        }
+        if (root instanceof HttpTimeoutException || root instanceof SocketTimeoutException) {
+            return viaProxy ? "PROXY_TIMEOUT" : "TIMEOUT";
+        }
+        if (root instanceof ConnectException) {
+            return viaProxy ? "PROXY_CONNECT_ERROR" : "CONNECT_ERROR";
+        }
+        if (root instanceof SSLHandshakeException) {
+            return "TLS_HANDSHAKE_ERROR";
+        }
+        if (root instanceof SSLException) {
+            return "TLS_ERROR";
+        }
+        return "CONNECTION_ERROR";
+    }
+
+    private Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null && current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current == null ? throwable : current;
     }
 
     private LatencyMetrics measureHttpPhases(MonitoredResource resource, URI uri) {
