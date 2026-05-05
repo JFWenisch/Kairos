@@ -17,8 +17,11 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -41,9 +44,7 @@ public class HttpCheckService {
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
     private final OutageService outageService;
-
-    private final HttpClient httpClient = createDefaultHttpClient();
-    private final HttpClient insecureHttpClient = createInsecureHttpClient();
+    private final ProxySettingsService proxySettingsService;
 
     public InstantCheckExecutionResult probe(String target, boolean skipTls, boolean useStoredAuth) {
         String url = target == null ? "" : target.trim();
@@ -63,7 +64,7 @@ public class HttpCheckService {
                 });
             }
 
-            HttpResponse<Void> response = (skipTls ? insecureHttpClient : httpClient)
+            HttpResponse<Void> response = getHttpClient(url, skipTls)
                     .send(requestBuilder.build(), HttpResponse.BodyHandlers.discarding());
             int statusCode = response.statusCode();
 
@@ -108,7 +109,7 @@ public class HttpCheckService {
                 log.debug("Applying Basic Auth '{}' to HTTP check for {}", auth.getName(), url);
             });
 
-                HttpResponse<Void> response = getHttpClient(resource)
+            HttpResponse<Void> response = getHttpClient(resource.getTarget(), resource.isSkipTls())
                     .send(requestBuilder.build(), HttpResponse.BodyHandlers.discarding());
             int statusCode = response.statusCode();
 
@@ -162,18 +163,32 @@ public class HttpCheckService {
         }
     }
 
-    HttpClient getHttpClient(MonitoredResource resource) {
-        return resource.isSkipTls() ? insecureHttpClient : httpClient;
-    }
-
-    private HttpClient createDefaultHttpClient() {
-        return HttpClient.newBuilder()
+    HttpClient getHttpClient(String target, boolean skipTls) {
+        HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+                .followRedirects(HttpClient.Redirect.NORMAL);
+
+        proxySettingsService.resolveHttpProxyForTarget(target).ifPresent(endpoint -> {
+            builder.proxy(ProxySelector.of(InetSocketAddress.createUnresolved(endpoint.host(), endpoint.port())));
+            if (endpoint.hasCredentials()) {
+                builder.authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(
+                                endpoint.username(),
+                                endpoint.password().toCharArray());
+                    }
+                });
+            }
+        });
+
+        if (skipTls) {
+            return createInsecureHttpClient(builder);
+        }
+        return builder.build();
     }
 
-    private HttpClient createInsecureHttpClient() {
+    private HttpClient createInsecureHttpClient(HttpClient.Builder builder) {
         try {
             TrustManager[] trustAllManagers = new TrustManager[]{new X509TrustManager() {
                 @Override
@@ -196,9 +211,7 @@ public class HttpCheckService {
             SSLParameters sslParameters = new SSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm("");
 
-            return HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
+            return builder
                     .sslContext(sslContext)
                     .sslParameters(sslParameters)
                     .build();

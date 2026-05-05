@@ -17,6 +17,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -49,10 +53,9 @@ public class DockerRepositorySyncService {
     private final MonitoredResourceRepository resourceRepository;
     private final DockerCheckService dockerCheckService;
     private final ResourceStatusStreamService resourceStatusStreamService;
+    private final ProxySettingsService proxySettingsService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final HttpClient httpClient = createDefaultHttpClient();
-    private final HttpClient insecureHttpClient = createInsecureHttpClient();
 
     @Transactional
     public void sync(ResourceDiscovery sourceResource) {
@@ -384,7 +387,7 @@ public class DockerRepositorySyncService {
                 requestBuilder.header("Authorization", "Basic " + encoded);
             }
         });
-        return getHttpClient(sourceResource).send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+        return getHttpClient(url, sourceResource.isSkipTls()).send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private Optional<DiscoveryServiceAuth> resolveAuth(String... candidates) {
@@ -474,18 +477,32 @@ public class DockerRepositorySyncService {
         return new RepositoryRef(rawTarget.trim(), registry, path, owner);
     }
 
-    private HttpClient getHttpClient(ResourceDiscovery resource) {
-        return resource.isSkipTls() ? insecureHttpClient : httpClient;
-    }
-
-    private HttpClient createDefaultHttpClient() {
-        return HttpClient.newBuilder()
+    private HttpClient getHttpClient(String target, boolean skipTls) {
+        HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+                .followRedirects(HttpClient.Redirect.NORMAL);
+
+        proxySettingsService.resolveHttpProxyForTarget(target).ifPresent(endpoint -> {
+            builder.proxy(ProxySelector.of(InetSocketAddress.createUnresolved(endpoint.host(), endpoint.port())));
+            if (endpoint.hasCredentials()) {
+                builder.authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(
+                                endpoint.username(),
+                                endpoint.password().toCharArray());
+                    }
+                });
+            }
+        });
+
+        if (skipTls) {
+            return createInsecureHttpClient(builder);
+        }
+        return builder.build();
     }
 
-    private HttpClient createInsecureHttpClient() {
+    private HttpClient createInsecureHttpClient(HttpClient.Builder builder) {
         try {
             TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
@@ -498,9 +515,7 @@ public class DockerRepositorySyncService {
             sslContext.init(null, trustAllCerts, new SecureRandom());
             SSLParameters sslParameters = new SSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm(null);
-            return HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
+            return builder
                     .sslContext(sslContext)
                     .sslParameters(sslParameters)
                     .build();
