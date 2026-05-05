@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.11</version>
+        <version>3.5.14</version>
         <relativePath/>
     </parent>
 
@@ -21,7 +21,7 @@
     <properties>
         <java.version>17</java.version>
         <flyway.version>10.22.0</flyway.version>
-        <thymeleaf.version>3.1.4.RELEASE</thymeleaf.version>
+        <thymeleaf.version>3.1.5.RELEASE</thymeleaf.version>
         <postgresql.version>42.7.7</postgresql.version>
         <logback.version>1.5.25</logback.version>
         <tomcat.version>11.0.21</tomcat.version>
