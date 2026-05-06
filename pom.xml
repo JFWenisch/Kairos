@@ -22,7 +22,7 @@
         <java.version>17</java.version>
         <flyway.version>10.22.0</flyway.version>
         <thymeleaf.version>3.1.5.RELEASE</thymeleaf.version>
-        <postgresql.version>42.7.7</postgresql.version>
+        <postgresql.version>42.7.1</postgresql.version>
         <logback.version>1.5.25</logback.version>
         <tomcat.version>11.0.21</tomcat.version>
         <jackson-bom.version>2.18.6</jackson-bom.version>
@@ -42,7 +42,7 @@
             <dependency>
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
