@@ -11,7 +11,8 @@ This section groups settings by operational concern so teams can move from basel
 5. [OIDC / OAuth2](configuration-oidc.md)
 6. [Observability](configuration-observability.md)
 7. [Custom Headers](custom-headers.md)
-8. [Notifications](notifications/index.md)
+8. [Proxies](configuration-proxies.md)
+9. [Notifications](notifications/index.md)
 
 ## What This Covers
 

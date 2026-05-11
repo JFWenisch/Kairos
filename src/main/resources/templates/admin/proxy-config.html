@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" th:href="@{/img/kairos.png}" type="image/png">
+    <title>Proxy Configuration - Kairos Admin</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/kairos.css}">
+    <th:block th:utext="${customHeadersHtml}"></th:block>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}"><img th:src="@{/img/kairos.png}" alt="Kairos" height="28" class="me-2"><span>Kairos</span></a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}"><i class="bi bi-house me-1"></i>Dashboard</a></li>
+                <li class="nav-item">
+                    <form th:action="@{/logout}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-link nav-link"><i class="bi bi-box-arrow-right me-1"></i>Logout</button>
+                    </form>
+                </li>
+                <li class="nav-item ms-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="toggleDarkMode()"><i class="bi bi-moon-stars-fill"></i></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-2 min-vh-100 border-end py-3 bg-dark-subtle">
+            <div th:replace="~{admin/layout :: adminSidebar}"></div>
+        </div>
+        <div class="col-md-10 py-4 px-4">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <span th:text="${successMessage}">Success</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <span th:text="${errorMessage}">Error</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <h2 class="h4 mb-1"><i class="bi bi-globe2 me-2"></i>Proxy Configuration</h2>
+            <p class="text-muted mb-4" style="font-size:.875rem">
+                Configure global outbound proxy behavior for checks and discovery sync.
+                Rules are matched against the full target string with wildcard support.
+            </p>
+
+            <form th:action="@{/admin/proxy-config}" method="post">
+                <div class="card mb-4">
+                    <div class="card-header">Global Proxy Switch</div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="proxyEnabled" name="proxyEnabled" th:checked="${settings.proxyEnabled}">
+                            <label class="form-check-label" for="proxyEnabled">Enable proxy routing</label>
+                        </div>
+                        <div class="form-text">When disabled, all checks and discovery connections are direct.</div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">Routing Rules</div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" id="modeBlacklist" name="mode" value="BLACKLIST"
+                                   th:checked="${settings.mode == 'BLACKLIST'}">
+                            <label class="form-check-label" for="modeBlacklist">Blacklist</label>
+                            <div class="form-text">Use proxy for everything except matching entries below.</div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" id="modeWhitelist" name="mode" value="WHITELIST"
+                                   th:checked="${settings.mode == 'WHITELIST'}">
+                            <label class="form-check-label" for="modeWhitelist">Whitelist</label>
+                            <div class="form-text">Use proxy only for matching entries below.</div>
+                        </div>
+                        <label for="targetRules" class="form-label">Targets / URL patterns (one entry per line)</label>
+                        <textarea id="targetRules" name="targetRules" class="form-control font-monospace"
+                                  rows="10" th:text="${settings.targetRules}"
+                                  placeholder="*.cluster.local&#10;https://internal.example.com*&#10;registry.example.com/*"></textarea>
+                        <div class="form-text">Wildcard <code>*</code> is supported anywhere in the pattern.</div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">HTTP Proxy</div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="httpProxyEnabled" name="httpProxyEnabled" th:checked="${settings.httpProxyEnabled}">
+                            <label class="form-check-label" for="httpProxyEnabled">Enable HTTP proxy</label>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="httpProxyHost" class="form-label">Host</label>
+                                <input type="text" id="httpProxyHost" name="httpProxyHost" class="form-control" th:value="${settings.httpProxyHost}" placeholder="proxy.company.local">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="httpProxyPort" class="form-label">Port</label>
+                                <input type="number" min="1" max="65535" id="httpProxyPort" name="httpProxyPort" class="form-control" th:value="${settings.httpProxyPort}" placeholder="3128">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">SOCKS Proxy</div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="socksProxyEnabled" name="socksProxyEnabled" th:checked="${settings.socksProxyEnabled}">
+                            <label class="form-check-label" for="socksProxyEnabled">Enable SOCKS proxy</label>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label for="socksProxyHost" class="form-label">Host</label>
+                                <input type="text" id="socksProxyHost" name="socksProxyHost" class="form-control" th:value="${settings.socksProxyHost}" placeholder="socks.company.local">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="socksProxyPort" class="form-label">Port</label>
+                                <input type="number" min="1" max="65535" id="socksProxyPort" name="socksProxyPort" class="form-control" th:value="${settings.socksProxyPort}" placeholder="1080">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">Proxy Authentication</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="proxyUsername" class="form-label">Username</label>
+                                <input type="text" id="proxyUsername" name="proxyUsername" class="form-control" th:value="${settings.proxyUsername}" autocomplete="off">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="proxyPassword" class="form-label">Password</label>
+                                <input type="password" id="proxyPassword" name="proxyPassword" class="form-control" autocomplete="new-password">
+                                <div class="form-text">Leave empty to keep the currently stored password.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Save Proxy Configuration
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/kairos.js}"></script>
+</body>
+</html>

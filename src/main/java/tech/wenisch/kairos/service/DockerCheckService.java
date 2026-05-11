@@ -16,6 +16,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -54,10 +58,8 @@ public class DockerCheckService {
     private final AuthService authService;
     private final ResourceStatusStreamService resourceStatusStreamService;
     private final OutageService outageService;
+    private final ProxySettingsService proxySettingsService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final HttpClient httpClient = createDefaultHttpClient();
-    private final HttpClient insecureHttpClient = createInsecureHttpClient();
 
     public InstantCheckExecutionResult probe(String target, boolean skipTls, boolean useStoredAuth) {
         String image = target == null ? "" : target.trim();
@@ -73,7 +75,7 @@ public class DockerCheckService {
                     .orElse(null);
             String authUsername = authOpt.map(ResourceTypeAuth::getUsername).orElse(null);
 
-            HttpClient client = skipTls ? insecureHttpClient : httpClient;
+            HttpClient client = getHttpClient(image, skipTls);
             AuthState authState = new AuthState(
                     basicAuthHeader,
                     authUsername,
@@ -118,7 +120,7 @@ public class DockerCheckService {
                     .orElse(null);
                 String authUsername = authOpt.map(ResourceTypeAuth::getUsername).orElse(null);
 
-            HttpClient client = getHttpClient(resource);
+            HttpClient client = getHttpClient(image, resource.isSkipTls());
             AuthState authState = new AuthState(
                     basicAuthHeader,
                     authUsername,
@@ -542,18 +544,32 @@ public class DockerCheckService {
         return new DockerImageRef(registry, repository, reference);
     }
 
-    private HttpClient getHttpClient(MonitoredResource resource) {
-        return resource.isSkipTls() ? insecureHttpClient : httpClient;
-    }
-
-    private HttpClient createDefaultHttpClient() {
-        return HttpClient.newBuilder()
+    private HttpClient getHttpClient(String target, boolean skipTls) {
+        HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
+                .followRedirects(HttpClient.Redirect.NORMAL);
+
+        proxySettingsService.resolveHttpProxyForTarget(target).ifPresent(endpoint -> {
+            builder.proxy(ProxySelector.of(InetSocketAddress.createUnresolved(endpoint.host(), endpoint.port())));
+            if (endpoint.hasCredentials()) {
+                builder.authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(
+                                endpoint.username(),
+                                endpoint.password().toCharArray());
+                    }
+                });
+            }
+        });
+
+        if (skipTls) {
+            return createInsecureHttpClient(builder);
+        }
+        return builder.build();
     }
 
-    private HttpClient createInsecureHttpClient() {
+    private HttpClient createInsecureHttpClient(HttpClient.Builder builder) {
         try {
             TrustManager[] trustAllManagers = new TrustManager[]{new X509TrustManager() {
                 @Override
@@ -576,9 +592,7 @@ public class DockerCheckService {
             SSLParameters sslParameters = new SSLParameters();
             sslParameters.setEndpointIdentificationAlgorithm("");
 
-            return HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(HttpClient.Redirect.NORMAL)
+            return builder
                     .sslContext(sslContext)
                     .sslParameters(sslParameters)
                     .build();

@@ -41,6 +41,7 @@ nav:
       - Security Concepts: configuration-security.md
       - Observability: configuration-observability.md
       - Custom Headers: custom-headers.md
+      - Proxies: configuration-proxies.md
       - Notifications:
           - Overview: notifications/index.md
           - Notification Providers: notifications/providers.md

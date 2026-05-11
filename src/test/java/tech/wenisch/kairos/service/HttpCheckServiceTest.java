@@ -28,8 +28,11 @@ class HttpCheckServiceTest {
     @Mock
     private ResourceStatusStreamService resourceStatusStreamService;
 
-        @Mock
-        private OutageService outageService;
+    @Mock
+    private OutageService outageService;
+
+    @Mock
+    private ProxySettingsService proxySettingsService;
 
     @InjectMocks
     private HttpCheckService httpCheckService;
@@ -54,18 +57,9 @@ class HttpCheckServiceTest {
 
     @Test
     void getHttpClientUsesInsecureClientWhenSkipTlsIsEnabled() {
-        MonitoredResource secureResource = MonitoredResource.builder()
-                .resourceType(ResourceType.HTTP)
-                .target("https://example.com")
-                .skipTls(false)
-                .build();
-        MonitoredResource insecureResource = MonitoredResource.builder()
-                .resourceType(ResourceType.HTTP)
-                .target("https://example.com")
-                .skipTls(true)
-                .build();
+        String target = "https://example.com";
 
-        assertThat(httpCheckService.getHttpClient(insecureResource))
-                .isNotSameAs(httpCheckService.getHttpClient(secureResource));
+        assertThat(httpCheckService.getHttpClient(target, true))
+                .isNotSameAs(httpCheckService.getHttpClient(target, false));
     }
 }
