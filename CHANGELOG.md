@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.7.6 - 2026-05-12
+
+### [2.7.6](https://github.com/wenisch-tech/Kairos/compare/v2.7.5...v2.7.6) (2026-05-12)
+
+
+### Build Systems
+
+* **deps:** bump org.springframework.ai:spring-ai-bom ([#62](https://github.com/wenisch-tech/Kairos/issues/62)) ([7417f85](https://github.com/wenisch-tech/Kairos/commit/7417f85ed651f6cc37d438f80f255d9a85da6d4c))
+
+
+
+Docker image: ghcr.io/wenisch-tech/kairos:2.7.6
+
+
 ## v2.7.5 - 2026-05-05
 
 ### [2.7.5](https://github.com/wenisch-tech/Kairos/compare/v2.7.4...v2.7.5) (2026-05-05)
