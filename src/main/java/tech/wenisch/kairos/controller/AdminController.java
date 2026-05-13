@@ -57,6 +57,7 @@ import tech.wenisch.kairos.service.CheckAuditService;
 import tech.wenisch.kairos.service.CheckExecutorService;
 import tech.wenisch.kairos.service.CustomHeaderService;
 import tech.wenisch.kairos.service.EmbedSettingsService;
+import tech.wenisch.kairos.service.ProxySettingsService;
 import tech.wenisch.kairos.service.ResourceDiscoveryManagementService;
 import tech.wenisch.kairos.service.ResourceExchangeService;
 import tech.wenisch.kairos.service.ResourceGroupService;
@@ -82,6 +83,7 @@ public class AdminController {
     private final EmbedSettingsService embedSettingsService;
     private final ApplicationVersionService applicationVersionService;
     private final CustomHeaderService customHeaderService;
+    private final ProxySettingsService proxySettingsService;
     private final ResourceDiscoveryManagementService resourceDiscoveryManagementService;
     private final CheckAuditService checkAuditService;
 
@@ -129,6 +131,43 @@ public class AdminController {
         customHeaderService.saveSettings(content, applyToAdmin);
         redirectAttributes.addFlashAttribute("successMessage", "Custom header settings saved.");
         return "redirect:/admin/custom-headers";
+    }
+
+    @GetMapping("/proxy-config")
+    public String proxyConfig(Model model) {
+        model.addAttribute("settings", proxySettingsService.getSettings());
+        return "admin/proxy-config";
+    }
+
+    @PostMapping("/proxy-config")
+    public String saveProxyConfig(
+            @RequestParam(value = "proxyEnabled", defaultValue = "false") boolean proxyEnabled,
+            @RequestParam(value = "httpProxyEnabled", defaultValue = "false") boolean httpProxyEnabled,
+            @RequestParam(value = "httpProxyHost", defaultValue = "") String httpProxyHost,
+            @RequestParam(value = "httpProxyPort", defaultValue = "") String httpProxyPort,
+            @RequestParam(value = "socksProxyEnabled", defaultValue = "false") boolean socksProxyEnabled,
+            @RequestParam(value = "socksProxyHost", defaultValue = "") String socksProxyHost,
+            @RequestParam(value = "socksProxyPort", defaultValue = "") String socksProxyPort,
+            @RequestParam(value = "proxyUsername", defaultValue = "") String proxyUsername,
+            @RequestParam(value = "proxyPassword", defaultValue = "") String proxyPassword,
+            @RequestParam(value = "mode", defaultValue = "BLACKLIST") String mode,
+            @RequestParam(value = "targetRules", defaultValue = "") String targetRules,
+            RedirectAttributes redirectAttributes) {
+        proxySettingsService.saveSettings(
+                proxyEnabled,
+                httpProxyEnabled,
+                httpProxyHost,
+                httpProxyPort,
+                socksProxyEnabled,
+                socksProxyHost,
+                socksProxyPort,
+                proxyUsername,
+                proxyPassword,
+                mode,
+                targetRules
+        );
+        redirectAttributes.addFlashAttribute("successMessage", "Proxy settings saved.");
+        return "redirect:/admin/proxy-config";
     }
 
     @GetMapping("/settings")

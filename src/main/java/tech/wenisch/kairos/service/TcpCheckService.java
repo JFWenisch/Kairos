@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.time.LocalDateTime;
 
@@ -27,12 +28,13 @@ public class TcpCheckService {
     private final CheckResultRepository checkResultRepository;
     private final ResourceStatusStreamService resourceStatusStreamService;
     private final OutageService outageService;
+    private final ProxySettingsService proxySettingsService;
 
     public InstantCheckExecutionResult probe(String target, boolean skipTls, boolean useStoredAuth) {
         long checkStartedNanos = System.nanoTime();
         try {
             HostPort hp = parse(target);
-            try (Socket socket = new Socket()) {
+            try (Socket socket = createSocket(target)) {
                 socket.connect(new InetSocketAddress(hp.host(), hp.port()), CONNECT_TIMEOUT_MS);
             }
             return InstantCheckExecutionResult.builder()
@@ -62,7 +64,7 @@ public class TcpCheckService {
         long checkStartedNanos = System.nanoTime();
         try {
             HostPort hp = parse(target);
-            try (Socket socket = new Socket()) {
+            try (Socket socket = createSocket(target)) {
                 socket.connect(new InetSocketAddress(hp.host(), hp.port()), CONNECT_TIMEOUT_MS);
             }
             CheckResult result = CheckResult.builder()
@@ -112,6 +114,12 @@ public class TcpCheckService {
             throw new IllegalArgumentException("Port out of range in target: " + target);
         }
         return new HostPort(host, port);
+    }
+
+    private Socket createSocket(String target) {
+        return proxySettingsService.resolveSocksProxyForTarget(target)
+                .map(Socket::new)
+                .orElseGet(() -> new Socket(Proxy.NO_PROXY));
     }
 
     private Long elapsedMillis(long startedNanos) {

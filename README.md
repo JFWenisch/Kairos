@@ -31,9 +31,8 @@
 - **Group visibility controls** - per resource group, choose `PUBLIC`, `AUTHENTICATED`, or `HIDDEN`; when a resource is in multiple groups the most-permissive visibility wins
 
 - **Access mode control** - choose between public access and authenticated-only access for all pages via **Admin -> General Settings**
-- **HTTP monitoring** - HTTP GET checks with configurable interval and parallelism
-- **Docker image monitoring** - validates image pullability via the OCI/Docker Registry HTTP API (manifest + blob probe, no Docker socket required)
-- **TCP port monitoring** - checks whether any TCP endpoint (`host:port`) accepts connections; useful for databases, message brokers, and internal services
+- **Multi-protocol monitoring** - HTTP GET checks, Docker image pullability validation via the OCI/Docker Registry HTTP API (no Docker socket required), and TCP port reachability checks (`host:port`); all with configurable intervals and parallelism
+- **Proxy support** - global HTTP and SOCKS proxy configuration with per-protocol enable switches, proxy authentication, and blacklist/whitelist routing rules with wildcard pattern matching so individual targets or whole domain groups can bypass or use the proxy
 - **Resource discovery services** - configure discovery sources (currently Docker registry/namespace discovery, for example `ghcr.io/wenisch-tech`) and Kairos auto-creates/updates Docker resources for discovered images (optional recursive traversal)
 - **Latency tracking** - end-to-end request latency measured per check and broken down into DNS resolution, TCP connect, and TLS handshake phases; stored in the database and displayed as an interactive trend chart on the resource detail page with individual data points, tooltips, zoom (1×–8×), drag-to-pan, and a time axis; also shows latest and average latency per resource on the dashboard; the chart adapts to the selected time range (24 h / 7 d / 30 d) by fetching real per-check samples from the API and downsampling client-side so detail is preserved when zooming in
 
